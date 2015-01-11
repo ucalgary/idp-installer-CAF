@@ -924,9 +924,8 @@ EOM
 	-Didp.scope="${certCN}" \
 	-Didp.keystore.password="${pass}" \
 	-Didp.sealer.password="${pass}" \
-	-Didp.merge.properties=./properties.tmp \
-	-Didp.no.tidy
-
+	-Didp.merge.properties=./properties.tmp 
+	
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
