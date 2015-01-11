@@ -924,8 +924,6 @@ EOM
 	-Didp.scope="${certCN}" \
 	-Didp.keystore.password="${pass}" \
 	-Didp.sealer.password="${pass}" \
-	-Didp.sealer.storePassword="${pass}" \
-	-Didp.sealer.keyPassword="${pass}" \
 	-Didp.merge.properties=./properties.tmp \
 	-Didp.no.tidy
 
