@@ -1048,8 +1048,10 @@ configShibbolethFederationValidationKey ()
 patchShibbV3Configs()
 {
         # Patch idp.properties
-        ${Echo} "Executing sed \"s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/\"  ${Spath}/v3_templates/idp.properties > /opt/shibboleth-idp/conf/idp.properties"
-        sed "s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/"  ${Spath}/v3_templates/idp.properties > /opt/shibboleth-idp/conf/idp.properties
+        ${Echo} "cat ${Spath}/v3_templates/idp.properties | sed -re \"s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/\"  > /opt/shibboleth-idp/conf/idp.properties"
+        cat ${Spath}/v3_templates/idp.properties \
+		| sed -re "s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/" \
+		> /opt/shibboleth-idp/conf/idp.properties
 
         # Patch ldap.properties
 
