@@ -910,9 +910,25 @@ runShibbolethInstaller ()
 	# 	run shibboleth installer
 	cd /opt/${shibDir}
 	${Echo} "Running shiboleth installer"
-	#sh install.sh -Didp.home="/opt/shibboleth-idp" -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
-	#JAVA_HOME=/usr/java/default sh bin/install.sh -Didp.src.dir=./ -Didp.target.dir=/opt/shibboleth-idp -Didp.host.name="${certCN}" -Didp.scope="${certCN}" -Didp.keystore.password="${pass}" -Didp.sealer.password="${pass}" -Didp.merge.properties=conf/idp.properties
-        JAVA_HOME=/usr/java/default sh bin/install.sh -Didp.src.dir=./ -Didp.target.dir=/opt/shibboleth-idp -Didp.host.name="${certCN}" -Didp.scope="${certCN}" -Didp.keystore.password="${pass}" -Didp.sealer.password="${pass}" -Didp.sealer.storePassword="${pass}" -Didp.sealer.keyPassword="${pass}" -Didp.merge.properties=conf/idp.properties
+
+        cat << EOM > properties.tmp
+idp.entityID= https://${certCN}/idp/shibboleth
+idp.sealer.storePassword= ${pass}
+idp.sealer.keyPassword= ${pass}
+EOM
+
+        JAVA_HOME=/usr/java/default sh bin/install.sh \
+	-Didp.src.dir=./ \
+	-Didp.target.dir=/opt/shibboleth-idp \
+	-Didp.host.name="${certCN}" \
+	-Didp.scope="${certCN}" \
+	-Didp.keystore.password="${pass}" \
+	-Didp.sealer.password="${pass}" \
+	-Didp.sealer.storePassword="${pass}" \
+	-Didp.sealer.keyPassword="${pass}" \
+	-Didp.merge.properties=./properties.tmp \
+	-Didp.no.tidy
+
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
@@ -1043,21 +1059,19 @@ configShibbolethFederationValidationKey ()
 
 }
 
-
 #cdinro
 patchShibbV3Configs()
 {
-        # Patch idp.properties
-        ${Echo} "cat ${Spath}/v3_templates/idp.properties | sed -re \"s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/SCOPE/${certCN}/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/\"  > /opt/shibboleth-idp/conf/idp.properties"
-        cat ${Spath}/v3_templates/idp.properties \
-		| sed -re "s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/SCOPE/${certCN}/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/" \
-		> /opt/shibboleth-idp/conf/idp.properties
+	# Patch idp.properties
+	# sed "s/ENTITY_ID/https:\/\/idp.canarie.ca\/idp\/shibboleth/;s/S_PASSWORD/8o7CeC+Idwtx8JpdY6MtRO5l6Jo=/;s/K_PASSWORD/8o7CeC+Idwtx8JpdY6MtRO5l6Jo=/" /root/idp-installer-CAF/v3_templates/idp.properties > /opt/shibboleth-idp/conf/idp.properties
+	sed "s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/"  ${Spath}/v3_templates/idp.properties > /opt/shibboleth-idp/conf/idp.properties
 
-        # Patch ldap.properties
+	# Patch ldap.properties
 
-        # Patch whatever
+	# Patch whatever
 
 }
+
 
 patchShibbolethConfigs ()
 {
@@ -1549,7 +1563,7 @@ invokeShibbolethInstallProcessJetty9 ()
 	configShibbolethFederationValidationKey
 
 	#patchShibbolethConfigs
-	patchShibbV3Configs
+	#patchShibbV3Configs
 
 	updateMachineTime
 
