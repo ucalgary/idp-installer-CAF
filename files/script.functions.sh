@@ -4,8 +4,8 @@
 
 
 cleanBadInstall() {
-	if [ -d "/opt/shibboleth-identityprovider" ]; then
-		rm -rf /opt/shibboleth-identityprovider*
+	if [ -d "/opt/${shibDir}" ]; then
+		rm -rf /opt/${shibDir}*
 	fi
 	if [ -d "/opt/cas-client-${casVer}" ]; then
 		rm -rf /opt/cas-client-${casVer}
@@ -97,7 +97,7 @@ setVarUpgradeType ()
 
 {
 
-	if [ -L "/opt/shibboleth-identityprovider" -a -d "/opt/shibboleth-idp" ]; then
+	if [ -L "/opt/${shibDir}" -a -d "/opt/shibboleth-idp" ]; then
 		upgrade=1
 	fi
 
@@ -398,7 +398,7 @@ fetchMysqlCon() {
 installFticksIfEnabled() {
 
 if [ "${fticks}" != "n" ]; then
-	cp ${downloadPath}/ndn-shib-fticks-0.0.1-SNAPSHOT.jar /opt/shibboleth-identityprovider/lib
+	cp ${downloadPath}/ndn-shib-fticks-0.0.1-SNAPSHOT.jar /opt/${shibDir}/lib
 
 else
 	${Echo} "NOT Installing ndn-shib-fticks"
@@ -485,7 +485,7 @@ EOM
                 fetchMysqlCon
                 cd /opt
                 tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
-                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
 
         fi
 
@@ -519,16 +519,16 @@ if [ "${type}" = "cas" ]; then
 		caslogurl=$(askString "CAS login URL" "Please input the Login URL to your CAS server (https://cas.xxx.yy/cas/login)" "${casurl}/login")
 	fi
 
-	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/shibboleth-identityprovider/lib/
-	mkdir /opt/shibboleth-identityprovider/src/main/webapp/WEB-INF/lib
-	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/shibboleth-identityprovider/src/main/webapp/WEB-INF/lib
+	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/${shibDir}/lib/
+	mkdir /opt/${shibDir}/src/main/webapp/WEB-INF/lib
+	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/${shibDir}/src/main/webapp/WEB-INF/lib
 	
-	cat ${Spath}/${prep}/shibboleth-identityprovider-web.xml.diff.template \
+	cat ${Spath}/${prep}/${shibDir}-web.xml.diff.template \
 		| sed -re "s#IdPuRl#${idpurl}#;s#CaSuRl#${caslogurl}#;s#CaS2uRl#${casurl}#" \
-		> ${Spath}/${prep}/shibboleth-identityprovider-web.xml.diff
-	files="`${Echo} ${files}` ${Spath}/${prep}/shibboleth-identityprovider-web.xml.diff"
+		> ${Spath}/${prep}/${shibDir}-web.xml.diff
+	files="`${Echo} ${files}` ${Spath}/${prep}/${shibDir}-web.xml.diff"
 
-	patch /opt/shibboleth-identityprovider/src/main/webapp/WEB-INF/web.xml -i ${Spath}/${prep}/shibboleth-identityprovider-web.xml.diff >> ${statusFile} 2>&1
+	patch /opt/${shibDir}/src/main/webapp/WEB-INF/web.xml -i ${Spath}/${prep}/${shibDir}-web.xml.diff >> ${statusFile} 2>&1
 
 else
 	${Echo} "Authentication type: ${type}, CAS Client Not Requested"
@@ -545,11 +545,11 @@ fetchAndUnzipShibbolethIdP ()
 {
 	cd /opt
 
-	if [ ! -f "${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
+	if [ ! -f "${downloadPath}/${shibDir}-${shibVer}.tar.gz" ]; then
 		${Echo} "Shibboleth not found, fetching from web"
-		${fetchCmd} ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip ${shibbURL}
+		${fetchCmd} ${downloadPath}/${shibDir}-${shibVer}.tar.gz ${shibbURL}
 
-		if [ ! -s ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip ]; then
+		if [ ! -s ${downloadPath}/${shibDir}-${shibVer}.tar.gz ]; then
 		${Echo} "Error while downloading Shibboleth, aborting."
 		cleanBadInstall
 		fi
@@ -558,9 +558,9 @@ fetchAndUnzipShibbolethIdP ()
 # 	unzip all files
 	${Echo} "Unzipping dependancies"
 
-	unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
-	chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
-	ln -s shibboleth-identityprovider-${shibVer} shibboleth-identityprovider
+	tar xzf ${downloadPath}/${shibDir}-${shibVer}.tar.gz -C /opt
+	chmod -R 755 /opt/${shibDir}-${shibVer}
+	ln -s ${shibDir}-${shibVer} ${shibDir}
 }
 
 
@@ -908,9 +908,11 @@ runShibbolethInstaller ()
 
 {
 	# 	run shibboleth installer
-	cd /opt/shibboleth-identityprovider
+	cd /opt/${shibDir}
 	${Echo} "Running shiboleth installer"
-	sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
+	#sh install.sh -Didp.home="/opt/shibboleth-idp" -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
+	#JAVA_HOME=/usr/java/default sh bin/install.sh -Didp.src.dir=./ -Didp.target.dir=/opt/shibboleth-idp -Didp.host.name="${certCN}" -Didp.scope="${certCN}" -Didp.keystore.password="${pass}" -Didp.sealer.password="${pass}" -Didp.merge.properties=conf/idp.properties
+        JAVA_HOME=/usr/java/default sh bin/install.sh -Didp.src.dir=./ -Didp.target.dir=/opt/shibboleth-idp -Didp.host.name="${certCN}" -Didp.scope="${certCN}" -Didp.keystore.password="${pass}" -Didp.sealer.password="${pass}" -Didp.sealer.storePassword="${pass}" -Didp.sealer.keyPassword="${pass}" -Didp.merge.properties=conf/idp.properties
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
@@ -1040,6 +1042,20 @@ configShibbolethFederationValidationKey ()
 	fi
 
 }
+
+#cdinro
+patchShibbV3Configs()
+{
+	# Patch idp.properties
+	# sed "s/ENTITY_ID/https:\/\/idp.canarie.ca\/idp\/shibboleth/;s/S_PASSWORD/8o7CeC+Idwtx8JpdY6MtRO5l6Jo=/;s/K_PASSWORD/8o7CeC+Idwtx8JpdY6MtRO5l6Jo=/" /root/idp-installer-CAF/v3_templates/idp.properties > /opt/shibboleth-idp/conf/idp.properties
+	sed "s/ENTITY_ID/https:\/\/${certCN}\/idp\/shibboleth/;s/S_PASSWORD/${pass}/;s/K_PASSWORD/${pass}/"  ${Spath}/v3_templates/idp.properties > /opt/shibboleth-idp/conf/idp.properties
+
+	# Patch ldap.properties
+
+	# Patch whatever
+
+}
+
 
 patchShibbolethConfigs ()
 {
@@ -1214,23 +1230,23 @@ ${Echo} "Previous installation found, performing upgrade."
 
 	eval ${distCmd1} &> >(tee -a ${statusFile})
 	cd /opt
-	currentShib=`ls -l /opt/shibboleth-identityprovider | awk '{print $NF}'`
+	currentShib=`ls -l /opt/${shibDir} | awk '{print $NF}'`
 	currentVer=`${Echo} ${currentShib} | awk -F\- '{print $NF}'`
 	if [ "${currentVer}" = "${shibVer}" ]; then
 		mv ${currentShib} ${currentShib}.${ts}
 	fi
 
-	if [ ! -f "${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
+	if [ ! -f "${downloadPath}/${shibDir}-${shibVer}.tar.gz" ]; then
 		fetchAndUnzipShibbolethIdP
 	fi
-	unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
-	chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
+	tar xzf ${downloadPath}/${shibDir}-${shibVer}.tar.gz -C /opt
+	chmod -R 755 /opt/${shibDir}-${shibVer}
 
-        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/shibboleth-identityprovider/src/main/webapp/metadata.xml
+        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/${shibDir}/src/main/webapp/metadata.xml
         tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
 
-	unlink /opt/shibboleth-identityprovider
-	ln -s /opt/shibboleth-identityprovider-${shibVer} /opt/shibboleth-identityprovider
+	unlink /opt/${shibDir}
+	ln -s /opt/${shibDir}-${shibVer} /opt/${shibDir}
 
 	if [ -d "/opt/cas-client-${casVer}" ]; then
 		installCasClientIfEnabled
@@ -1241,7 +1257,7 @@ ${Echo} "Previous installation found, performing upgrade."
 	fi
 
 	if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
-		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
 	fi
 
 	setJavaHome
@@ -1297,13 +1313,13 @@ patchJettyConfigs ()
 
 {
         jettyBase="/opt/jetty/base"
-        if [ -d "/opt/shibboleth-identityprovider/endorsed" ]; then
+        if [ -d "/opt/${shibDir}/endorsed" ]; then
                 if [ ! -d "${jettyBase}/lib/ext/endorsed" ]; then
                         mkdir ${jettyBase}/lib/ext/endorsed
                 fi
-                for i in `ls /opt/shibboleth-identityprovider/endorsed/`; do
+                for i in `ls /opt/${shibDir}/endorsed/`; do
                         if [ ! -s "${jettyBase}/lib/ext/endorsed/${i}" ]; then
-                                cp /opt/shibboleth-identityprovider/endorsed/${i} ${jettyBase}/lib/ext/endorsed
+                                cp /opt/${shibDir}/endorsed/${i} ${jettyBase}/lib/ext/endorsed
                         fi
                 done
         fi
@@ -1331,9 +1347,7 @@ patchJettyConfigs ()
         echo "etc/jetty-shibboleth.xml" >> $jettyBase/start.ini
 
         jettyUser=`grep "^jetty" /etc/passwd | cut -d: -f1`
-        chown ${jettyUser} ${jettyBase}/etc/jetty-shibboleth.xml
-        chown ${jettyUser} /opt/shibboleth-idp/metadata
-        chown -R ${jettyUser} /opt/shibboleth-idp/logs/
+        chown -R ${jettyUser} /opt/shibboleth-idp/
 
         # need to set bash as the shell for the user to permit jetty to restart after reboot
         chsh -s /bin/bash ${jettyUser}
@@ -1524,14 +1538,16 @@ invokeShibbolethInstallProcessJetty9 ()
 	# Override per federation
 	configContainerSSLServerKey
 
-	patchShibbolethLDAPLoginConfigs
+	#Should be before runShibbolethInstaller
+	# patchShibbolethLDAPLoginConfigs
 
 	patchJettyConfigs
 
 	# Override per federation
 	configShibbolethFederationValidationKey
 
-	patchShibbolethConfigs
+	#patchShibbolethConfigs
+	patchShibbV3Configs
 
 	updateMachineTime
 

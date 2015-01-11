@@ -7,7 +7,7 @@ setInstallStatus() {
 msg_FSSO="Federated SSO/Shibboleth:"
 msg_RADIUS="eduroam read FreeRADIUS:"
 
-if [ -L "/opt/shibboleth-identityprovider" -a -d "/opt/shibboleth-idp" ]
+if [ -L "/opt/${shibDir}" -a -d "/opt/shibboleth-idp" ]
 then
         msg_fsso_stat="Installed"
 	installStateFSSO=1
