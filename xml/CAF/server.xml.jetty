@@ -7,6 +7,7 @@
   <!-- This configuration must be used in conjunction with jetty.xml -->
   <!-- and either jetty-https.xml or jetty-spdy.xml (but not both)   -->
   <!-- ============================================================= -->
+<!--
   <New id="shibContextFactory" class="net.shibboleth.utilities.jetty9.DelegateToApplicationSslContextFactory">
     <Set name="KeyStorePath">/opt/shibboleth-idp/credentials/idp.jks</Set>
     <Set name="KeyStorePassword">ShIbBKeyPaSs</Set>
@@ -17,7 +18,7 @@
       </Array>
     </Set>
   </New>
-
+-->
   <New id="shibContextFactory2" class="net.shibboleth.utilities.jetty9.DelegateToApplicationSslContextFactory">
     <Set name="KeyStoreType">pkcs12</Set>
     <Set name="KeyStorePath">HtTpSJkS</Set>
