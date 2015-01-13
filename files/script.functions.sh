@@ -574,8 +574,6 @@ mkdir -p ${certpath}
 
 }
 
-
-
 installCertificates()
 
 {
@@ -583,35 +581,40 @@ installCertificates()
 # change to certificate path whilst doing this part
 cd ${certpath}
 ${Echo} "Fetching TCS CA chain from web"
-	${fetchCmd} ${certpath}/server.chain ${certificateChain}
-	if [ ! -s "${certpath}/server.chain" ]; then
-		${Echo} "Can not get the certificate chain, aborting install."
-		cleanBadInstall
-	fi
+        ${fetchCmd} ${certpath}/server.chain ${certificateChain}
+        if [ ! -s "${certpath}/server.chain" ]; then
+                ${Echo} "Can not get the certificate chain, aborting install."
+                cleanBadInstall
+        fi
 
-	${Echo} "Installing TCS CA chain in java cacert keystore"
-	cnt=1
-	for i in `cat ${certpath}server.chain | sed -re 's/\ /\*\*\*/g'`; do
-		n=`${Echo} ${i} | sed -re 's/\*\*\*/\ /g'`
-		${Echo} ${n} >> ${certpath}${cnt}.root
-		ltest=`${Echo} ${n} | grep "END CERTIFICATE"`
-		if [ ! -z "${ltest}" ]; then
-			cnt=`expr ${cnt} + 1`
-		fi
-	done
-	ccnt=1
-	while [ ${ccnt} -lt ${cnt} ]; do
-		md5finger=`keytool -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
-		subject=`openssl x509 -subject -noout -in ${certpath}${ccnt}.root | awk -F= '{print $NF}'`
-		if [ -z "${test}" ]; then
-			keytool -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
-		fi
-		files="`${Echo} ${files}` ${certpath}${ccnt}.root"
-		ccnt=`expr ${ccnt} + 1`
-	done
-	
+        ${Echo} "Installing TCS CA chain in java cacert keystore"
+        cnt=1
+        for i in `cat ${certpath}server.chain | sed -re 's/\ /\*\*\*/g'`; do
+                n=`${Echo} ${i} | sed -re 's/\*\*\*/\ /g'`
+                ${Echo} ${n} >> ${certpath}${cnt}.root
+                ltest=`${Echo} ${n} | grep "END CERTIFICATE"`
+                if [ ! -z "${ltest}" ]; then
+                        cnt=`expr ${cnt} + 1`
+                fi
+        done
+        ccnt=1
+        while [ ${ccnt} -lt ${cnt} ]; do
+                md5finger=`keytool -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+                test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+                subject=`openssl x509 -subject -noout -in ${certpath}${ccnt}.root | awk -F= '{print $NF}'`
+                if [ -z "${test}" ]; then
+                        keytool -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+                fi
+                files="`${Echo} ${files}` ${certpath}${ccnt}.root"
+                ccnt=`expr ${ccnt} + 1`
+        done
+
+# Fetch ldap cert
+${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > ${certpath}/ldap-server.crt
+
 }
+
+
 
 askForConfigurationData() {
 	if [ -z "${type}" ]; then
@@ -943,8 +946,6 @@ EOM
         -Dldap.merge.properties=./ldap.properties.tmp \
         -Didp.merge.properties=./idp.properties.tmp
 
-        # Fetch ldap cert
-        ${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > /opt/shibboleth-idp/ssl/ldap-server.crt
 }
 
 
