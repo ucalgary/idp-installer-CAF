@@ -387,16 +387,22 @@ ldapwhoami -vvv -H ldaps://${ldapserver} -D "${ldapbinddn}" -x -w "${ldappass}" 
 # ntp server check
 ##############################
 elo "${Echo} Validating ntpserver (${ntpserver}) reachability..."
-${Echo} "ntpdate ${ntpserver}" >> ${statusFile}
-ntpcheck=$(ntpdate ${ntpserver} 2>&1 | tee -a ${statusFile} | awk -F":" '{print $4}' | awk '{print $1 $2}')
-
-if [ $ntpcheck == "noserver"  ]
-        then
-                elo "${Echo} ntpserver - - - - failed"
-                NTPSERVER="failed"
-        else
-                elo "${Echo} ntpserver - - - - ok"
-                NTPSERVER="ok"
+${Echo} "ntpdate ${ntpserver}" &> >(tee -a ${statusFile})
+ntpcheck=$(ntpdate ${ntpserver} 2>&1 | head -n1 | awk '{print $1 $2}')
+if [ $ntpcheck == "Errorresolving" ]
+	then
+		elo "${Echo} ntpserver - - - - failed"
+		NTPSERVER="failed"
+	else
+	ntpcheck=$(ntpdate ${ntpserver} 2>&1 | head -n1 | awk -F":" '{print $4}' | awk '{print $1 $2}')
+	if [ $ntpcheck == "adjusttime"  ]
+        	then
+			elo "${Echo} ntpserver - - - - ok"
+                        NTPSERVER="ok"
+        	else
+			elo "${Echo} ntpserver - - - - failed"
+                        NTPSERVER="failed"
+	fi
 fi
 ###############################
 # summary results
