@@ -905,6 +905,7 @@ configShibbolethXMLAttributeResolverForLDAP ()
 }
 
 runShibbolethInstaller ()
+
 {
         #       run shibboleth installer
         cd /opt/${shibDir}
@@ -916,11 +917,12 @@ idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
 EOM
 
+
         cat << EOM > ldap.properties.tmp
 idp.authn.LDAP.ldapURL                          = ${ldapServerStr}:636
 idp.authn.LDAP.useStartTLS                      = false
 idp.authn.LDAP.useSSL                           = true
-idp.authn.LDAP.trustCertificates                = %{idp.home}/credentials/ldap-server.crt
+idp.authn.LDAP.trustCertificates                = %{idp.home}/ssl/ldap-server.crt
 idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
 idp.authn.LDAP.returnAttributes                 = cn,mail
 idp.authn.LDAP.baseDN                           = ${ldapbasedn}
@@ -928,12 +930,6 @@ idp.authn.LDAP.userFilter                       = (uid={user})
 idp.authn.LDAP.bindDN                           = ${ldapbinddn}
 idp.authn.LDAP.bindDNCredential                 = ${ldappass}
 idp.authn.LDAP.dnFormat                         = uid=%s,ou=people,dc=example,dc=org
-idp.attribute.resolver.LDAP.ldapURL             = %{idp.authn.LDAP.ldapURL}
-idp.attribute.resolver.LDAP.baseDN              = %{idp.authn.LDAP.baseDN}
-idp.attribute.resolver.LDAP.bindDN              = %{idp.authn.LDAP.bindDN}
-idp.attribute.resolver.LDAP.bindDNCredential    = %{idp.authn.LDAP.bindDNCredential}
-idp.attribute.resolver.LDAP.useStartTLS         = %{idp.authn.LDAP.useStartTLS:true}
-idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates}
 EOM
 
 
@@ -947,7 +943,10 @@ EOM
         -Dldap.merge.properties=./ldap.properties.tmp \
         -Didp.merge.properties=./idp.properties.tmp
 
+        # Fetch ldap cert
+        ${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > /opt/shibboleth-idp/ssl/ldap-server.crt
 }
+
 
 configShibbolethSSLForLDAPJavaKeystore()
 
