@@ -1076,35 +1076,6 @@ configShibbolethFederationValidationKey ()
 
 }
 
-#cdinro
-patchShibbV3Configs()
-{
-        # Patch ldap.properties
-
-        reg1="s#idp.authn.LDAP.ldapURL.*= ldap://localhost:10389#idp.authn.LDAP.ldapURL = ${ldapServerStr}:636#"
-        reg2="s/idp.authn.LDAP.trustCertificates.*= %\{idp.home\}\/credentials\/ldap-server.crt/idp.authn.LDAP.trustCertificates= \/opt\/shibboleth-idp\/ssl\/ldap-server.crt/"
-
-        reg3="s/#idp.authn.LDAP.useStartTLS.*= true/idp.authn.LDAP.useStartTLS = false/"
-        reg4="s/#idp.authn.LDAP.useSSL.*= false/idp.authn.LDAP.useSSL = true/"
-
-        reg5="s/idp.authn.LDAP.baseDN.*= ou=people,dc=example,dc=org/idp.authn.LDAP.baseDN = ${ldapbasedn}/"
-        reg6="s/idp.authn.LDAP.bindDN.*= uid=myservice,ou=system/idp.authn.LDAP.bindDN = ${ldapbinddn}/"
-        reg7="s/idp.authn.LDAP.bindDNCredential.*= myServicePassword/idp.authn.LDAP.bindDNCredential = ${ldappass}/"
-
-        echo "sed -re \"$reg1\" /opt/shibboleth-idp/conf/ldap.properties"
-        echo "sed -re \"$reg2\" /opt/shibboleth-idp/conf/ldap.properties"
-        echo "sed -re \"$reg3\" /opt/shibboleth-idp/conf/ldap.properties"
-        echo "sed -re \"$reg4\" /opt/shibboleth-idp/conf/ldap.properties"
-        echo "sed -re \"$reg5\" /opt/shibboleth-idp/conf/ldap.properties"
-        echo "sed -re \"$reg6\" /opt/shibboleth-idp/conf/ldap.properties"
-        echo "sed -re \"$reg7\" /opt/shibboleth-idp/conf/ldap.properties"
-        sed -i -re "$reg1;$reg2;$reg3;$reg4;$reg5;$reg6;$reg7" /opt/shibboleth-idp/conf/ldap.properties
-
-        # Fetch LDAP Certificate
-        ${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > /opt/shibboleth-idp/ssl/ldap-server.crt
-
-}
-
 
 patchShibbolethConfigs ()
 {
@@ -1594,9 +1565,6 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	# Override per federation
 	configShibbolethFederationValidationKey
-
-	#patchShibbolethConfigs
-	#patchShibbV3Configs
 
 	updateMachineTime
 
