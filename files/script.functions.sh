@@ -1119,7 +1119,7 @@ updateMachineTime ()
 	${Echo} "Updating time from: ${ntpserver}"
 	/usr/sbin/ntpdate ${ntpserver} > /dev/null 2>&1
 
-if [ "${dist}" != "ubuntu" ] 
+if [ "${dist}" == "ubuntu" ] 
 	then
 		sed -n 'H;${x;s/server .*\n/server '"${ntpserver}"'\n&/;p;}' /etc/ntp.conf > ./tmp.txt
 		rm -f /etc/ntp.conf
