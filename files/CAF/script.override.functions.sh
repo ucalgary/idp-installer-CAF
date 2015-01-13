@@ -89,7 +89,10 @@ installCertificates ()
 # 		files="`${Echo} ${files}` ${certpath}${ccnt}.root"
 # 		ccnt=`expr ${ccnt} + 1`
 # 	done
-	
+
+# Fetch ldap cert
+${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > ${certpath}/ldap-server.crt
+
 }
 
 configShibbolethFederationValidationKey ()
