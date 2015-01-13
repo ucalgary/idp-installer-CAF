@@ -89,7 +89,10 @@ installCertificates ()
 # 		files="`${Echo} ${files}` ${certpath}${ccnt}.root"
 # 		ccnt=`expr ${ccnt} + 1`
 # 	done
-	
+
+# Fetch ldap cert
+${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > ${certpath}/ldap-server.crt
+
 }
 
 configShibbolethFederationValidationKey ()
@@ -225,23 +228,23 @@ ${Echo} "Previous installation found, performing upgrade."
 
         eval ${distCmd1} &> >(tee -a ${statusFile})
         cd /opt
-        currentShib=`ls -l /opt/shibboleth-identityprovider | awk '{print $NF}'`
+        currentShib=`ls -l /opt/${shibDir} | awk '{print $NF}'`
         currentVer=`${Echo} ${currentShib} | awk -F\- '{print $NF}'`
         if [ "${currentVer}" = "${shibVer}" ]; then
                 mv ${currentShib} ${currentShib}.${ts}
         fi
 
-        if [ ! -f "${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
+        if [ ! -f "${downloadPath}/${shibDir}-${shibVer}.tar.gz" ]; then
                 fetchAndUnzipShibbolethIdP
         fi
-        unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
-        chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
+        tar xzf ${downloadPath}/${shibDir}-${shibVer}.tar.gz -C /opt
+        chmod -R 755 /opt/${shibDir}-${shibVer}
 
-        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/shibboleth-identityprovider/src/main/webapp/metadata.xml
+        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/${shibDir}/src/main/webapp/metadata.xml
         tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
 
-        unlink /opt/shibboleth-identityprovider
-        ln -s /opt/shibboleth-identityprovider-${shibVer} /opt/shibboleth-identityprovider
+        unlink /opt/${shibDir}
+        ln -s /opt/${shibDir}-${shibVer} /opt/${shibDir}
 
         if [ -d "/opt/cas-client-${casVer}" ]; then
                 installCasClientIfEnabled
@@ -252,7 +255,7 @@ ${Echo} "Previous installation found, performing upgrade."
                         cd /opt/ndn-shib-fticks
                         mvn >> ${statusFile} 2>&1
                 fi
-                cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
+                cp /opt/ndn-shib-fticks/target/*.jar /opt/${shibDir}/lib
         else
                 fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
 
@@ -262,7 +265,7 @@ ${Echo} "Previous installation found, performing upgrade."
         fi
 
         if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
-                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
         fi
 
         setJavaHome
