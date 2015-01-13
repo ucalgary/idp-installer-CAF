@@ -905,27 +905,48 @@ configShibbolethXMLAttributeResolverForLDAP ()
 }
 
 runShibbolethInstaller ()
-
 {
-	# 	run shibboleth installer
-	cd /opt/${shibDir}
-	${Echo} "Running shiboleth installer"
+        #       run shibboleth installer
+        cd /opt/${shibDir}
+        ${Echo} "Running shiboleth installer"
 
-        cat << EOM > properties.tmp
-idp.entityID= https://${certCN}/idp/shibboleth
+        cat << EOM > idp.properties.tmp
+idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
-idp.sealer.keyPassword= ${pass}
+idp.sealer.keyPassword  = ${pass}
 EOM
 
+        cat << EOM > ldap.properties.tmp
+idp.authn.LDAP.ldapURL                          = ${ldapServerStr}:636
+idp.authn.LDAP.useStartTLS                      = false
+idp.authn.LDAP.useSSL                           = true
+idp.authn.LDAP.trustCertificates                = %{idp.home}/credentials/ldap-server.crt
+idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
+idp.authn.LDAP.returnAttributes                 = cn,mail
+idp.authn.LDAP.baseDN                           = ${ldapbasedn}
+idp.authn.LDAP.userFilter                       = (uid={user})
+idp.authn.LDAP.bindDN                           = ${ldapbinddn}
+idp.authn.LDAP.bindDNCredential                 = ${ldappass}
+idp.authn.LDAP.dnFormat                         = uid=%s,ou=people,dc=example,dc=org
+idp.attribute.resolver.LDAP.ldapURL             = %{idp.authn.LDAP.ldapURL}
+idp.attribute.resolver.LDAP.baseDN              = %{idp.authn.LDAP.baseDN}
+idp.attribute.resolver.LDAP.bindDN              = %{idp.authn.LDAP.bindDN}
+idp.attribute.resolver.LDAP.bindDNCredential    = %{idp.authn.LDAP.bindDNCredential}
+idp.attribute.resolver.LDAP.useStartTLS         = %{idp.authn.LDAP.useStartTLS:true}
+idp.attribute.resolver.LDAP.trustCertificates   = %{idp.authn.LDAP.trustCertificates}
+EOM
+
+
         JAVA_HOME=/usr/java/default sh bin/install.sh \
-	-Didp.src.dir=./ \
-	-Didp.target.dir=/opt/shibboleth-idp \
-	-Didp.host.name="${certCN}" \
-	-Didp.scope="${certCN}" \
-	-Didp.keystore.password="${pass}" \
-	-Didp.sealer.password="${pass}" \
-	-Didp.merge.properties=./properties.tmp 
-	
+        -Didp.src.dir=./ \
+        -Didp.target.dir=/opt/shibboleth-idp \
+        -Didp.host.name="${certCN}" \
+        -Didp.scope="${certCN}" \
+        -Didp.keystore.password="${pass}" \
+        -Didp.sealer.password="${pass}" \
+        -Dldap.merge.properties=./ldap.properties.tmp \
+        -Didp.merge.properties=./idp.properties.tmp
+
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
@@ -1576,7 +1597,7 @@ invokeShibbolethInstallProcessJetty9 ()
 	configShibbolethFederationValidationKey
 
 	#patchShibbolethConfigs
-	patchShibbV3Configs
+	#patchShibbV3Configs
 
 	updateMachineTime
 
