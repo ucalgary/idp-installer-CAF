@@ -90,7 +90,7 @@ redhat_install_ldaptools="yum -y install openldap-clients"
 redhatEduroamPath="/etc/raddb"
 redhatRadiusGroup="radiusd"
 
-ubuntuCmdEduroam="apt-get install -y samba winbind freeradius freeradius-krb5 freeradius-ldap freeradius-utils freeradius-mysql make"
+ubuntuCmdEduroam="apt-get install -y ntp samba winbind freeradius freeradius-krb5 freeradius-ldap freeradius-utils freeradius-mysql make"
 redhatCmdEduroam="yum -y install bind-utils samba samba-winbind freeradius freeradius-krb5 freeradius-ldap freeradius-perl freeradius-python freeradius-utils freeradius-mysql make" 
 #redhatCmdFedSSO="yum -y install java-1.6.0-openjdk-devel tomcat6 mysql-server mysql"
 centosCmdEduroam="yum -y install bind-utils samba samba-winbind freeradius freeradius-krb5 freeradius-ldap freeradius-perl freeradius-python freeradius-utils freeradius-mysql make" 

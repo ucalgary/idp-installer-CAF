@@ -1121,7 +1121,6 @@ updateMachineTime ()
 
 if [ "${dist}" != "ubuntu" ] 
 	then
-		touch ./tmp.txt
 		sed -n 'H;${x;s/server .*\n/server '"${ntpserver}"'\n&/;p;}' /etc/ntp.conf > ./tmp.txt
 		rm -f /etc/ntp.conf
 		mv ./tmp.txt /etc/ntp.conf
