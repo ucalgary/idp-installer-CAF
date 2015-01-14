@@ -493,7 +493,7 @@ EOM
 
         }
 
-
+#cdinro
 installCasClientIfEnabled() {
 
 if [ "${type}" = "cas" ]; then
@@ -519,16 +519,17 @@ if [ "${type}" = "cas" ]; then
 		caslogurl=$(askString "CAS login URL" "Please input the Login URL to your CAS server (https://cas.xxx.yy/cas/login)" "${casurl}/login")
 	fi
 
-	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/${shibDir}/lib/
-	mkdir /opt/${shibDir}/src/main/webapp/WEB-INF/lib
-	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/${shibDir}/src/main/webapp/WEB-INF/lib
+	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
+	cp /opt/shibboleth-idp/webapp/WEB-INF/web.xml /opt/shibboleth-idp/edit-webapp/WEB-INF/
 	
 	cat ${Spath}/${prep}/${shibDir}-web.xml.diff.template \
 		| sed -re "s#IdPuRl#${idpurl}#;s#CaSuRl#${caslogurl}#;s#CaS2uRl#${casurl}#" \
 		> ${Spath}/${prep}/${shibDir}-web.xml.diff
 	files="`${Echo} ${files}` ${Spath}/${prep}/${shibDir}-web.xml.diff"
 
-	patch /opt/${shibDir}/src/main/webapp/WEB-INF/web.xml -i ${Spath}/${prep}/${shibDir}-web.xml.diff >> ${statusFile} 2>&1
+	patch /opt/shibboleth-idp/edit-webapp/WEB-INF/web.xml -i ${Spath}/${prep}/${shibDir}-web.xml.diff >> ${statusFile} 2>&1
+
+	/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
 else
 	${Echo} "Authentication type: ${type}, CAS Client Not Requested"
@@ -1538,9 +1539,6 @@ invokeShibbolethInstallProcessJetty9 ()
 	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
 
 
-	installCasClientIfEnabled
-
-
 	installFticksIfEnabled
 
 
@@ -1553,6 +1551,7 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	runShibbolethInstaller
 
+	installCasClientIfEnabled
 
 	createCertificatePathAndHome
 
