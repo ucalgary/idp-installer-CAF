@@ -915,7 +915,8 @@ runShibbolethInstaller ()
         ${Echo} "Running shiboleth installer"
 
         # Extract AD domain from baseDN
-        ldapDomain=$(echo ${ldapbasedn#OU*DC=} | sed "s/,DC=/./g")
+        ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
+        ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
 
         cat << EOM > idp.properties.tmp
 idp.entityID            = https://${certCN}/idp/shibboleth
