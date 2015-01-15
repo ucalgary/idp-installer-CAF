@@ -917,12 +917,43 @@ runShibbolethInstaller ()
         cd /opt/${shibDir}
         ${Echo} "Running shiboleth installer"
 
-        # Extract AD domain from baseDN
-        ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
-        ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
-
-
 	if [ "${type}" = "ldap" ]; then
+
+		# Set default values
+
+                if [ -x ${ldap_type} ]; then
+                        ldap_type="ad"
+                fi
+
+		if [ -x ${ldapStartTLS} ]; then
+			ldapStartTLS="true"
+		fi
+
+                if [ -x ${ldapSSL} ]; then
+                        ldapSSL="false"
+		fi
+
+                if [ -x ${user_field} ]; then
+                        user_field="samaccountname"
+                fi
+
+                if [ -x ${ldap_attr} ]; then
+                        ldap_attr="cn,mail"
+                fi
+
+		# ActiveDirectory specific
+		if [ "${ldap_type}" = "ad" ]; then
+
+                        #Set idp.authn.LDAP.authenticator
+                        ldapAuthenticator="adAuthenticator"
+			ldapDnFormat="%s@${Dname}"
+
+		# Other LDAP implementations
+		else
+			#Set idp.authn.LDAP.authenticator
+                        ldapAuthenticator="bindSearchAuthenticator"
+			ldapDnFormat="uid=%s,${ldapbasedn}"
+		fi
 
 		cat << EOM > idp.properties.tmp
 idp.entityID            = https://${certCN}/idp/shibboleth
@@ -932,20 +963,20 @@ idp.authn.flows		= Password
 EOM
 
         	cat << EOM > ldap.properties.tmp
-idp.authn.LDAP.authenticator                    = adAuthenticator
+idp.authn.LDAP.authenticator                    = ${ldapAuthenticator}
 idp.authn.LDAP.ldapURL                          = ldap://${ldapserver}
-idp.authn.LDAP.useStartTLS                      = true
-idp.authn.LDAP.useSSL                           = false
+idp.authn.LDAP.useStartTLS                      = ${ldapStartTLS}
+idp.authn.LDAP.useSSL                           = ${ldapSSL}
 idp.authn.LDAP.sslConfig                        = certificateTrust
 idp.authn.LDAP.trustCertificates                = %{idp.home}/ssl/ldap-server.crt
 idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-server.truststore
-idp.authn.LDAP.returnAttributes                 = cn,mail
+idp.authn.LDAP.returnAttributes                 = ${ldap_attr}
 idp.authn.LDAP.baseDN                           = ${ldapbasedn}
 idp.authn.LDAP.subtreeSearch                    = true
-idp.authn.LDAP.userFilter                       = (uid={0})
+idp.authn.LDAP.userFilter                       = (uid=\{${user_field}\})
 idp.authn.LDAP.bindDN                           = ${ldapbinddn}
 idp.authn.LDAP.bindDNCredential                 = ${ldappass}
-idp.authn.LDAP.dnFormat                         = %s@${ldapDomain}
+idp.authn.LDAP.dnFormat                         = ${ldapDnFormat}
 EOM
 
 	        JAVA_HOME=/usr/java/default sh bin/install.sh \
