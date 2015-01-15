@@ -493,7 +493,6 @@ EOM
 
         }
 
-#cdinro
 installCasClientIfEnabled() {
 
 if [ "${type}" = "cas" ]; then
@@ -732,8 +731,11 @@ askForConfigurationData() {
 		selfsigned=$(askYesNo "Self signed certificate" "Create a self signed certificate for HTTPS?\n\nThis is NOT recommended for production systems! Only for testing purposes" "y")
 	fi
 
-	pass=$(askString "IDP keystore password" "The IDP keystore is for the Shibboleth software itself and not the webserver. Please set your IDP keystore password.\nAn empty string generates a randomized new password" "" 1)
-	httpspass=$(askString "HTTPS Keystore password" "The webserver uses a separate keystore for itself. Please input your Keystore password for the end user facing HTTPS.\n\nAn empty string generates a randomized new password" "" 1)
+	if [ "${disable_passw_input}" != "y" ]; then
+		pass=$(askString "IDP keystore password" "The IDP keystore is for the Shibboleth software itself and not the webserver. Please set your IDP keystore password.\nAn empty string generates a randomized new password" "" 1)
+		httpspass=$(askString "HTTPS Keystore password" "The webserver uses a separate keystore for itself. Please input your Keystore password for the end user facing HTTPS.\n\nAn empty string generates a randomized new password" "" 1)
+	fi
+
 }
 
 setDistCommands() {
@@ -920,16 +922,16 @@ runShibbolethInstaller ()
         ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
 
 
-        if [ "${type}" = "ldap" ]; then
+	if [ "${type}" = "ldap" ]; then
 
-                cat << EOM > idp.properties.tmp
+		cat << EOM > idp.properties.tmp
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
-idp.authn.flows         = Password
+idp.authn.flows		= Password
 EOM
 
-                cat << EOM > ldap.properties.tmp
+        	cat << EOM > ldap.properties.tmp
 idp.authn.LDAP.authenticator                    = adAuthenticator
 idp.authn.LDAP.ldapURL                          = ldap://${ldapserver}
 idp.authn.LDAP.useStartTLS                      = true
@@ -946,19 +948,20 @@ idp.authn.LDAP.bindDNCredential                 = ${ldappass}
 idp.authn.LDAP.dnFormat                         = %s@${ldapDomain}
 EOM
 
-                JAVA_HOME=/usr/java/default sh bin/install.sh \
-                -Didp.src.dir=./ \
-                -Didp.target.dir=/opt/shibboleth-idp \
-                -Didp.host.name="${certCN}" \
-                -Didp.scope="${certCN}" \
-                -Didp.keystore.password="${pass}" \
-                -Didp.sealer.password="${pass}" \
-                -Dldap.merge.properties=./ldap.properties.tmp \
-                -Didp.merge.properties=./idp.properties.tmp
+	        JAVA_HOME=/usr/java/default sh bin/install.sh \
+        	-Didp.src.dir=./ \
+        	-Didp.target.dir=/opt/shibboleth-idp \
+        	-Didp.host.name="${certCN}" \
+        	-Didp.scope="${certCN}" \
+        	-Didp.keystore.password="${pass}" \
+        	-Didp.sealer.password="${pass}" \
+        	-Dldap.merge.properties=./ldap.properties.tmp \
+        	-Didp.merge.properties=./idp.properties.tmp
 
 
-        elif [ "${type}" = "cas" ]; then
+	elif [ "${type}" = "cas" ]; then
 
+		#cdinro
                 cat << EOM > idp.properties.tmp
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
@@ -976,7 +979,8 @@ EOM
                 -Didp.sealer.password="${pass}" \
                 -Didp.merge.properties=./idp.properties.tmp
 
-        fi
+	fi
+
 
 }
 
