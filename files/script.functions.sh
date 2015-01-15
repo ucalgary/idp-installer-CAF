@@ -919,14 +919,17 @@ runShibbolethInstaller ()
         ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
         ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
 
-        cat << EOM > idp.properties.tmp
+
+        if [ "${type}" = "ldap" ]; then
+
+                cat << EOM > idp.properties.tmp
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
+idp.authn.flows         = Password
 EOM
 
-
-        cat << EOM > ldap.properties.tmp
+                cat << EOM > ldap.properties.tmp
 idp.authn.LDAP.authenticator                    = adAuthenticator
 idp.authn.LDAP.ldapURL                          = ldap://${ldapserver}
 idp.authn.LDAP.useStartTLS                      = true
@@ -943,15 +946,37 @@ idp.authn.LDAP.bindDNCredential                 = ${ldappass}
 idp.authn.LDAP.dnFormat                         = %s@${ldapDomain}
 EOM
 
-        JAVA_HOME=/usr/java/default sh bin/install.sh \
-        -Didp.src.dir=./ \
-        -Didp.target.dir=/opt/shibboleth-idp \
-        -Didp.host.name="${certCN}" \
-        -Didp.scope="${certCN}" \
-        -Didp.keystore.password="${pass}" \
-        -Didp.sealer.password="${pass}" \
-        -Dldap.merge.properties=./ldap.properties.tmp \
-        -Didp.merge.properties=./idp.properties.tmp
+                JAVA_HOME=/usr/java/default sh bin/install.sh \
+                -Didp.src.dir=./ \
+                -Didp.target.dir=/opt/shibboleth-idp \
+                -Didp.host.name="${certCN}" \
+                -Didp.scope="${certCN}" \
+                -Didp.keystore.password="${pass}" \
+                -Didp.sealer.password="${pass}" \
+                -Dldap.merge.properties=./ldap.properties.tmp \
+                -Didp.merge.properties=./idp.properties.tmp
+
+
+        elif [ "${type}" = "cas" ]; then
+
+                cat << EOM > idp.properties.tmp
+idp.entityID            = https://${certCN}/idp/shibboleth
+idp.sealer.storePassword= ${pass}
+idp.sealer.keyPassword  = ${pass}
+idp.authn.flows         = RemoteUser
+EOM
+
+
+                JAVA_HOME=/usr/java/default sh bin/install.sh \
+                -Didp.src.dir=./ \
+                -Didp.target.dir=/opt/shibboleth-idp \
+                -Didp.host.name="${certCN}" \
+                -Didp.scope="${certCN}" \
+                -Didp.keystore.password="${pass}" \
+                -Didp.sealer.password="${pass}" \
+                -Didp.merge.properties=./idp.properties.tmp
+
+        fi
 
 }
 
