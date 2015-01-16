@@ -115,6 +115,8 @@ then
 
 	if echo "${installer_section0_buildComponentList}" | grep -q "shibboleth"; then
 		validateConnectivity ${installer_section0_version}
+
+		checkEptidDb
 	fi
 
 else
