@@ -3,7 +3,7 @@
 > <!-- CAS Filter Configuration -->
 > <context-param>
 >   <param-name>serverName</param-name>
->   <param-value>https://idp.canarie.ca</param-value>                                      <!-- CHANGE HERE - IDP url -->
+>   <param-value>IdPuRl</param-value>                                      <!-- CHANGE HERE - IDP url -->
 > </context-param>
 > 
 > <!-- CAS Authentication Filter -->
