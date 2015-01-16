@@ -944,9 +944,14 @@ runShibbolethInstaller ()
 		# ActiveDirectory specific
 		if [ "${ldap_type}" = "ad" ]; then
 
+			
+
                         #Set idp.authn.LDAP.authenticator
                         ldapAuthenticator="adAuthenticator"
-			ldapDnFormat="%s@${Dname}"
+		        # Extract AD domain from baseDN
+		        ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
+		        ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
+			ldapDnFormat="%s@${ldapDomain}"
 
 		# Other LDAP implementations
 		else
@@ -1012,6 +1017,8 @@ EOM
 
 	fi
 
+	# Setting ownership
+	chown -R jetty /opt/shibboleth-idp/
 
 }
 
@@ -1141,70 +1148,6 @@ configShibbolethFederationValidationKey ()
 	if [ "${cFinger}" != "${mdSignerFinger}" ]; then
 		 ${Echo} "Fingerprint error on md-signer.crt!\nGet ther certificate from http://md.swamid.se/md/md-signer.crt and verify it, then place it in the file: ${idpPath}/credentials/md-signer.crt" >> ${messages}
 	fi
-
-}
-
-
-patchShibbolethConfigs ()
-{
-
-# patch shibboleth config files
-	${Echo} "Patching config files"
-	mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
-	cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
-	patch /opt/shibboleth-idp/conf/handler.xml -i ${Spath}/${prep}/handler.xml.diff >> ${statusFile} 2>&1
-	patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/relying-party.xml.diff >> ${statusFile} 2>&1
-# 	patch /opt/shibboleth-idp/conf/attribute-resolver.xml -i ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml.diff >> ${statusFile} 2>&1
-	cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-	if [ "${google}" != "n" ]; then
-		repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
-		cat ${Spath}/xml/${my_ctl_federation}/google-relay.diff.template | sed -re "s/IdPfQdN/${certCN}/" > ${Spath}/xml/${my_ctl_federation}/google-relay.diff
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/google-relay.diff"
-		patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/google-relay.diff >> ${statusFile} 2>&1
-		cat ${Spath}/xml/${my_ctl_federation}/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
-	fi
-
-	if [ "${fticks}" != "n" ]; then
-		cp ${Spath}/xml/${my_ctl_federation}/fticks_logging.xml /opt/shibboleth-idp/conf/logging.xml
-		touch /opt/shibboleth-idp/conf/fticks-key.txt
-		chown ${tcatUser} /opt/shibboleth-idp/conf/fticks-key.txt
-	fi
-
-	if [ "${eptid}" != "n" ]; then
-		epass=`${passGenCmd}`
-# 		grant sql access for shibboleth
-		esalt=`openssl rand -base64 36 2>/dev/null`
-		cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
-
-		${Echo} "Create MySQL database and shibboleth user."
-		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		retval=$?
-		if [ "${retval}" -ne 0 ]; then
-			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
-		fi
-			
-		cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
-			| sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
-			> ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
-
-		repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-		repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-		repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-		repStr='<!-- EPTID FILTER PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
-	fi
-
 
 }
 
@@ -1361,39 +1304,34 @@ fi
 
 installJetty() {
 
-#Install specific version
-#jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
-#jetty9File="${jetty9URL##*/}"
-#jetty9Path=`basename ${jetty9File}  .tar.gz`
+	#Install specific version
+	#jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
+	#jetty9File="${jetty9URL##*/}"
+	#jetty9Path=`basename ${jetty9File}  .tar.gz`
 
-#Download latest stable
-jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
-jetty9Path=`basename ${jetty9File}  .tar.gz`
-jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
+	#Download latest stable
+	jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+	jetty9Path=`basename ${jetty9File}  .tar.gz`
+	jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
 
-        if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]
-        then
-                echo "Jetty detected as installed"
-        else
-                if [ ! -s "${downloadPath}/${jetty9File}" ]; then
-                        echo "Fetching Jetty from ${jetty9URL}"
-                        ${fetchCmd} ${downloadPath}/${jetty9File} "{$jetty9URL}"
-                fi
-                cd /opt
-                tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
-                mkdir -p "/opt/${jetty9Path}/base/tmp"
-                for i in etc lib resources webapps logs start.ini; do cp -r /opt/${jetty9Path}/$i /opt/${jetty9Path}/base/; done
-                ln -s /opt/${jetty9Path} /opt/jetty
-                sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
-                sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
-                sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/base/g' /opt/jetty/bin/jetty.sh
-                sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/base\/tmp/g' /opt/jetty/bin/jetty.sh
-                cat ${Spath}/files/jetty.sh > /opt/jetty/bin/jetty.sh
-                useradd jetty
-                chown jetty:jetty /opt/jetty/ -R
-                ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
+        if [ ! -s "${downloadPath}/${jetty9File}" ]; then
+                echo "Fetching Jetty from ${jetty9URL}"
+                ${fetchCmd} ${downloadPath}/${jetty9File} "{$jetty9URL}"
+        fi
+        cd /opt
+        tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
+        mkdir -p "/opt/${jetty9Path}/base/tmp"
+        for i in etc lib resources webapps logs start.ini; do cp -r /opt/${jetty9Path}/$i /opt/${jetty9Path}/base/; done
+        ln -s /opt/${jetty9Path} /opt/jetty
+        sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
+        sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
+        sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/base/g' /opt/jetty/bin/jetty.sh
+        sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/base\/tmp/g' /opt/jetty/bin/jetty.sh
+        cat ${Spath}/files/jetty.sh > /opt/jetty/bin/jetty.sh
+        useradd jetty
+        chown jetty:jetty /opt/jetty/ -R
+        ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
 
-         fi
 }
 
 
@@ -1401,17 +1339,6 @@ patchJettyConfigs ()
 
 {
         jettyBase="/opt/jetty/base"
-        if [ -d "/opt/${shibDir}/endorsed" ]; then
-                if [ ! -d "${jettyBase}/lib/ext/endorsed" ]; then
-                        mkdir ${jettyBase}/lib/ext/endorsed
-                fi
-                for i in `ls /opt/${shibDir}/endorsed/`; do
-                        if [ ! -s "${jettyBase}/lib/ext/endorsed/${i}" ]; then
-                                cp /opt/${shibDir}/endorsed/${i} ${jettyBase}/lib/ext/endorsed
-                        fi
-                done
-        fi
-
         if [ -z "`grep '7443' /etc/sysconfig/iptables`" ]; then
                 iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
                 iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
@@ -1433,9 +1360,6 @@ patchJettyConfigs ()
 
         cat ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml | sed "s/jettySSLport/${jettySSLport}/" > $jettyBase/etc/jetty-shibboleth.xml
         echo "etc/jetty-shibboleth.xml" >> $jettyBase/start.ini
-
-        jettyUser=`grep "^jetty" /etc/passwd | cut -d: -f1`
-        chown -R ${jettyUser} /opt/shibboleth-idp/
 
         # need to set bash as the shell for the user to permit jetty to restart after reboot
         chsh -s /bin/bash ${jettyUser}
@@ -1591,8 +1515,13 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	patchFirewall
 
-	installJetty
-	# moved from above jetty, to here just after.
+        if [ ! -s "/opt/jetty" ]; then
+		installJetty
+                configJettyServerXMLForPasswd
+        	patchJettyConfigs
+        	updateJettyAddingIDPWar
+        	enableJettyOnRestart
+	fi
 
 	# installEPEL Sept 26 - no longer needed since Maven is installed via zip
 
@@ -1601,20 +1530,15 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	installFticksIfEnabled
 
-
 	installEPTIDSupport
 
-	configJettyServerXMLForPasswd
-
 	configShibbolethXMLAttributeResolverForLDAP
-
 
 	runShibbolethInstaller
 
 	installCasClientIfEnabled
 
 	createCertificatePathAndHome
-
 
 	# Override per federation
 	installCertificates
@@ -1624,22 +1548,12 @@ invokeShibbolethInstallProcessJetty9 ()
 	# Override per federation
 	configContainerSSLServerKey
 
-	#Should be before runShibbolethInstaller
-	# patchShibbolethLDAPLoginConfigs
-
-	patchJettyConfigs
-
 	# Override per federation
 	configShibbolethFederationValidationKey
 
 	updateMachineTime
 
-	updateJettyAddingIDPWar
-
 	restartJettyService
-
-	enableJettyOnRestart
-
 
 }
 
