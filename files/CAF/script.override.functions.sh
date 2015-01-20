@@ -144,7 +144,8 @@ echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 	chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
 	${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
-	patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/relying-party.xml.diff >> ${statusFile} 2>&1
+#	cdinro: modify
+#	patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/relying-party.xml.diff >> ${statusFile} 2>&1
 
 # 	patch /opt/shibboleth-idp/conf/attribute-resolver.xml -i ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml.diff >> ${statusFile} 2>&1
 	cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
