@@ -75,7 +75,7 @@ deployEduroamCustomizations() {
 	
 	cp ${templatePath}/etc/nsswitch.conf.template /etc/nsswitch.conf
 
-	p ${templatePathEduroamDist}/sites-available/default.template ${distEduroamPath}/sites-available/default
+	cp ${templatePathEduroamDist}/sites-available/default.template ${distEduroamPath}/sites-available/default
 	cp ${templatePathEduroamDist}/sites-available/eduroam.template ${distEduroamPath}/sites-available/eduroam
 	cp ${templatePathEduroamDist}/sites-available/eduroam-inner-tunnel.template ${distEduroamPath}/sites-available/eduroam-inner-tunnel
 	if [ ${dist} != "ubuntu" -a ${redhatDist} = "7"  ]; then
@@ -115,7 +115,7 @@ deployEduroamCustomizations() {
 # ${distEduroamPath}/modules
 	### /mods-enabled doesn't exist after installtion !?!?
         #ln -s ${distEduroamPath}/mods-enabled ${distEduroamPath}/modules
-	cat ${templatePathEduroamDist}${distEduroamModules}/mschap.template \
+	cat ${templatePathEduroamDist}/modules/mschap.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	|perl -npe "s#PXYCFG_rEaLm#${freeRADIUS_pxycfg_realm}#" \
 	 > ${distEduroamPath}${distEduroamModules}/mschap
