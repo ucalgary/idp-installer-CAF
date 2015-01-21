@@ -75,10 +75,10 @@ deployEduroamCustomizations() {
 	
 	cp ${templatePath}/etc/nsswitch.conf.template /etc/nsswitch.conf
 
-	cp ${templatePath}${distEduroamPath}/sites-available/default.template ${distEduroamPath}/sites-available/default
-	cp ${templatePath}${distEduroamPath}/sites-available/eduroam.template ${distEduroamPath}/sites-available/eduroam
-	cp ${templatePath}${distEduroamPath}/sites-available/eduroam-inner-tunnel.template ${distEduroamPath}/sites-available/eduroam-inner-tunnel
-	cp ${templatePath}${distEduroamPath}/eap.conf.template ${distEduroamPath}/eap.conf
+	cp ${templatePathEduroamDist}/sites-available/default.template ${distEduroamPath}/sites-available/default
+	cp ${templatePathEduroamDist}/sites-available/eduroam.template ${distEduroamPath}/sites-available/eduroam
+	cp ${templatePathEduroamDist}/sites-available/eduroam-inner-tunnel.template ${distEduroamPath}/sites-available/eduroam-inner-tunnel
+	cp ${templatePathEduroamDist}/eap.conf.template ${distEduroamPath}/eap.conf
 	chgrp ${distRadiusGroup} ${distEduroamPath}/sites-available/*
 	
 	# remove and redo symlink for freeRADIUS sites-available to sites-enabled
@@ -110,27 +110,27 @@ deployEduroamCustomizations() {
 
 # ${distEduroamPath}/modules
         ln -s ${distEduroamPath}/mods-enabled ${distEduroamPath}/modules
-	cat ${templatePath}${distEduroamPath}/modules/mschap.template \
+	cat ${templatePathEduroamDist}/modules/mschap.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	|perl -npe "s#PXYCFG_rEaLm#${freeRADIUS_pxycfg_realm}#" \
 	 > ${distEduroamPath}/modules/mschap
 	chgrp ${distRadiusGroup} ${distEduroamPath}/modules/mschap
 
 # ${distEduroamPath}/radiusd.conf
-	cat ${templatePath}${distEduroamPath}/radiusd.conf.template \
+	cat ${templatePathEduroamDist}/radiusd.conf.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	> ${distEduroamPath}/radiusd.conf
 	chgrp ${distRadiusGroup} ${distEduroamPath}/radiusd.conf
 
 # ${distEduroamPath}/proxy.conf
-	cat ${templatePath}${distEduroamPath}/proxy.conf.template \
+	cat ${templatePathEduroamDist}/proxy.conf.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	|perl -npe "s#PrOd_EduRoAm_PhRaSe#${freeRADIUS_cdn_prod_passphrase}#" \
 	> ${distEduroamPath}/proxy.conf
 	chgrp ${distRadiusGroup} ${distEduroamPath}/proxy.conf
 
 # ${distEduroamPath}/clients.conf 
-	cat ${templatePath}${distEduroamPath}/clients.conf.template \
+	cat ${templatePathEduroamDist}/clients.conf.template \
 	|perl -npe "s#PrOd_EduRoAm_PhRaSe#${freeRADIUS_cdn_prod_passphrase}#" \
 	|perl -npe "s#CLCFG_YaP1_iP#${freeRADIUS_clcfg_ap1_ip}#" \
 	|perl -npe "s#CLCFG_YaP1_sEcReT#${freeRADIUS_clcfg_ap1_secret}#" \
@@ -140,7 +140,7 @@ deployEduroamCustomizations() {
 	chgrp ${distRadiusGroup} ${distEduroamPath}/clients.conf
 
 # ${distEduroamPath}/certs/ca.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
-	cat ${templatePath}${distEduroamPath}/certs/ca.cnf.template \
+	cat ${templatePathEduroamDist}/certs/ca.cnf.template \
 	|perl -npe "s#CRT_Ca_StAtE#${freeRADIUS_ca_state}#" \
 	|perl -npe "s#CRT_Ca_LoCaL#${freeRADIUS_ca_local}#" \
 	|perl -npe "s#CRT_Ca_OrGnAmE#${freeRADIUS_ca_org_name}#" \
@@ -149,7 +149,7 @@ deployEduroamCustomizations() {
  	> ${distEduroamPath}/certs/ca.cnf
 	
 # ${distEduroamPath}/certs/server.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
-	cat ${templatePath}${distEduroamPath}/certs/server.cnf.template \
+	cat ${templatePathEduroamDist}/certs/server.cnf.template \
 	|perl -npe "s#CRT_SvR_StAtE#${freeRADIUS_svr_state}#" \
 	|perl -npe "s#CRT_SvR_LoCaL#${freeRADIUS_svr_local}#" \
 	|perl -npe "s#CRT_SvR_OrGnAmE#${freeRADIUS_svr_org_name}#" \
@@ -158,7 +158,7 @@ deployEduroamCustomizations() {
  	> ${distEduroamPath}/certs/server.cnf
 
 # ${distEduroamPath}/certs/client.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
-	cat ${templatePath}${distEduroamPath}/certs/client.cnf.template \
+	cat ${templatePathEduroamDist}/certs/client.cnf.template \
 	|perl -npe "s#CRT_SvR_StAtE#${freeRADIUS_svr_state}#" \
 	|perl -npe "s#CRT_SvR_LoCaL#${freeRADIUS_svr_local}#" \
 	|perl -npe "s#CRT_SvR_OrGnAmE#${freeRADIUS_svr_org_name}#" \
