@@ -79,7 +79,7 @@ deployEduroamCustomizations() {
 	cp ${templatePathEduroamDist}/sites-available/eduroam.template ${distEduroamPath}/sites-available/eduroam
 	cp ${templatePathEduroamDist}/sites-available/eduroam-inner-tunnel.template ${distEduroamPath}/sites-available/eduroam-inner-tunnel
 	if [ ${dist} != "ubuntu" -a ${redhatDist} = "7"  ]; then
-		cp ${templatePathEduroamDist}/eap.conf.template ${distEduroamPath}/mods-available/eap.conf
+		cp ${templatePathEduroamDist}/eap.conf.template ${distEduroamPath}/mods-available/eap
 	else
 		cp ${templatePathEduroamDist}/eap.conf.template ${distEduroamPath}/eap.conf
 	fi
