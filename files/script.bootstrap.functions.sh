@@ -172,6 +172,7 @@ setDistCommands() {
 		distEduroamPath=${ubuntuEduroamPath}
 		distRadiusGroup=${ubuntuRadiusGroup}
 		templatePathEduroamDist=${templatePathEduroamUbuntu}
+		distEduroamModules=${UbuntuEduroamModules}
         elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
                 if [ ${dist} = "centos" ]; then
 			redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
@@ -190,8 +191,10 @@ setDistCommands() {
 			distRadiusGroup=${centosRadiusGroup}
 			if [ ${redhatDist} = "7"  ]; then
 				templatePathEduroamDist=${templatePathEduroamCentOS7}
+				distEduroamModules=${CentOS7EduroamModules}
 			else
 				templatePathEduroamDist=${templatePathEduroamCentOS}
+				distEduroamModules=${CentOSEduroamModules}
 			fi
                 else
                         redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
@@ -207,6 +210,7 @@ setDistCommands() {
 			distEduroamPath=${redhatEduroamPath}
 			distRadiusGroup=${redhatRadiusGroup}
 			templatePathEduroamDist=${templatePathEduroamRedhat}
+			distEduroamModules=${RedhatEduroamModules}
                 fi
                 tomcatSettingsFile=${tomcatSettingsFileC}
 

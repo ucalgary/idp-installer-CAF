@@ -75,10 +75,14 @@ deployEduroamCustomizations() {
 	
 	cp ${templatePath}/etc/nsswitch.conf.template /etc/nsswitch.conf
 
-	cp ${templatePathEduroamDist}/sites-available/default.template ${distEduroamPath}/sites-available/default
+	p ${templatePathEduroamDist}/sites-available/default.template ${distEduroamPath}/sites-available/default
 	cp ${templatePathEduroamDist}/sites-available/eduroam.template ${distEduroamPath}/sites-available/eduroam
 	cp ${templatePathEduroamDist}/sites-available/eduroam-inner-tunnel.template ${distEduroamPath}/sites-available/eduroam-inner-tunnel
-	cp ${templatePathEduroamDist}/eap.conf.template ${distEduroamPath}/eap.conf
+	if [ ${dist} != "ubuntu" -a ${redhatDist} = "7"  ]; then
+		cp ${templatePathEduroamDist}/eap.conf.template ${distEduroamPath}/mods-available/eap.conf
+	else
+		cp ${templatePathEduroamDist}/eap.conf.template ${distEduroamPath}/eap.conf
+	fi
 	chgrp ${distRadiusGroup} ${distEduroamPath}/sites-available/*
 	
 	# remove and redo symlink for freeRADIUS sites-available to sites-enabled
@@ -109,12 +113,13 @@ deployEduroamCustomizations() {
 	> /etc/samba/smb.conf
 
 # ${distEduroamPath}/modules
-        ln -s ${distEduroamPath}/mods-enabled ${distEduroamPath}/modules
-	cat ${templatePathEduroamDist}/modules/mschap.template \
+	### /mods-enabled doesn't exist after installtion !?!?
+        #ln -s ${distEduroamPath}/mods-enabled ${distEduroamPath}/modules
+	cat ${templatePathEduroamDist}${distEduroamModules}/mschap.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	|perl -npe "s#PXYCFG_rEaLm#${freeRADIUS_pxycfg_realm}#" \
-	 > ${distEduroamPath}/modules/mschap
-	chgrp ${distRadiusGroup} ${distEduroamPath}/modules/mschap
+	 > ${distEduroamPath}${distEduroamModules}/mschap
+	chgrp ${distRadiusGroup} ${distEduroamPath}${distEduroamModules}/mschap
 
 # ${distEduroamPath}/radiusd.conf
 	cat ${templatePathEduroamDist}/radiusd.conf.template \
