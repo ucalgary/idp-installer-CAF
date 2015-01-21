@@ -145,8 +145,10 @@ setJavaHome () {
         ln -s /usr/java/jre${javaVer}/ /usr/java/latest
         ln -s /usr/java/latest /usr/java/default
         export JAVA_HOME="/usr/java/default"
+	export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         #Set the alternatives
         for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
+        for i in `ls $JAVA_HOME/bin/`;do update-alternatives --set $i $JAVA_HOME/bin/$i; done
 
         echo "***javahome is: ${JAVA_HOME}"
         # validate java_home and ensure it runs as expected before going any further
@@ -184,13 +186,10 @@ setJavaHome () {
 
 
 setJavaCACerts ()
+
 {
-	# 	set path to ca cert file
-	if [ -f "/etc/ssl/certs/java/cacerts" ]; then
-		javaCAcerts="/etc/ssl/certs/java/cacerts"
-	else
-		javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
-	fi
+	javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
+	keytool="${JAVA_HOME}/bin/keytool"
 }
 
 generatePasswordsForSubsystems ()
@@ -602,11 +601,11 @@ ${Echo} "Fetching TCS CA chain from web"
 	done
 	ccnt=1
 	while [ ${ccnt} -lt ${cnt} ]; do
-		md5finger=`keytool -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+		md5finger=`${keytool} -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+		test=`${keytool} -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
 		subject=`openssl x509 -subject -noout -in ${certpath}${ccnt}.root | awk -F= '{print $NF}'`
 		if [ -z "${test}" ]; then
-			keytool -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+			${keytool} -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 		fi
 		files="`${Echo} ${files}` ${certpath}${ccnt}.root"
 		ccnt=`expr ${ccnt} + 1`
@@ -922,7 +921,7 @@ runShibbolethInstaller ()
 	# 	run shibboleth installer
 	cd /opt/shibboleth-identityprovider
 	${Echo} "Running shiboleth installer"
-	sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
+	JAVA_HOME=/usr/java/default sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
@@ -962,11 +961,11 @@ configShibbolethSSLForLDAPJavaKeystore()
 	for i in `ls ${certpath}${ldapCert}.*`; do
 
 		numLDAPCertificateFiles=$[$numLDAPCertificateFiles +1]
-		md5finger=`keytool -printcert -file ${i} | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+		md5finger=`${keytool} -printcert -file ${i} | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+		test=`${keytool} -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
 		subject=`openssl x509 -subject -noout -in ${i} | awk -F= '{print $NF}'`
 		if [ -z "${test}" ]; then
-			keytool -import -noprompt -alias "${subject}" -file ${i} -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+			${keytool} -import -noprompt -alias "${subject}" -file ${i} -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 		fi
 		files="`${Echo} ${files}` ${i}"
 	done
