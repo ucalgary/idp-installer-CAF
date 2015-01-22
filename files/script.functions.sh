@@ -187,6 +187,8 @@ setJavaCACerts ()
 
 {
         javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
+        keytool="${JAVA_HOME}/bin/keytool"
+	
 }
 
 
