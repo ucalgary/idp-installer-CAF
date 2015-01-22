@@ -67,6 +67,9 @@ name = radiusd
 #  Location of config and logfiles.
 confdir = ${raddbdir}
 run_dir = ${localstatedir}/run/${name}
+modconfdir = ${confdir}/mods-config
+certdir = ${confdir}/certs
+cadir   = ${confdir}/certs
 
 # Should likely be ${localstatedir}/lib/radiusd
 db_dir = ${raddbdir}
@@ -787,7 +790,10 @@ instantiate {
 #	to multiple times.
 #
 ######################################################################
-$INCLUDE policy.conf
+#$INCLUDE policy.conf
+policy {
+	$INCLUDE policy.d/
+}
 
 ######################################################################
 #

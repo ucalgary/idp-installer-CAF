@@ -296,7 +296,7 @@ authenticate {
 	#  be used for authentication ONLY for compatibility with legacy
 	#  FreeRADIUS configurations.
 	#
-	unix
+	#unix
 
 	# Uncomment it if you want to use ldap for authentication
 	#

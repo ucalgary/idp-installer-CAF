@@ -73,16 +73,16 @@ mschap {
 # if the stripped-user-name for some reason abc\\netid
 #
 
-if (User-Name =~ /^(.+)@(.+)/) { 
-    update request { 
-      Stripped-User-Name := "%{1}" 
-    } 
-  }
-if (Stripped-User-Name =~ /^(. )\\(. )/) { 
-    update request { 
-      Stripped-User-Name := "%{2}" 
-    } 
-  }
+##if (User-Name =~ /^(.+)@(.+)/) { 
+##    update request { 
+##      Stripped-User-Name := "%{1}" 
+##    } 
+##  }
+##if (Stripped-User-Name =~ /^(. )\\(. )/) { 
+##    update request { 
+##      Stripped-User-Name := "%{2}" 
+##    } 
+##  }
 
 #Skipping calling ntlm_auth in this fashion and having it right below to reduce clutter.
 #ntlm_auth

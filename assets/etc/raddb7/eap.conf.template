@@ -208,7 +208,7 @@
 			#  not use client certificates, and you do not want
 			#  to permit EAP-TLS authentication, then delete
 			#  this configuration item.
-			CA_file = ${cadir}/ca.pem
+			ca_file = ${cadir}/ca.pem
 
 			#
 			#  For DH cipher suites to work, you have to
@@ -248,7 +248,7 @@
 			#  3) uncomment the line below.
 			#  5) Restart radiusd
 		#	check_crl = yes
-			CA_path = ${cadir}
+			ca_path = ${cadir}
 
 		       #
 		       #  If check_cert_issuer is set, the value will
