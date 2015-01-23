@@ -901,57 +901,69 @@ runShibbolethInstaller ()
         cd /opt/${shibDir}
         ${Echo} "Running shiboleth installer"
 
+
+	# Set some default values
+
+        if [ -x ${ldap_type} ]; then
+                ldap_type="ad"
+        fi
+
+	if [ -x ${ldapStartTLS} ]; then
+		ldapStartTLS="true"
+	fi
+
+        if [ -x ${ldapSSL} ]; then
+                ldapSSL="false"
+	fi
+
+        if [ -x ${user_field} ]; then
+                user_field="samaccountname"
+        fi
+
+        if [ -x ${ldap_attr} ]; then
+                ldap_attr="cn,mail"
+        fi
+
+	# ActiveDirectory specific
+	if [ "${ldap_type}" = "ad" ]; then
+
+              #Set idp.authn.LDAP.authenticator
+              ldapAuthenticator="adAuthenticator"
+	      # Extract AD domain from baseDN
+	      ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
+	      ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
+	      ldapDnFormat="%s@${ldapDomain}"
+
+	 # Other LDAP implementations
+	 else
+	       #Set idp.authn.LDAP.authenticator
+               ldapAuthenticator="bindSearchAuthenticator"
+	       ldapDnFormat="uid=%s,${ldapbasedn}"
+	 fi
+
+
 	if [ "${type}" = "ldap" ]; then
 
-		# Set default values
-
-                if [ -x ${ldap_type} ]; then
-                        ldap_type="ad"
-                fi
-
-		if [ -x ${ldapStartTLS} ]; then
-			ldapStartTLS="true"
-		fi
-
-                if [ -x ${ldapSSL} ]; then
-                        ldapSSL="false"
-		fi
-
-                if [ -x ${user_field} ]; then
-                        user_field="samaccountname"
-                fi
-
-                if [ -x ${ldap_attr} ]; then
-                        ldap_attr="cn,mail"
-                fi
-
-		# ActiveDirectory specific
-		if [ "${ldap_type}" = "ad" ]; then
-
-			
-
-                        #Set idp.authn.LDAP.authenticator
-                        ldapAuthenticator="adAuthenticator"
-		        # Extract AD domain from baseDN
-		        ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
-		        ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
-			ldapDnFormat="%s@${ldapDomain}"
-
-		# Other LDAP implementations
-		else
-			#Set idp.authn.LDAP.authenticator
-                        ldapAuthenticator="bindSearchAuthenticator"
-			ldapDnFormat="uid=%s,${ldapbasedn}"
-		fi
-
-		cat << EOM > idp.properties.tmp
+	       cat << EOM > idp.properties.tmp
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
 idp.authn.flows		= Password
 EOM
 
-        	cat << EOM > ldap.properties.tmp
+	elif [ "${type}" = "cas" ]; then
+
+                cat << EOM > idp.properties.tmp
+idp.entityID            = https://${certCN}/idp/shibboleth
+idp.sealer.storePassword= ${pass}
+idp.sealer.keyPassword  = ${pass}
+idp.authn.flows         = RemoteUser
+EOM
+
+	fi
+
+	# Set LDAP configuration (needed for both cas and ldap)
+        cat << EOM > ldap.properties.tmp
 idp.authn.LDAP.authenticator                    = ${ldapAuthenticator}
 idp.authn.LDAP.ldapURL                          = ldap://${ldapserver}
 idp.authn.LDAP.useStartTLS                      = ${ldapStartTLS}
@@ -968,38 +980,16 @@ idp.authn.LDAP.bindDNCredential                 = ${ldappass}
 idp.authn.LDAP.dnFormat                         = ${ldapDnFormat}
 EOM
 
-	        JAVA_HOME=/usr/java/default sh bin/install.sh \
-        	-Didp.src.dir=./ \
-        	-Didp.target.dir=/opt/shibboleth-idp \
-        	-Didp.host.name="${certCN}" \
-        	-Didp.scope="${certCN}" \
-        	-Didp.keystore.password="${pass}" \
-        	-Didp.sealer.password="${pass}" \
-        	-Dldap.merge.properties=./ldap.properties.tmp \
-        	-Didp.merge.properties=./idp.properties.tmp
-
-
-	elif [ "${type}" = "cas" ]; then
-
-		#cdinro
-                cat << EOM > idp.properties.tmp
-idp.entityID            = https://${certCN}/idp/shibboleth
-idp.sealer.storePassword= ${pass}
-idp.sealer.keyPassword  = ${pass}
-idp.authn.flows         = RemoteUser
-EOM
-
-
-                JAVA_HOME=/usr/java/default sh bin/install.sh \
-                -Didp.src.dir=./ \
-                -Didp.target.dir=/opt/shibboleth-idp \
-                -Didp.host.name="${certCN}" \
-                -Didp.scope="${certCN}" \
-                -Didp.keystore.password="${pass}" \
-                -Didp.sealer.password="${pass}" \
-                -Didp.merge.properties=./idp.properties.tmp
-
-	fi
+	# Run the installer
+	JAVA_HOME=/usr/java/default sh bin/install.sh \
+	-Didp.src.dir=./ \
+	-Didp.target.dir=/opt/shibboleth-idp \
+	-Didp.host.name="${certCN}" \
+	-Didp.scope="${certCN}" \
+	-Didp.keystore.password="${pass}" \
+	-Didp.sealer.password="${pass}" \
+	-Dldap.merge.properties=./ldap.properties.tmp \
+	-Didp.merge.properties=./idp.properties.tmp
 
 	# Setting ownership
 	chown -R jetty /opt/shibboleth-idp/
