@@ -691,14 +691,14 @@ modules {
 	#  referenced in a processing section, such as authorize,
 	#  authenticate, accounting, pre/post-proxy, etc.
 	#
-	$INCLUDE ${confdir}/modules/
+	$INCLUDE ${confdir}/mods-enabled/
 
 	#  Extensible Authentication Protocol
 	#
 	#  For all EAP related authentications.
 	#  Now in another file, because it is very large.
 	#
-	$INCLUDE eap.conf
+	#$INCLUDE eap.conf
 
 	#  Include another file that has the SQL-related configuration.
 	#  This is another file only because it tends to be big.
