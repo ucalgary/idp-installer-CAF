@@ -117,20 +117,6 @@ ${Echo} "Previous installation found, performing upgrade."
                 installCasClientIfEnabled
         fi
 
-        if [ -d "/opt/ndn-shib-fticks" ]; then
-                if [ -z "`ls /opt/ndn-shib-fticks/target/*.jar`" ]; then
-                        cd /opt/ndn-shib-fticks
-                        mvn >> ${statusFile} 2>&1
-                fi
-                cp /opt/ndn-shib-fticks/target/*.jar /opt/${shibDir}/lib
-        else
-                fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
-
-                if [ "${fticks}" != "n" ]; then
-                        installFticksIfEnabled
-                fi
-        fi
-
         if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
                 cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
         fi

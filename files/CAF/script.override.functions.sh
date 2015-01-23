@@ -160,9 +160,9 @@ echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 	fi
 
 	if [ "${fticks}" != "n" ]; then
-		patch /opt/shibboleth-idp/conf/logging.xml -i ${Spath}/xml/CAF/fticks.diff >> ${statusFile} 2>&1
+		patch /opt/shibboleth-idp/conf/logback.xml -i ${Spath}/xml/CAF/fticks.diff >> ${statusFile} 2>&1
 		touch /opt/shibboleth-idp/conf/fticks-key.txt
-		chown ${jettyUser} /opt/shibboleth-idp/conf/fticks-key.txt
+		chown ${jettyUser}: /opt/shibboleth-idp/conf/fticks-key.txt
 	fi
 
 	if [ "${eptid}" != "n" ]; then
@@ -247,20 +247,6 @@ ${Echo} "Previous installation found, performing upgrade."
 
         if [ -d "/opt/cas-client-${casVer}" ]; then
                 installCasClientIfEnabled
-        fi
-
-        if [ -d "/opt/ndn-shib-fticks" ]; then
-                if [ -z "`ls /opt/ndn-shib-fticks/target/*.jar`" ]; then
-                        cd /opt/ndn-shib-fticks
-                        mvn >> ${statusFile} 2>&1
-                fi
-                cp /opt/ndn-shib-fticks/target/*.jar /opt/${shibDir}/lib
-        else
-                fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
-
-                if [ "${fticks}" != "n" ]; then
-                        installFticksIfEnabled
-                fi
         fi
 
         if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then

@@ -394,21 +394,6 @@ fetchMysqlCon() {
 }
 
 
-
-installFticksIfEnabled() {
-
-if [ "${fticks}" != "n" ]; then
-	cp ${downloadPath}/ndn-shib-fticks-0.0.1-SNAPSHOT.jar /opt/${shibDir}/lib
-
-else
-	${Echo} "NOT Installing ndn-shib-fticks"
-
-fi
-
-
-}
-
-
 installEPTIDSupport ()
         {
         if [ "${eptid}" != "n" ]; then
@@ -1282,10 +1267,6 @@ ${Echo} "Previous installation found, performing upgrade."
 		installCasClientIfEnabled
 	fi
 
-	if [ "${fticks}" != "n" ]; then
-		installFticksIfEnabled
-	fi
-
 	if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
 		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
 	fi
@@ -1417,9 +1398,9 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${fticks}" != "n" ]; then
-                cp ${Spath}/xml/${my_ctl_federation}/fticks_logging.xml /opt/shibboleth-idp/conf/logging.xml
+                patch /opt/shibboleth-idp/conf/logback.xml -i ${Spath}/xml/CAF/fticks.diff >> ${statusFile} 2>&1
                 touch /opt/shibboleth-idp/conf/fticks-key.txt
-                chown ${jettyUser} /opt/shibboleth-idp/conf/fticks-key.txt
+                chown ${jettyUser}: /opt/shibboleth-idp/conf/fticks-key.txt
         fi
 
         if [ "${eptid}" != "n" ]; then
@@ -1525,9 +1506,6 @@ invokeShibbolethInstallProcessJetty9 ()
 	# installEPEL Sept 26 - no longer needed since Maven is installed via zip
 
 	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
-
-
-	installFticksIfEnabled
 
 	installEPTIDSupport
 
