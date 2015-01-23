@@ -213,7 +213,7 @@ client canada-flr-prod1-west {
 	netmask			= 32
         secret                  = PrOd_EduRoAm_PhRaSe 
 	shortname		= canada-flr-prod1-west
-	nas_type			= other
+	nas_type		= other
 	virtual_server		= eduroam
 }
 client canada-flr-prod2-west {
@@ -221,7 +221,7 @@ client canada-flr-prod2-west {
 	netmask			= 32
         secret                  = PrOd_EduRoAm_PhRaSe 
 	shortname		= canada-flr-prod2-west
-	nas_type			= other
+	nas_type		= other
 	virtual_server		= eduroam
 }
 client canada-flr-prod3-west {
@@ -229,7 +229,7 @@ client canada-flr-prod3-west {
 	netmask			= 32
         secret                  = PrOd_EduRoAm_PhRaSe 
 	shortname		= canada-flr-prod3-west
-	nas_type			= other
+	nas_type		= other
 	virtual_server		= eduroam
 }
 client canada-flr-prod1-east {
@@ -237,7 +237,7 @@ client canada-flr-prod1-east {
         netmask			= 32
         secret                  = KqETPP8dSOOSMGrVPLOiJJ3z
 	shortname		= canada-flr-prod1-east
-	nas_type			= other
+	nas_type		= other
 	virtual_server		= eduroam
 }
 client canada-flr-prod2-east {
@@ -245,7 +245,7 @@ client canada-flr-prod2-east {
 	netmask			= 32
         secret                  = PrOd_EduRoAm_PhRaSe 
 	shortname		= canada-flr-prod2-east
-	nas_type			= other
+	nas_type		= other
 	virtual_server		= eduroam
 }
 

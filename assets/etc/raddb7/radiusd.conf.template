@@ -66,13 +66,13 @@ name = radiusd
 
 #  Location of config and logfiles.
 confdir = ${raddbdir}
-run_dir = ${localstatedir}/run/${name}
 modconfdir = ${confdir}/mods-config
 certdir = ${confdir}/certs
 cadir   = ${confdir}/certs
+run_dir = ${localstatedir}/run/${name}
 
-# Should likely be ${localstatedir}/lib/radiusd
-db_dir = ${raddbdir}
+#db_dir = ${raddbdir}
+db_dir = ${localstatedir}/lib/radiusd
 
 #
 # libdir: Where to find the rlm_* modules.
@@ -189,7 +189,7 @@ max_requests = 1024000
 #  The server ignore all "listen" section if you are using '-i' and '-p'
 #  on the command line.
 #
-listen {
+#listen {
 	#  Type of packets to listen for.
 	#  Allowed values are:
 	#	auth	listen for authentication packets
@@ -203,7 +203,7 @@ listen {
 	#		packets.  For examples, see the file
 	#		raddb/sites-available/coa-server
 	#
-	type = auth
+#	type = auth
 
 	#  Note: "type = proxy" lets you control the source IP used for
 	#        proxying packets, with some limitations:
@@ -222,7 +222,7 @@ listen {
 	#	dotted quad (1.2.3.4)
 	#       hostname    (radius.example.com)
 	#       wildcard    (*)
-	ipaddr = *
+#	ipaddr = *
 
 	#  OR, you can use an IPv6 address, but not both
 	#  at the same time.
@@ -232,7 +232,7 @@ listen {
 	#  Allowed values are:
 	#	integer port number (1812)
 	#	0 means "use /etc/services for the proper port"
-	port = 0
+#	port = 0
 
 	#  Some systems support binding to an interface, in addition
 	#  to the IP address.  This feature isn't strictly necessary,
@@ -259,21 +259,21 @@ listen {
 	#  See clients.conf for the configuration of "per_socket_clients".
 	#
 #	clients = per_socket_clients
-}
+#}
 
 #  This second "listen" section is for listening on the accounting
 #  port, too.
 #
-listen {
-	ipaddr = *
-	ipaddr = 192.168.1.26 
+#listen {
+#	ipaddr = *
+#	ipaddr = 192.168.1.26 
 #	ipv6addr = ::
-	port = 0
+#	port = 0
 	#port = 1813 
-	type = acct
+#	type = acct
 #	interface = eth0
 #	clients = per_socket_clients
-}
+#}
 
 #  hostname_lookups: Log the names of clients or just their IP addresses
 #  e.g., www.freeradius.org (on) or 206.47.27.232 (off).
@@ -301,8 +301,8 @@ hostname_lookups = no
 #  If they're set to "no" at configure time, then setting them to "yes"
 #  WILL NOT WORK.  It will give you an error.
 #
-regular_expressions	= yes
-extended_expressions	= yes
+#regular_expressions	= yes
+#extended_expressions	= yes
 
 #
 #  Logging section.  The various "log_*" configuration items
@@ -322,6 +322,8 @@ log {
 	#
 	destination = syslog
 	#destination = files
+	
+	colourise = yes
 
 	#
 	#  The logging messages for the server are appended to the
@@ -653,6 +655,9 @@ thread pool {
 	#  '0' is a special value meaning 'infinity', or 'the servers never
 	#  exit'
 	max_requests_per_server = 0
+
+	auto_limit_acct = no
+
 }
 
 # MODULE CONFIGURATION
@@ -745,7 +750,7 @@ instantiate {
 	#  The entire command line (and output) must fit into 253 bytes.
 	#
 	#  e.g. Framed-Pool = `%{exec:/bin/echo foo}`
-	exec
+#	exec
 
 	#
 	#  The expression module doesn't do authorization,
@@ -758,15 +763,15 @@ instantiate {
 	#  listed in any other section.  See 'doc/rlm_expr' for
 	#  more information.
 	#
-	expr
+#	expr
 
 	#
 	# We add the counter module here so that it registers
 	# the check-name attribute before any module which sets
 	# it
 #	daily
-	expiration
-	logintime
+#	expiration
+#	logintime
 
 	# subsections here can be thought of as "virtual" modules.
 	#

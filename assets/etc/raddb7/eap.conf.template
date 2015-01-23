@@ -170,9 +170,8 @@
 		#  ANYONE who has a certificate signed by them can
 		#  authenticate via EAP-TLS!  This is likely not what you want.
 		
-		 tls { 
-		#- old section name was tls 
-		#tls-config tls-common {
+		#tls {- old section name was tls 
+		tls-config tls-common {
 			#
 			#  These is used to simplify later configurations.
 			#
@@ -456,9 +455,9 @@
 			}
 		}
 
-        	#tls {
+        	tls {
                 	# Point to the common TLS configuration
-                #	tls = tls-common
+                	tls = tls-common
 
                 	#
                 	# As part of checking a client certificate, the EAP-TLS
@@ -467,7 +466,7 @@
                 	# be used to accept or reject the request.
                 	#
         		#       virtual_server = check-eap-tls
-        	#}
+        	}
 
 		#  The TTLS module implements the EAP-TTLS protocol,
 		#  which can be described as EAP inside of Diameter,
@@ -610,6 +609,7 @@
 			#  PEAP tunnel, we recommend using MS-CHAPv2,
 			#  as that is the default type supported by
 			#  Windows clients.
+			tls = tls-common
 			default_eap_type = mschapv2
 
 			#  the PEAP module also has these configuration
