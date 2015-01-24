@@ -157,6 +157,7 @@ guessLinuxDist() {
 
 setDistCommands() {
         if [ ${dist} = "ubuntu" ]; then
+		redhatDist="none"
 		debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
                 distCmdU=${ubuntuCmdU}
                 distCmdUa=${ubuntuCmdUa}
