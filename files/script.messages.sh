@@ -69,7 +69,7 @@ BackTitle="IDP Deployer"
 # define commands
 ubuntuCmdU="apt-get update"
 ubuntuCmdUa="apt-get -y upgrade"
-ubuntuCmd1="apt-get -y install patch ntpdate unzip curl"
+ubuntuCmd1="apt-get -y install patch ntpdate unzip curl sysvinit-utils"
 ubuntuCmd2="apt-get -y install git-core"
 ubuntuCmd3="apt-get -y install openjdk-6-jdk default-jre"
 ubuntuCmd4="apt-get -y install tomcat6"
