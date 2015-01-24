@@ -723,59 +723,6 @@ askForConfigurationData() {
 
 }
 
-setDistCommands() {
-        if [ ${dist} = "ubuntu" ]; then
-                debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
-                distCmdU=${ubuntuCmdU}
-                distCmd1=${ubuntuCmd1}
-                distCmd2=${ubuntuCmd2}
-                distCmd3=${ubuntuCmd3}
-                distCmd4=${ubuntuCmd4}
-                distCmd5=${ubuntuCmd5}
-        elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
-                if [ ${dist} = "centos" ]; then
-                        redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
-                        distCmdU=${centosCmdU}
-                        distCmd1=${centosCmd1}
-                        distCmd2=${centosCmd2}
-                        distCmd3=${centosCmd3}
-                        distCmd4=${centosCmd4}
-                        distCmd5=${centosCmd5}
-                else
-                        redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
-                        distCmdU=${redhatCmdU}
-                        distCmd1=${redhatCmd1}
-                        distCmd2=${redhatCmd2}
-                        distCmd3=${redhatCmd3}
-                        distCmd4=${redhatCmd4}
-                        distCmd5=${redhatCmd5}
-                fi
-
-                if [ "$redhatDist" -eq "6" ]; then
-                        redhatEpel=${redhatEpel6}
-                else
-                        redhatEpel=${redhatEpel5}
-                fi
-
-                #if [ ! -z "`rpm -q epel-release | grep ' is not installed'`" ]; then
-                #
-                #       # Consider this base requirement for system, or maybe move it to the installation phase for Shibboleth??
-                #       #
-                ##      continueF="y"
-#
-#
-#                       if [ "${continueF}" = "y" ]; then
-#                               installEPEL
-#                       fi
-#               fi
-
-                if [ "`which host 2>/dev/null`" == "" ]; then
-                        ${Echo} "Installing bind-utils..."
-                        yum -y -q install bind-utils >> ${statusFile} 2>&1
-                fi
-        fi
-}
-
 
 prepConfirmBox() {
 	cat > ${downloadPath}/confirm.tx << EOM
