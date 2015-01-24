@@ -100,7 +100,7 @@ deployEduroamCustomizations() {
 # /etc/krb5.conf	
 	cat ${templatePath}/etc/krb5.conf.template \
 	|perl -npe "s#kRb5_LiBdEf_DeFaUlT_ReAlM#${krb5_libdef_default_realm}#" \
-	|perl -npe "s#kRb5_DoMaIn_ReAlM#${smb_netbios_name}.${krb5_domain_realm}#" \
+	|perl -npe "s#kRb5_DoMaIn_ReAlM#${smb_netbios_name}${krb5_domain_realm}#" \
 	|perl -npe "s#kRb5_rEaLmS_dEf_DoM#${smb_netbios_name}${krb5_realms_def_dom}#" \
 	> /etc/krb5.conf
 
@@ -180,8 +180,8 @@ deployEduroamCustomizations() {
 
 #	WARNING, see the ${distEduroamPath}/certs/README to 'clean' out certificate bits when you run
 #		this script respect the protections freeRADIUS put in place to not overwrite certs
-if [ "${dist}" != "ubuntu" ]; then
-	if [ i${redhatDist} != "7" ]; then
+if [ "${dist}" != "ubuntu"  ]; then
+	if [ ${redhatDist} != "7" ]; then
 		if [  -e "${distEduroamPath}/certs/server.crt" ] 
 		then
 			echo "bootstrap already run, skipping"
@@ -197,7 +197,7 @@ else
 fi
 
 # ensure proper start/stop at run level 3 for the machine are in place for winbind,smb, and of course, radiusd
-	if [ "${dist}" != "ubuntu" -a redhatDist != "7" ]; then
+	if [ "${dist}" != "ubuntu" && redhatDist != "7" ]; then
 		ckCmd="/sbin/chkconfig"
 		ckArgs="--level 3"
 		ckState="on" 
