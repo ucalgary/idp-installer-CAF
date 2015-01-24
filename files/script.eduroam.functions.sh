@@ -145,6 +145,9 @@ deployEduroamCustomizations() {
 	chgrp ${distRadiusGroup} ${distEduroamPath}/clients.conf
 
 # ${distEduroamPath}/certs/ca.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
+	echo "==========================================================================================================="
+	echo "email: ${freeRADIUS_ca_email}, ${freeRADIUS_svr_email}, ${freeRADIUS_svr_email} "
+
 	cat ${templatePathEduroamDist}/certs/ca.cnf.template \
 	|perl -npe "s#CRT_Ca_StAtE#${freeRADIUS_ca_state}#" \
 	|perl -npe "s#CRT_Ca_LoCaL#${freeRADIUS_ca_local}#" \
@@ -167,7 +170,7 @@ deployEduroamCustomizations() {
 	|perl -npe "s#CRT_SvR_StAtE#${freeRADIUS_svr_state}#" \
 	|perl -npe "s#CRT_SvR_LoCaL#${freeRADIUS_svr_local}#" \
 	|perl -npe "s#CRT_SvR_OrGnAmE#${freeRADIUS_svr_org_name}#" \
-	|perl -npe "s#CRT_SvR_EmAiL#${freeRADIUS_svr_email}#" \
+	|perl -npe "s#CRT_SvR_EmAiL#'${freeRADIUS_svr_email}'#" \
 	|perl -npe "s#CRT_SvR_CoMmOnNaMe#${freeRADIUS_svr_commonName}#" \
  	> ${distEduroamPath}/certs/client.cnf
 
@@ -178,8 +181,8 @@ deployEduroamCustomizations() {
 #	WARNING, see the ${distEduroamPath}/certs/README to 'clean' out certificate bits when you run
 #		this script respect the protections freeRADIUS put in place to not overwrite certs
 if [ "${dist}" != "ubuntu" ]; then
-	if [ redhatDist != "7" ]; then
-		if [  -e "${distEduroamPath}/certs/server.crt"] 
+	if [ i${redhatDist} != "7" ]; then
+		if [  -e "${distEduroamPath}/certs/server.crt" ] 
 		then
 			echo "bootstrap already run, skipping"
 		else
