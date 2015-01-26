@@ -100,8 +100,8 @@ deployEduroamCustomizations() {
 # /etc/krb5.conf	
 	cat ${templatePath}/etc/krb5.conf.template \
 	|perl -npe "s#kRb5_LiBdEf_DeFaUlT_ReAlM#${krb5_libdef_default_realm}#" \
-	|perl -npe "s#kRb5_DoMaIn_ReAlM#${smb_netbios_name}${krb5_domain_realm}#" \
-	|perl -npe "s#kRb5_rEaLmS_dEf_DoM#${smb_netbios_name}${krb5_realms_def_dom}#" \
+	|perl -npe "s#kRb5_DoMaIn_ReAlM#${smb_netbios_name}.${krb5_domain_realm}#" \
+	|perl -npe "s#kRb5_rEaLmS_dEf_DoM#${smb_netbios_name}.${krb5_realms_def_dom}#" \
 	> /etc/krb5.conf
 
 # /etc/samba/smb.conf
@@ -181,7 +181,7 @@ deployEduroamCustomizations() {
 #	WARNING, see the ${distEduroamPath}/certs/README to 'clean' out certificate bits when you run
 #		this script respect the protections freeRADIUS put in place to not overwrite certs
 if [ "${dist}" != "ubuntu"  ]; then
-	if [ ${redhatDist} != "7" ]; then
+	if [ "${redhatDist}" != "7" ]; then
 		if [  -e "${distEduroamPath}/certs/server.crt" ] 
 		then
 			echo "bootstrap already run, skipping"
@@ -191,13 +191,14 @@ if [ "${dist}" != "ubuntu"  ]; then
 		fi
 	else
 		(cd ${distEduroamPath}/certs; make destroycerts; make clean; ./bootstrap )
+		chown root:radiusd ${distEduroamPath}/certs/*
 	fi
 else
 	dd if=/dev/urandom of=${distEduroamPath}/certs/random count=10
 fi
 
 # ensure proper start/stop at run level 3 for the machine are in place for winbind,smb, and of course, radiusd
-	if [ "${dist}" != "ubuntu" && redhatDist != "7" ]; then
+	if [ "${dist}" != "ubuntu" ] && [ "${redhatDist}" != "7" ]; then
 		ckCmd="/sbin/chkconfig"
 		ckArgs="--level 3"
 		ckState="on" 
@@ -217,7 +218,7 @@ fi
 
 	fi
 # add radiusd/freerad to group wbpriv/winbindd_priv 
-if [ "${dist}" != "ubuntu" ]; then
+if [ "${dist}" != "ubuntu" ] && [ "${redhatDist}" != "7" ]; then
 	echo "adding user radiusd to WINBIND/SAMBA privilege group wbpriv" >> ${statusFile} 2>&1 
 	usermod -a -G wbpriv radiusd
 else
