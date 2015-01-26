@@ -198,7 +198,7 @@ else
 fi
 
 # ensure proper start/stop at run level 3 for the machine are in place for winbind,smb, and of course, radiusd
-	if [ "${dist}" != "ubuntu" ] && [ "${redhatDist}" != "7" ]; then
+	if [ "${dist}" != "ubuntu" ]; then
 		ckCmd="/sbin/chkconfig"
 		ckArgs="--level 3"
 		ckState="on" 
@@ -218,20 +218,22 @@ fi
 
 	fi
 # add radiusd/freerad to group wbpriv/winbindd_priv 
-if [ "${dist}" != "ubuntu" ] && [ "${redhatDist}" != "7" ]; then
-	echo "adding user radiusd to WINBIND/SAMBA privilege group wbpriv" >> ${statusFile} 2>&1 
-	usermod -a -G wbpriv radiusd
-else
-	echo "adding user freerad to WINBIND/SAMBA privilege group winbindd_priv" >> ${statusFile} 2>&1
-	usermod -a -G winbindd_priv freerad
-fi
+	if [ "${dist}" != "ubuntu" ]; then
+		echo "adding user radiusd to WINBIND/SAMBA privilege group wbpriv" >> ${statusFile} 2>&1 
+		usermod -a -G wbpriv radiusd
+	else
+		echo "adding user freerad to WINBIND/SAMBA privilege group winbindd_priv" >> ${statusFile} 2>&1
+		usermod -a -G winbindd_priv freerad
+	fi
 
 # tweak winbind to permit proper authentication traffic to proceed
 # without this, the NTLM call out for freeRADIUS will not be able to process requests
-if [ "${dist}" != "ubuntu" ]; then
-	chmod ugo+rx /var/run/winbindd
-else
-    	chown root:winbindd_priv /var/lib/samba/winbindd_privileged/				
+if [ "${redhatDist}" != "7" ]; then
+	if [ "${dist}" != "ubuntu" ]; then
+		chmod ugo+rx /var/run/winbindd
+	else
+	    	chown root:winbindd_priv /var/lib/samba/winbindd_privileged/				
+	fi
 fi
 
 # disable iptables on runlevels 3,4,5 for reboot and then disable it right now for good measure
@@ -241,8 +243,10 @@ fi
 #	${ckCmd} --level 4 iptables off
 #	${ckCmd} --level 5 iptables off
 #	/sbin/service iptables stop
-if [ "${dist}" != "ubuntu" ]; then
-	modifyIPTABLESForEduroam
+if [ "${redhatDist}" != "7" ]; then
+	if [ "${dist}" != "ubuntu" ]; then
+		modifyIPTABLESForEduroam
+	fi
 fi
 
 echo "Start Up processes completed" >> ${statusFile} 2>&1 
