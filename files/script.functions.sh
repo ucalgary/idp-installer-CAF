@@ -708,7 +708,7 @@ askForConfigurationData() {
 		eptid=$(askYesNo "eduPersonTargetedID" "Do you want to install support for eduPersonTargetedID?\nThis is recommended")
 	fi
 
-	if [ "${eptid}" != "n" ]; then
+	if [ "${eptid}" != "n" -a "${passw_input}" = "y" ]; then
 		mysqlPass=$(askString "MySQL password" "MySQL is used for supporting the eduPersonTargetedId attribute.\n\n Please set the root password for MySQL.\nAn empty string generates a randomized new password" "" 1)
 	fi
 
