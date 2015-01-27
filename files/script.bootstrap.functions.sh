@@ -157,6 +157,7 @@ guessLinuxDist() {
 
 setDistCommands() {
         if [ ${dist} = "ubuntu" ]; then
+		redhatDist="none"
 		debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
                 distCmdU=${ubuntuCmdU}
                 distCmdUa=${ubuntuCmdUa}
@@ -171,6 +172,8 @@ setDistCommands() {
                 distCmdEduroam=${ubuntuCmdEduroam}
 		distEduroamPath=${ubuntuEduroamPath}
 		distRadiusGroup=${ubuntuRadiusGroup}
+		templatePathEduroamDist=${templatePathEduroamUbuntu}
+		distEduroamModules=${UbuntuEduroamModules}
         elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
                 if [ ${dist} = "centos" ]; then
 			redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
@@ -187,6 +190,13 @@ setDistCommands() {
                         distCmdEduroam=${centosCmdEduroam}
 			distEduroamPath=${centosEduroamPath}
 			distRadiusGroup=${centosRadiusGroup}
+			if [ ${redhatDist} = "7"  ]; then
+				templatePathEduroamDist=${templatePathEduroamCentOS7}
+				distEduroamModules=${CentOS7EduroamModules}
+			else
+				templatePathEduroamDist=${templatePathEduroamCentOS}
+				distEduroamModules=${CentOSEduroamModules}
+			fi
                 else
                         redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
                         distCmdU=${redhatCmdU}
@@ -200,6 +210,8 @@ setDistCommands() {
                         distCmdEduroam=${redhatCmdEduroam}
 			distEduroamPath=${redhatEduroamPath}
 			distRadiusGroup=${redhatRadiusGroup}
+			templatePathEduroamDist=${templatePathEduroamRedhat}
+			distEduroamModules=${RedhatEduroamModules}
                 fi
                 tomcatSettingsFile=${tomcatSettingsFileC}
 
@@ -387,16 +399,22 @@ ldapwhoami -vvv -H ldaps://${ldapserver} -D "${ldapbinddn}" -x -w "${ldappass}" 
 # ntp server check
 ##############################
 elo "${Echo} Validating ntpserver (${ntpserver}) reachability..."
-${Echo} "ntpdate ${ntpserver}" >> ${statusFile}
-ntpcheck=$(ntpdate ${ntpserver} 2>&1 | tee -a ${statusFile} | awk -F":" '{print $4}' | awk '{print $1 $2}')
-
-if [ $ntpcheck == "noserver"  ]
-        then
-                elo "${Echo} ntpserver - - - - failed"
-                NTPSERVER="failed"
-        else
-                elo "${Echo} ntpserver - - - - ok"
-                NTPSERVER="ok"
+${Echo} "ntpdate ${ntpserver}" &> >(tee -a ${statusFile})
+ntpcheck=$(ntpdate ${ntpserver} 2>&1 | head -n1 | awk '{print $1 $2}')
+if [ $ntpcheck == "Errorresolving" ]
+	then
+		elo "${Echo} ntpserver - - - - failed"
+		NTPSERVER="failed"
+	else
+	ntpcheck=$(ntpdate ${ntpserver} 2>&1 | head -n1 | awk -F":" '{print $4}' | awk '{print $1 $2}')
+	if [ $ntpcheck == "adjusttime"  ]
+        	then
+			elo "${Echo} ntpserver - - - - ok"
+                        NTPSERVER="ok"
+        	else
+			elo "${Echo} ntpserver - - - - failed"
+                        NTPSERVER="failed"
+	fi
 fi
 ###############################
 # summary results

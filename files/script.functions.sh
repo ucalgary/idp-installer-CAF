@@ -1057,6 +1057,13 @@ updateMachineTime ()
 	${Echo} "Updating time from: ${ntpserver}"
 	/usr/sbin/ntpdate ${ntpserver} > /dev/null 2>&1
 
+if [ "${dist}" == "ubuntu" ] 
+	then
+		sed -n 'H;${x;s/server .*\n/server '"${ntpserver}"'\n&/;p;}' /etc/ntp.conf > ./tmp.txt
+		rm -f /etc/ntp.conf
+		mv ./tmp.txt /etc/ntp.conf
+		service ntp reload
+	else
 # 	add crontab entry for ntpdate
 	test=`crontab -l 2>/dev/null | grep "${ntpserver}" | grep ntpdate`
 	if [ -z "${test}" ]; then
@@ -1067,6 +1074,7 @@ updateMachineTime ()
 		fi
 		${Echo} "${CRONTAB}*/5 *  *   *   *     /usr/sbin/ntpdate ${ntpserver} > /dev/null 2>&1" | crontab
 	fi
+fi
 }
 
 
