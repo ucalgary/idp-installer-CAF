@@ -410,88 +410,88 @@ fi
 
 
 installEPTIDSupport ()
-        {
-        if [ "${eptid}" != "n" ]; then
-                ${Echo} "Installing EPTID support"
+{
+	if [ "${eptid}" != "n" ]; then
+		${Echo} "Installing EPTID support"
 
-                if [ "$dist" == "ubuntu" ]; then
-                        test=`dpkg -s mysql-server > /dev/null 2>&1`
-                        isInstalled=$?
+		if [ "$dist" == "ubuntu" ]; then
+			test=`dpkg -s mysql-server > /dev/null 2>&1`
+			isInstalled=$?
 
-                elif [ "$dist" == "centos" -a "$redhatDist" == "6" ]; then
-                        [ -f /etc/init.d/mysqld ]
-                        isInstalled=$?
+		elif [ "$dist" == "centos" -a "$redhatDist" == "6" ]; then
+			[ -f /etc/init.d/mysqld ]
+			isInstalled=$?
 
-                elif [ "$dist" == "centos" -a "$redhatDist" == "7" ]; then
-                        #Add Oracle repos
-                        if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
+		elif [ "$dist" == "centos" -a "$redhatDist" == "7" ]; then
+			#Add Oracle repos
+			if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
 
-                                ${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
-                                mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
-                                eval $mysqlOracleRepo >> ${statusFile} 2>&1
+				${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
+				mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
+				eval $mysqlOracleRepo >> ${statusFile} 2>&1
 
-                        else
+			else
 
-                                ${Echo} "Dected MySQL Repo EXIST on this system."
-                        fi
-                        test=`rpm -q mysql-community-server > /dev/null 2>&1`
-                        isInstalled=$?
+				${Echo} "Dected MySQL Repo EXIST on this system."
+			fi
+			test=`rpm -q mysql-community-server > /dev/null 2>&1`
+			isInstalled=$?
 
-                fi
+		fi
 
-                if [ "${isInstalled}" -ne 0 ]; then
-                        export DEBIAN_FRONTEND=noninteractive
-                        eval ${distCmd5} >> ${statusFile} 2>&1
+		if [ "${isInstalled}" -ne 0 ]; then
+			export DEBIAN_FRONTEND=noninteractive
+			eval ${distCmd5} >> ${statusFile} 2>&1
 
-                        mysqldTest=`pgrep mysqld`
-                        if [ -z "${mysqldTest}" ]; then
-                                if [ ${dist} == "ubuntu" ]; then
-                                        service mysql restart >> ${statusFile} 2>&1
-                                else
-                                        service mysqld restart >> ${statusFile} 2>&1
-                                fi
-                        fi
-                        # set mysql root password
-                        tfile=`mktemp`
-                        if [ ! -f "$tfile" ]; then
-                                return 1
-                        fi
-                        cat << EOM > $tfile
+			mysqldTest=`pgrep mysqld`
+			if [ -z "${mysqldTest}" ]; then
+				if [ ${dist} == "ubuntu" ]; then
+					service mysql restart >> ${statusFile} 2>&1
+				else
+					service mysqld restart >> ${statusFile} 2>&1
+				fi
+			fi
+			# set mysql root password
+			tfile=`mktemp`
+			if [ ! -f "$tfile" ]; then
+				return 1
+			fi
+			cat << EOM > $tfile
 USE mysql;
 UPDATE user SET password=PASSWORD("${mysqlPass}") WHERE user='root';
 FLUSH PRIVILEGES;
 EOM
 
-                        mysql --no-defaults -u root -h localhost <$tfile
-                        retval=$?
-                        # moved removal of MySQL command file to be in the if-then-else statement set below
+			mysql --no-defaults -u root -h localhost <$tfile
+			retval=$?
+			# moved removal of MySQL command file to be in the if-then-else statement set below
 
-                        if [ "${retval}" -ne 0 ]; then
-                                ${Echo} "\n\n\nAn error has occurred in the configuration of the MySQL installation."
-                                ${Echo} "Please correct the MySQL installation and make sure a root password is set and it is possible to log in using the 'mysql' command."
-                                ${Echo} "When MySQL is working, re-run this script."
-                                ${Echo} "The file being run in MySQL is ${tfile} and has not been deleted, please review and delete as necessary."
-                                cleanBadInstall
-                        else
-                                rm -f $tfile
-                        fi
-
-
-                        if [ "${dist}" != "ubuntu" ]; then
-                                /sbin/chkconfig mysqld on
-                        fi
-                fi
-
-                fetchMysqlCon
-                cd /opt
-                tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
-                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
-
-        fi
+			if [ "${retval}" -ne 0 ]; then
+				${Echo} "\n\n\nAn error has occurred in the configuration of the MySQL installation."
+				${Echo} "Please correct the MySQL installation and make sure a root password is set and it is possible to log in using the 'mysql' command."
+				${Echo} "When MySQL is working, re-run this script."
+				${Echo} "The file being run in MySQL is ${tfile} and has not been deleted, please review and delete as necessary."
+				cleanBadInstall
+			else
+				rm -f $tfile
+			fi
 
 
+			if [ "${dist}" != "ubuntu" ]; then
+				/sbin/chkconfig mysqld on
+			fi
+		fi
 
-        }
+		fetchMysqlCon
+		cd /opt
+		tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
+		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+
+	fi
+
+
+
+}
 
 
 installCasClientIfEnabled() {
