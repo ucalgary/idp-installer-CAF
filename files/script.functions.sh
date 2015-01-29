@@ -1219,7 +1219,7 @@ fi
 }
 
 
-installJetty() {
+jettySetup() {
 
 	#Install specific version
 	#jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
@@ -1237,68 +1237,21 @@ installJetty() {
         fi
         cd /opt
         tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
-        mkdir -p "/opt/${jetty9Path}/base/tmp"
-        for i in etc lib resources webapps logs start.ini; do cp -r /opt/${jetty9Path}/$i /opt/${jetty9Path}/base/; done
+        cp -r /opt/${shibDir}/jetty-base /opt/${jetty9Path}/
         ln -s /opt/${jetty9Path} /opt/jetty
         sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
-        sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/base/g' /opt/jetty/bin/jetty.sh
-        sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/base\/tmp/g' /opt/jetty/bin/jetty.sh
-        cat ${Spath}/files/jetty.sh > /opt/jetty/bin/jetty.sh
-        useradd jetty
+        sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
+        sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
+        useradd -d /opt/jetty -s /bin/bash jetty
         chown jetty:jetty /opt/jetty/ -R
         ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
-
-}
-
-
-patchJettyConfigs ()
-
-{
-        jettyBase="/opt/jetty/base"
-        if [ -z "`grep '7443' /etc/sysconfig/iptables`" ]; then
-                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
-                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
-                iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
-                iptables-save > /etc/sysconfig/iptables
-        fi
-        service iptables restart
-        jettySSLport="7443"
-
-        if [ ! -s "${jettyBase}/lib/ext/jetty9-dta-ssl-1.0.0.jar" ]; then
-                ${fetchCmd} ${jettyBase}/lib/ext/jetty9-dta-ssl-1.0.0.jar ${jettyDepend}
-
-                if [ ! -s "${jettyBase}/lib/ext/jetty9-dta-ssl-1.0.0.jar" ]; then
-                        ${Echo} "Can not get jetty dependancy, aborting install."
-                        cleanBadInstall
-                fi
+	if [ "${dist}" != "ubuntu" ]; then
+		chkconfig jetty on
         fi
 
-        cat ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml | sed "s/jettySSLport/${jettySSLport}/" > $jettyBase/etc/jetty-shibboleth.xml
-        echo "etc/jetty-shibboleth.xml" >> $jettyBase/start.ini
+        cat ${Spath}/files/idp.ini | sed "s#changeit#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
 
-        # need to set bash as the shell for the user to permit jetty to restart after reboot
-        chsh -s /bin/bash ${jettyUser}
-
-}
-
-updateJettyAddingIDPWar ()
-{
-        #       add idp.war to jetty
-        cp ${Spath}/xml/${my_ctl_federation}/jetty.idp.xml ${jettyBase}/webapps/idp.xml
-        chown jetty ${jettyBase}/webapps/idp.xml
-}
-
-configJettyServerXMLForPasswd ()
-{
-
-        #       prepare config from templates
-        echo ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml >> log
-        cat ${Spath}/xml/${my_ctl_federation}/server.xml.jetty \
-                | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#;s#HtTpSJkS#${httpsP12}#;s#TrUsTsToRe#${javaCAcerts}#" \
-                > ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml
-        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml"
 }
 
 
@@ -1309,10 +1262,21 @@ restartJettyService ()
                 service jetty stop
         fi
         service jetty start
+
+        if [ -z "`grep '7443' /etc/sysconfig/iptables`" ]; then
+                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
+                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
+                iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
+                iptables-save > /etc/sysconfig/iptables
+        fi
+        service iptables restart
+
 }
 
 
 patchShibbolethConfigs ()
+
 {
 
 # patch shibboleth config files
@@ -1375,26 +1339,6 @@ patchShibbolethConfigs ()
 
 }
 
-
-enableJettyOnRestart ()
-{
-
-# ensure proper start/stop at run level 3 for the machine are in place for Jetty and related services
-        if [ "${dist}" != "ubuntu" ]; then
-                ckCmd="/sbin/chkconfig"
-                ckArgs="--level 3"
-                ckState="on"
-                ckServices="jetty"
-
-                for myService in $ckServices
-                do
-                        ${ckCmd} ${ckArgs} ${myService} ${ckState}
-                done
-        fi
-
-}
-
-
 invokeShibbolethInstallProcessJetty9 ()
 {
 
@@ -1431,14 +1375,6 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	patchFirewall
 
-        if [ ! -s "/opt/jetty" ]; then
-		installJetty
-                configJettyServerXMLForPasswd
-        	patchJettyConfigs
-        	updateJettyAddingIDPWar
-        	enableJettyOnRestart
-	fi
-
 	# installEPEL Sept 26 - no longer needed since Maven is installed via zip
 
 	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
@@ -1466,6 +1402,10 @@ invokeShibbolethInstallProcessJetty9 ()
 
         # cdinro test
         patchShibbolethConfigs
+
+        if [ ! -s "/opt/jetty" ]; then
+                jettySetup
+        fi
 
 	updateMachineTime
 
