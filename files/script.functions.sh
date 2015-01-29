@@ -938,9 +938,6 @@ EOM
 	-Dldap.merge.properties=./ldap.properties.tmp \
 	-Didp.merge.properties=./idp.properties.tmp
 
-	# Setting ownership
-	chown -R jetty /opt/shibboleth-idp/
-
 }
 
 
