@@ -1221,15 +1221,15 @@ fi
 
 jettySetup() {
 
-	#Install specific version
-	#jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
-	#jetty9File="${jetty9URL##*/}"
-	#jetty9Path=`basename ${jetty9File}  .tar.gz`
+        #Install specific version
+        #jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
+        #jetty9File="${jetty9URL##*/}"
+        #jetty9Path=`basename ${jetty9File}  .tar.gz`
 
-	#Download latest stable
-	jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
-	jetty9Path=`basename ${jetty9File}  .tar.gz`
-	jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
+        #Download latest stable
+        jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+        jetty9Path=`basename ${jetty9File}  .tar.gz`
+        jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
 
         if [ ! -s "${downloadPath}/${jetty9File}" ]; then
                 echo "Fetching Jetty from ${jetty9URL}"
@@ -1244,14 +1244,16 @@ jettySetup() {
         sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
         sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
         useradd -d /opt/jetty -s /bin/bash jetty
-        chown jetty:jetty /opt/jetty/ -R
         ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
-	if [ "${dist}" != "ubuntu" ]; then
-		chkconfig jetty on
+        if [ "${dist}" != "ubuntu" ]; then
+                chkconfig jetty on
         fi
 
         cat ${Spath}/files/idp.ini | sed "s#changeit#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
 
+        # Setting ownership
+        chown jetty:jetty /opt/jetty/ -R
+        chown -R jetty /opt/shibboleth-idp/
 }
 
 
