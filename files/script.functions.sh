@@ -1246,7 +1246,7 @@ jettySetup() {
                 chkconfig jetty on
         fi
 
-        cat ${Spath}/files/idp.ini | sed "s#changeit#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
+        cat ${Spath}/files/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
 
         # Setting ownership
         chown jetty:jetty /opt/jetty/ -R
