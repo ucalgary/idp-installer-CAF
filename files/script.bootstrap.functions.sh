@@ -485,3 +485,51 @@ ${Echo} "Starting installation script..."
 
 }
 
+
+checkEptidDb() {
+    if [ "${eptid}" = "n" ]; then
+	return 0
+    fi
+
+    ${Echo} "Checking for existing EPTID database..."
+    if ! which mysql > /dev/null 2>&1 || ! service mysql status > /dev/null 2>&1; then
+	${Echo} "MySQL not installed, skipping"
+	return 0
+    fi
+
+    if [ ! -f /opt/shibboleth-idp/conf/attribute-resolver.xml ]; then
+	mysql --no-defaults -uroot --password="" -e "" > /dev/null 2>&1
+
+	if [ $? -ne 0 ]; then
+	    ${Echo} "ERROR: Existing EPTID configuration not found but MySQL root password is set. Please remove the MySQL root password then try again."
+	    exit 1
+	fi
+
+	return 0
+    fi
+
+    ${Echo} "/opt/shibboleth/conf/attribute-resolver exists, installer will use existing salt and password"
+
+    epass=$(grep jdbcPassword /opt/shibboleth-idp/conf/attribute-resolver.xml | awk -F '"' '{print $2}')
+    esalt=$(grep salt /opt/shibboleth-idp/conf/attribute-resolver.xml | awk -F '"' '{print $2}')
+
+    if [ -z "${epass}" ]; then
+	${Echo} "ERROR: Could not retrieve MySQL password from attribute-resolver.xml"
+	exit 1
+    fi
+    
+    if [ -z "${esalt}" ]; then
+	${Echo} "ERROR: Could not retrieve salt from attribute-resolver.xml"
+	exit 1
+    fi
+
+    ${Echo} "Testing existing MySQL password..."
+    mysql --no-defaults -ushibboleth --password="${epass}" -e "" > /dev/null 2>&1
+
+    if [ $? -ne 0 ]; then
+        ${Echo} "ERROR: Failed to connect to MySQL using user 'shibboleth' and password from /opt/shibboleth-idp/conf/attribute-resolver.xml. Please correct the password in attribute-resolver.xml or remove the file entirely if the EPTID table needs to be created."
+        exit 1
+    fi
+
+    ${Echo} "MySQL password works!"
+}
