@@ -146,14 +146,14 @@ deployEduroamCustomizations() {
 	chgrp ${distRadiusGroup} ${distEduroamPath}/clients.conf
 
 # ${distEduroamPath}/certs/ca.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
-	echo "==========================================================================================================="
-	echo "email: ${freeRADIUS_ca_email}, ${freeRADIUS_svr_email}, ${freeRADIUS_svr_email} "
+mod_freeRADIUS_svr_email=`echo "${freeRADIUS_svr_email}" | sed 's/@/\\\\@/'`
+mod_freeRADIUS_ca_email=`echo "${freeRADIUS_ca_email}" | sed 's/@/\\\\@/'`
 
 	cat ${templatePathEduroamDist}/certs/ca.cnf.template \
 	|perl -npe "s#CRT_Ca_StAtE#${freeRADIUS_ca_state}#" \
 	|perl -npe "s#CRT_Ca_LoCaL#${freeRADIUS_ca_local}#" \
 	|perl -npe "s#CRT_Ca_OrGnAmE#${freeRADIUS_ca_org_name}#" \
-	|perl -npe "s#CRT_Ca_EmAiL#${freeRADIUS_ca_email}#" \
+	|perl -npe "s#CRT_Ca_EmAiL#${mod_freeRADIUS_ca_email}#" \
 	|perl -npe "s#CRT_Ca_CoMmOnNaMe#${freeRADIUS_ca_commonName}#" \
  	> ${distEduroamPath}/certs/ca.cnf
 	
@@ -162,7 +162,7 @@ deployEduroamCustomizations() {
 	|perl -npe "s#CRT_SvR_StAtE#${freeRADIUS_svr_state}#" \
 	|perl -npe "s#CRT_SvR_LoCaL#${freeRADIUS_svr_local}#" \
 	|perl -npe "s#CRT_SvR_OrGnAmE#${freeRADIUS_svr_org_name}#" \
-	|perl -npe "s#CRT_SvR_EmAiL#${freeRADIUS_svr_email}#" \
+	|perl -npe "s#CRT_SvR_EmAiL#${mod_freeRADIUS_svr_email}#" \
 	|perl -npe "s#CRT_SvR_CoMmOnNaMe#${freeRADIUS_svr_commonName}#" \
  	> ${distEduroamPath}/certs/server.cnf
 
@@ -171,7 +171,7 @@ deployEduroamCustomizations() {
 	|perl -npe "s#CRT_SvR_StAtE#${freeRADIUS_svr_state}#" \
 	|perl -npe "s#CRT_SvR_LoCaL#${freeRADIUS_svr_local}#" \
 	|perl -npe "s#CRT_SvR_OrGnAmE#${freeRADIUS_svr_org_name}#" \
-	|perl -npe "s#CRT_SvR_EmAiL#'${freeRADIUS_svr_email}'#" \
+	|perl -npe "s#CRT_SvR_EmAiL#'${mod_freeRADIUS_svr_email}'#" \
 	|perl -npe "s#CRT_SvR_CoMmOnNaMe#${freeRADIUS_svr_commonName}#" \
  	> ${distEduroamPath}/certs/client.cnf
 
