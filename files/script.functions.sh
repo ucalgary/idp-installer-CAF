@@ -1250,7 +1250,7 @@ jettySetup() {
 
         # Setting ownership
         chown jetty:jetty /opt/jetty/ -R
-        chown -R jetty /opt/shibboleth-idp/
+        chown -R jetty:jetty /opt/shibboleth-idp/
 }
 
 
