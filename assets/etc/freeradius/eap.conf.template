@@ -155,7 +155,7 @@
 			certdir = ${confdir}/certs
 			cadir = ${confdir}/certs
 
-			#private_key_password = whatever
+			private_key_password = whatever
 			private_key_file = ${certdir}/server.key
 
 			#  If Private key & Certificate are located in
