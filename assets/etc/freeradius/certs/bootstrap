@@ -10,19 +10,19 @@
 #
 #  $Id$
 #
-umask 027
-cd `dirname $0`
+#umask 027
+#cd `dirname $0`
 
-make -h > /dev/null 2>&1
+#make -h > /dev/null 2>&1
 
 #
 #  If we have a working "make", then use it.  Otherwise, run the commands
 #  manually.
 #
-if [ "$?" = "0" ]; then
-  make all
-  exit $?
-fi
+#if [ "$?" = "0" ]; then
+#  make all
+#  exit $?
+#fi
 
 #
 #  The following commands were created by running "make -n", and edited
