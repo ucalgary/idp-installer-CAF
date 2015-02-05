@@ -581,6 +581,7 @@ output += "ldappass=\'"+ $("#ldappass").val()+ "\'\n";
 output += "ldapbasedn=\'"+ $("#ldapbasedn").val()+ "\'\n";
 output += "subsearch=\'"+ $("#subsearch").val()+ "\'\n";
 output += "ldap_type=\'"+ $("#ldap_type").val()+ "\'\n";
+output += "attr_filter=\'"+ $("#attr_filter").val()+ "\'\n";
 output += "user_field=\'"+ $("#user_field").val()+ "\'\n";
 output += "ldap_attr=\'"+ $("#ldap_attr").val()+ "\'\n";
 output += "passw_input='"+ $("#passw_input").val()+ "\'\n";
