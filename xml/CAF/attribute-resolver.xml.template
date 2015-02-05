@@ -322,7 +322,7 @@
         useStartTLS="%{idp.attribute.resolver.LDAP.useStartTLS:true}">
         <dc:FilterTemplate>
             <![CDATA[
-                (uid=${requestContext.principalName})
+                (AtTrFiLtEr=${requestContext.principalName})
             ]]>
         </dc:FilterTemplate>
         <dc:StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509Filesystem">
