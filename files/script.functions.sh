@@ -145,8 +145,10 @@ setJavaHome () {
         ln -s /usr/java/jre${javaVer}/ /usr/java/latest
         ln -s /usr/java/latest /usr/java/default
         export JAVA_HOME="/usr/java/default"
+	export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         #Set the alternatives
         for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
+        for i in `ls $JAVA_HOME/bin/`;do update-alternatives --set $i $JAVA_HOME/bin/$i; done
 
         echo "***javahome is: ${JAVA_HOME}"
         # validate java_home and ensure it runs as expected before going any further
@@ -184,13 +186,10 @@ setJavaHome () {
 
 
 setJavaCACerts ()
+
 {
-	# 	set path to ca cert file
-	if [ -f "/etc/ssl/certs/java/cacerts" ]; then
-		javaCAcerts="/etc/ssl/certs/java/cacerts"
-	else
-		javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
-	fi
+	javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
+	keytool="${JAVA_HOME}/bin/keytool"
 }
 
 generatePasswordsForSubsystems ()
@@ -411,88 +410,88 @@ fi
 
 
 installEPTIDSupport ()
-        {
-        if [ "${eptid}" != "n" ]; then
-                ${Echo} "Installing EPTID support"
+{
+	if [ "${eptid}" != "n" ]; then
+		${Echo} "Installing EPTID support"
 
-                if [ "$dist" == "ubuntu" ]; then
-                        test=`dpkg -s mysql-server > /dev/null 2>&1`
-                        isInstalled=$?
+		if [ "$dist" == "ubuntu" ]; then
+			test=`dpkg -s mysql-server > /dev/null 2>&1`
+			isInstalled=$?
 
-                elif [ "$dist" == "centos" -a "$redhatDist" == "6" ]; then
-                        [ -f /etc/init.d/mysqld ]
-                        isInstalled=$?
+		elif [ "$dist" == "centos" -a "$redhatDist" == "6" ]; then
+			[ -f /etc/init.d/mysqld ]
+			isInstalled=$?
 
-                elif [ "$dist" == "centos" -a "$redhatDist" == "7" ]; then
-                        #Add Oracle repos
-                        if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
+		elif [ "$dist" == "centos" -a "$redhatDist" == "7" ]; then
+			#Add Oracle repos
+			if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
 
-                                ${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
-                                mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
-                                eval $mysqlOracleRepo >> ${statusFile} 2>&1
+				${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
+				mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
+				eval $mysqlOracleRepo >> ${statusFile} 2>&1
 
-                        else
+			else
 
-                                ${Echo} "Dected MySQL Repo EXIST on this system."
-                        fi
-                        test=`rpm -q mysql-community-server > /dev/null 2>&1`
-                        isInstalled=$?
+				${Echo} "Dected MySQL Repo EXIST on this system."
+			fi
+			test=`rpm -q mysql-community-server > /dev/null 2>&1`
+			isInstalled=$?
 
-                fi
+		fi
 
-                if [ "${isInstalled}" -ne 0 ]; then
-                        export DEBIAN_FRONTEND=noninteractive
-                        eval ${distCmd5} >> ${statusFile} 2>&1
+		if [ "${isInstalled}" -ne 0 ]; then
+			export DEBIAN_FRONTEND=noninteractive
+			eval ${distCmd5} >> ${statusFile} 2>&1
 
-                        mysqldTest=`pgrep mysqld`
-                        if [ -z "${mysqldTest}" ]; then
-                                if [ ${dist} == "ubuntu" ]; then
-                                        service mysql restart >> ${statusFile} 2>&1
-                                else
-                                        service mysqld restart >> ${statusFile} 2>&1
-                                fi
-                        fi
-                        # set mysql root password
-                        tfile=`mktemp`
-                        if [ ! -f "$tfile" ]; then
-                                return 1
-                        fi
-                        cat << EOM > $tfile
+			mysqldTest=`pgrep mysqld`
+			if [ -z "${mysqldTest}" ]; then
+				if [ ${dist} == "ubuntu" ]; then
+					service mysql restart >> ${statusFile} 2>&1
+				else
+					service mysqld restart >> ${statusFile} 2>&1
+				fi
+			fi
+
+			if [ "${dist}" != "ubuntu" ]; then
+				/sbin/chkconfig mysqld on
+			fi
+
+		fi
+
+		if [ -z "${epass}" ]; then
+			# set mysql root password
+			tfile=`mktemp`
+			if [ ! -f "$tfile" ]; then
+				return 1
+			fi
+
+			cat << EOM > $tfile
 USE mysql;
 UPDATE user SET password=PASSWORD("${mysqlPass}") WHERE user='root';
 FLUSH PRIVILEGES;
 EOM
 
-                        mysql --no-defaults -u root -h localhost <$tfile
-                        retval=$?
-                        # moved removal of MySQL command file to be in the if-then-else statement set below
+			mysql --no-defaults -u root -h localhost <$tfile
 
-                        if [ "${retval}" -ne 0 ]; then
-                                ${Echo} "\n\n\nAn error has occurred in the configuration of the MySQL installation."
-                                ${Echo} "Please correct the MySQL installation and make sure a root password is set and it is possible to log in using the 'mysql' command."
-                                ${Echo} "When MySQL is working, re-run this script."
-                                ${Echo} "The file being run in MySQL is ${tfile} and has not been deleted, please review and delete as necessary."
-                                cleanBadInstall
-                        else
-                                rm -f $tfile
-                        fi
+			retval=$?
 
+			if [ "${retval}" -ne 0 ]; then
+				${Echo} "\n\n\nAn error has occurred in the configuration of the MySQL installation."
+				${Echo} "Please correct the MySQL installation and make sure a root password is set and it is possible to log in using the 'mysql' command."
+				${Echo} "When MySQL is working, re-run this script."
+				${Echo} "The file being run in MySQL is ${tfile} and has not been deleted, please review and delete as necessary."
+				cleanBadInstall
+			else
+				rm -f $tfile
+			fi
+		fi
 
-                        if [ "${dist}" != "ubuntu" ]; then
-                                /sbin/chkconfig mysqld on
-                        fi
-                fi
-
-                fetchMysqlCon
-                cd /opt
-                tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
-                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
-
-        fi
-
-
-
-        }
+		fetchMysqlCon
+		cd /opt
+		tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
+		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+	fi
+}
 
 
 installCasClientIfEnabled() {
@@ -602,11 +601,11 @@ ${Echo} "Fetching TCS CA chain from web"
 	done
 	ccnt=1
 	while [ ${ccnt} -lt ${cnt} ]; do
-		md5finger=`keytool -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+		md5finger=`${keytool} -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+		test=`${keytool} -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
 		subject=`openssl x509 -subject -noout -in ${certpath}${ccnt}.root | awk -F= '{print $NF}'`
 		if [ -z "${test}" ]; then
-			keytool -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+			${keytool} -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 		fi
 		files="`${Echo} ${files}` ${certpath}${ccnt}.root"
 		ccnt=`expr ${ccnt} + 1`
@@ -721,7 +720,7 @@ askForConfigurationData() {
 		eptid=$(askYesNo "eduPersonTargetedID" "Do you want to install support for eduPersonTargetedID?\nThis is recommended")
 	fi
 
-	if [ "${eptid}" != "n" ]; then
+	if [ "${eptid}" != "n" -a "${passw_input}" = "y" ]; then
 		mysqlPass=$(askString "MySQL password" "MySQL is used for supporting the eduPersonTargetedId attribute.\n\n Please set the root password for MySQL.\nAn empty string generates a randomized new password" "" 1)
 	fi
 
@@ -729,8 +728,10 @@ askForConfigurationData() {
 		selfsigned=$(askYesNo "Self signed certificate" "Create a self signed certificate for HTTPS?\n\nThis is NOT recommended for production systems! Only for testing purposes" "y")
 	fi
 
+        if [ "${passw_input}" = "y" ]; then
 	pass=$(askString "IDP keystore password" "The IDP keystore is for the Shibboleth software itself and not the webserver. Please set your IDP keystore password.\nAn empty string generates a randomized new password" "" 1)
 	httpspass=$(askString "HTTPS Keystore password" "The webserver uses a separate keystore for itself. Please input your Keystore password for the end user facing HTTPS.\n\nAn empty string generates a randomized new password" "" 1)
+	fi
 }
 
 #setDistCommands() {
@@ -920,7 +921,7 @@ runShibbolethInstaller ()
 	# 	run shibboleth installer
 	cd /opt/shibboleth-identityprovider
 	${Echo} "Running shiboleth installer"
-	sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
+	JAVA_HOME=/usr/java/default sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
@@ -960,11 +961,11 @@ configShibbolethSSLForLDAPJavaKeystore()
 	for i in `ls ${certpath}${ldapCert}.*`; do
 
 		numLDAPCertificateFiles=$[$numLDAPCertificateFiles +1]
-		md5finger=`keytool -printcert -file ${i} | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+		md5finger=`${keytool} -printcert -file ${i} | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+		test=`${keytool} -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
 		subject=`openssl x509 -subject -noout -in ${i} | awk -F= '{print $NF}'`
 		if [ -z "${test}" ]; then
-			keytool -import -noprompt -alias "${subject}" -file ${i} -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+			${keytool} -import -noprompt -alias "${subject}" -file ${i} -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 		fi
 		files="`${Echo} ${files}` ${i}"
 	done
@@ -1057,6 +1058,13 @@ updateMachineTime ()
 	${Echo} "Updating time from: ${ntpserver}"
 	/usr/sbin/ntpdate ${ntpserver} > /dev/null 2>&1
 
+if [ "${dist}" == "ubuntu" ] 
+	then
+		sed -n 'H;${x;s/server .*\n/server '"${ntpserver}"'\n&/;p;}' /etc/ntp.conf > ./tmp.txt
+		rm -f /etc/ntp.conf
+		mv ./tmp.txt /etc/ntp.conf
+		service ntp reload
+	else
 # 	add crontab entry for ntpdate
 	test=`crontab -l 2>/dev/null | grep "${ntpserver}" | grep ntpdate`
 	if [ -z "${test}" ]; then
@@ -1067,6 +1075,7 @@ updateMachineTime ()
 		fi
 		${Echo} "${CRONTAB}*/5 *  *   *   *     /usr/sbin/ntpdate ${ntpserver} > /dev/null 2>&1" | crontab
 	fi
+fi
 }
 
 
@@ -1346,19 +1355,21 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${eptid}" != "n" ]; then
-                epass=`${passGenCmd}`
-#               grant sql access for shibboleth
-                esalt=`openssl rand -base64 36 2>/dev/null`
-                cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+		if [ -z "${epass}" ]; then
+			epass=`${passGenCmd}`
+			grant sql access for shibboleth
+			esalt=`openssl rand -base64 36 2>/dev/null`
+			cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+			files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
 
-                ${Echo} "Create MySQL database and shibboleth user."
-                mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                retval=$?
-                if [ "${retval}" -ne 0 ]; then
-                        ${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-                        ${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
-                fi
+			${Echo} "Create MySQL database and shibboleth user."
+			mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+			retval=$?
+			if [ "${retval}" -ne 0 ]; then
+				${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+				${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+			fi
+		fi
 
                 cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
                         | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
