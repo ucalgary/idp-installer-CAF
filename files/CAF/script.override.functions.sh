@@ -144,8 +144,7 @@ echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 	chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
 	${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
-	#patch /opt/shibboleth-idp/conf/metadata-providers.xml -i ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml.diff
-	cat ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml > /opt/shibboleth-idp/conf/metadata-providers.xml
+	patch /opt/shibboleth-idp/conf/metadata-providers.xml -i ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml.diff
 	cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
 
 	if [ "${google}" != "n" ]; then
