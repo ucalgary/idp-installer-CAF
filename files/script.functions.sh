@@ -1288,6 +1288,7 @@ patchShibbolethConfigs ()
         mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
         cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
         patch /opt/shibboleth-idp/conf/handler.xml -i ${Spath}/${prep}/handler.xml.diff >> ${statusFile} 2>&1
+	dos2unix /opt/shibboleth-idp/conf/metadata-providers.xml
         patch /opt/shibboleth-idp/conf/metadata-providers.xml -i ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml.diff
         cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
 
