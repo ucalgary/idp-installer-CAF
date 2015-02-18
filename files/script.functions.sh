@@ -97,10 +97,9 @@ setVarUpgradeType ()
 
 {
 
-	if [ -L "/opt/${shibDir}" -a -d "/opt/shibboleth-idp" ]; then
+	if [ -d "/opt/shibboleth-idp" ]; then
 		upgrade=1
 	fi
-
 }
 
 setVarPrepType ()
@@ -127,7 +126,7 @@ setJavaHome () {
 
 	if [ -L "/usr/java/default" -a -d "/usr/java/jre${javaVer}" ]; then
 		${Echo} "Dected Java allready installed."
-                export JAVA_HOME=/usr/java/default/jre	
+                export JAVA_HOME=/usr/java/default	
 		return 0
 	fi
 
