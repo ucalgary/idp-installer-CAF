@@ -469,7 +469,8 @@ EOM
                 fetchMysqlCon
                 cd /opt
                 tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
-                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
+                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
+		/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
         fi
 
@@ -1195,7 +1196,6 @@ ${Echo} "Previous installation found, performing upgrade."
 	tar xzf ${downloadPath}/${shibDir}-${shibVer}.tar.gz -C /opt
 	chmod -R 755 /opt/${shibDir}-${shibVer}
 
-        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/${shibDir}/src/main/webapp/metadata.xml
         tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
 
 	unlink /opt/${shibDir}
@@ -1203,10 +1203,6 @@ ${Echo} "Previous installation found, performing upgrade."
 
 	if [ -d "/opt/cas-client-${casVer}" ]; then
 		installCasClientIfEnabled
-	fi
-
-	if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
-		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
 	fi
 
 	setJavaHome
@@ -1383,11 +1379,11 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
 
-	installEPTIDSupport
-
 	configShibbolethXMLAttributeResolverForLDAP
 
 	runShibbolethInstaller
+
+        installEPTIDSupport
 
 	installCasClientIfEnabled
 
