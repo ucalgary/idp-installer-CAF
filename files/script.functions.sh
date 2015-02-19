@@ -1208,7 +1208,9 @@ ${Echo} "Previous installation found, performing upgrade."
         	cp -ar /etc/alternatives ${Spath}/backups/ 2>/dev/null
 	fi
 
-        cat /root/.bashrc ${Spath}/backups/.bashrc
+	if [ ! -f ${Spath}/backups/.bashrc ]; then
+        	cat /root/.bashrc ${Spath}/backups/.bashrc
+	fi
 
         rm -rf /opt/shibboleth-idp
 
