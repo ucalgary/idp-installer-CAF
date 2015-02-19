@@ -485,7 +485,7 @@ if [ "${type}" = "cas" ]; then
 	if [ ! -f "${downloadPath}/cas-client-${casVer}-release.zip" ]; then
 		fetchCas
 	fi
-	unzip -q ${downloadPath}/cas-client-${casVer}-release.zip -d /opt
+	unzip -qo ${downloadPath}/cas-client-${casVer}-release.zip -d /opt
 	if [ ! -s "/opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar" ]; then
 		${Echo} "Unzip of cas-client failed, check zip file: ${downloadPath}/cas-client-${casVer}-release.zip"
 		cleanBadInstall
@@ -1419,9 +1419,7 @@ invokeShibbolethInstallProcessJetty9 ()
         # cdinro test
         patchShibbolethConfigs
 
-        if [ ! -s "/opt/jetty" ]; then
-                jettySetup
-        fi
+        jettySetup
 
 	updateMachineTime
 
