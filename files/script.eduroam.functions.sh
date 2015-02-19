@@ -327,7 +327,7 @@ displayMainMenu() {
 			#${whiptailBin} --backtitle "${GUIbacktitle}" --title "Review and Confirm Install Settings" --scrolltext --clear --defaultno --yesno --textbox ${freeradiusfile} 20 75 3>&1 1>&2 2>&3
 			#eduroamTask=$(${whiptailBin} --backtitle "${GUIbacktitle}" --title "Identity Server Main Menu" --cancel-button "exit, no changes" menu --clear  -- "${getStatusString}\nWhich do you want to do?" ${whipSize} 2 review "install Settings" refresh "relevant CentOS packages" install "full eduroam base server" 20 75 3>&1 1>&2 2>&3)
 
-			eduroamTask=$(${whiptailBin} --backtitle "${GUIbacktitle}" --title "Identity Server Main Menu" --cancel-button "exit" --menu --clear  -- "Which do you want to do?" ${whipSize} 5 refresh "Refresh relevant CentOS packages" review "Review install Settings" installEduroam "Install only the eduroam service" installFedSSO "Install only Federated SSO service"  installAll "Install eduroam and Federated SSO services" 3>&1 1>&2 2>&3)
+			eduroamTask=$(${whiptailBin} --backtitle "${GUIbacktitle}" --title "Identity Server Main Menu" --cancel-button "exit" --menu --clear  -- "Which do you want to do?" ${whipSize} 5 refresh "Refresh relevant CentOS packages" review "Review install Settings" installEduroam "Install only the eduroam service" installFedSSO "Install only Federated SSO service"  installAll "Install eduroam and Federated SSO services" rollBack "Restore previous Shibboleth installation" 3>&1 1>&2 2>&3)
 
 
 		else
@@ -405,7 +405,24 @@ displayMainMenu() {
                         else
                                 echo "Sorry, necessary configuration for shibboleth is incomplete, please redo config file"
                                 exit
-                fi
+	                fi
+
+        elif [ "${eduroamTask}" = "rollBack" ]  
+                then
+			if [ -d ${Spath}/backups/shibboleth-idp -a -d ${Spath}/backups/alternatives ]; then
+
+	                        service jetty stop
+        	                rm -rf /opt/shibboleth-idp
+                	        mv ${Spath}/backups/shibboleth-idp /opt/
+                        	rm -rf /etc/alternatives
+                        	mv ${Spath}/backups/alternatives /etc/
+				cat ${Spath}/backups/.bashrc > /root/.bashrc
+				source /root/.bashrc
+                        	service tomcat6 start
+			else
+                                echo "Sorry, nothing to restore."
+                                exit
+			fi
 
 	elif [ "${eduroamTask}" = "installAll" ]
 	then

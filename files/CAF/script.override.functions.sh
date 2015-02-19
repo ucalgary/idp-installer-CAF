@@ -237,8 +237,14 @@ ${Echo} "Previous installation found, performing upgrade."
         tar xzf ${downloadPath}/${shibDir}-${shibVer}.tar.gz -C /opt
         chmod -R 755 /opt/${shibDir}-${shibVer}
 
-        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/${shibDir}/src/main/webapp/metadata.xml
-        tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
+        # Backup previous V2 environment
+        #tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
+        service tomcat6 stop
+        rm -rf ${Spath}/backups/shibboleth-idp
+        mv /opt/shibboleth-idp ${Spath}/backups/ 2>/dev/null
+        rm -rf ${Spath}/backups/alternatives
+        cp -ar /etc/alternatives ${Spath}/backups/ 2>/dev/null
+        cat /root/.bashrc ${Spath}/backups/.bashrc
 
         unlink /opt/${shibDir}
         ln -s /opt/${shibDir}-${shibVer} /opt/${shibDir}
@@ -247,13 +253,9 @@ ${Echo} "Previous installation found, performing upgrade."
                 installCasClientIfEnabled
         fi
 
-        if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
-                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
-        fi
-
         setJavaHome
 else
-        ${Echo} "\nThis is a fresh Shibboleth Install"
+        ${Echo} "This is a fresh Shibboleth Install"
 
 
 fi
