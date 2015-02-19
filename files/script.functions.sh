@@ -1199,11 +1199,18 @@ ${Echo} "Previous installation found, performing upgrade."
 	# Backup previous V2 environment
         #tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
         service tomcat6 stop
-	rm -rf ${Spath}/backups/shibboleth-idp
-        mv /opt/shibboleth-idp ${Spath}/backups/ 2>/dev/null
-        rm -rf ${Spath}/backups/alternatives
-        cp -ar /etc/alternatives ${Spath}/backups/ 2>/dev/null
-	cat /root/.bashrc ${Spath}/backups/.bashrc
+
+	if [ ! -d ${Spath}/backups/shibboleth-idp ]; then
+		cp -ar /opt/shibboleth-idp ${Spath}/backups/ 2>/dev/null
+	fi
+
+	if [ ! -d ${Spath}/backups/alternatives ]; then
+        	cp -ar /etc/alternatives ${Spath}/backups/ 2>/dev/null
+	fi
+
+        cat /root/.bashrc ${Spath}/backups/.bashrc
+
+        rm -rf /opt/shibboleth-idp
 
 	unlink /opt/${shibDir}
 	ln -s /opt/${shibDir}-${shibVer} /opt/${shibDir}
