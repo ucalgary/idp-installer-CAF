@@ -327,7 +327,7 @@ displayMainMenu() {
 			#${whiptailBin} --backtitle "${GUIbacktitle}" --title "Review and Confirm Install Settings" --scrolltext --clear --defaultno --yesno --textbox ${freeradiusfile} 20 75 3>&1 1>&2 2>&3
 			#eduroamTask=$(${whiptailBin} --backtitle "${GUIbacktitle}" --title "Identity Server Main Menu" --cancel-button "exit, no changes" menu --clear  -- "${getStatusString}\nWhich do you want to do?" ${whipSize} 2 review "install Settings" refresh "relevant CentOS packages" install "full eduroam base server" 20 75 3>&1 1>&2 2>&3)
 
-			eduroamTask=$(${whiptailBin} --backtitle "${GUIbacktitle}" --title "Identity Server Main Menu" --cancel-button "exit" --menu --clear  -- "Which do you want to do?" ${whipSize} 5 refresh "Refresh relevant CentOS packages" review "Review install Settings" installEduroam "Install only the eduroam service" installFedSSO "Install only Federated SSO service"  installAll "Install eduroam and Federated SSO services" rollBack "Restore previous Shibboleth installation" 3>&1 1>&2 2>&3)
+			eduroamTask=$(${whiptailBin} --backtitle "${GUIbacktitle}" --title "Identity Server Main Menu" --cancel-button "exit" --menu --clear  -- "Which do you want to do?" ${whipSize} 5 refresh "Refresh relevant CentOS packages" review "Review install Settings" installEduroam "Install only the eduroam service" installFedSSO "Install only Federated SSO service" rollBack "Restore previous Shibboleth V2 setup" installAll "Install eduroam and Federated SSO services" 3>&1 1>&2 2>&3)
 
 
 		else
