@@ -492,7 +492,7 @@ checkEptidDb() {
     fi
 
     ${Echo} "Checking for existing EPTID database..."
-    if ! which mysql > /dev/null 2>&1 || ! service mysql status > /dev/null 2>&1; then
+    if [ ! -f /etc/init.d/mysqld ]; then
 	${Echo} "MySQL not installed, skipping"
 	return 0
     fi
@@ -510,8 +510,8 @@ checkEptidDb() {
 
     ${Echo} "/opt/shibboleth/conf/attribute-resolver exists, installer will use existing salt and password"
 
-    epass=$(grep jdbcPassword /opt/shibboleth-idp/conf/attribute-resolver.xml | awk -F '"' '{print $2}')
-    esalt=$(grep salt /opt/shibboleth-idp/conf/attribute-resolver.xml | awk -F '"' '{print $2}')
+    epass=$(grep jdbcPassword /opt/shibboleth-idp/conf/attribute-resolver.xml | grep -v 'jdbcPassword="mypassword"' | awk -F '"' '{print $2}')
+    esalt=$(grep salt /opt/shibboleth-idp/conf/attribute-resolver.xml | grep -v 'salt="your random string here"' | awk -F '"' '{print $2}')
 
     if [ -z "${epass}" ]; then
 	${Echo} "ERROR: Could not retrieve MySQL password from attribute-resolver.xml"
