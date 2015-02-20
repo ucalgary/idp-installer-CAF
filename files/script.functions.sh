@@ -1200,16 +1200,8 @@ ${Echo} "Previous installation found, performing upgrade."
         #tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
         service tomcat6 stop
 
-	if [ ! -d ${Spath}/backups/shibboleth-idp ]; then
-		cp -ar /opt/shibboleth-idp ${Spath}/backups/ 2>/dev/null
-	fi
-
-	if [ ! -d ${Spath}/backups/alternatives ]; then
-        	cp -ar /etc/alternatives ${Spath}/backups/ 2>/dev/null
-	fi
-
-	if [ ! -f ${Spath}/backups/.bashrc ]; then
-        	cat /root/.bashrc ${Spath}/backups/.bashrc
+	if [ ! -d /opt/bak ]; then
+		cp -ar /opt/shibboleth-idp /opt/bak 2>/dev/null
 	fi
 
         rm -rf /opt/shibboleth-idp

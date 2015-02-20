@@ -409,15 +409,11 @@ displayMainMenu() {
 
         elif [ "${eduroamTask}" = "rollBack" ]  
                 then
-			if [ -d ${Spath}/backups/shibboleth-idp -a -d ${Spath}/backups/alternatives ]; then
+			if [ -d /opt/bak ]; then
 
 	                        service jetty stop
         	                rm -rf /opt/shibboleth-idp
-                	        mv ${Spath}/backups/shibboleth-idp /opt/
-                        	rm -rf /etc/alternatives
-                        	mv ${Spath}/backups/alternatives /etc/
-				cat ${Spath}/backups/.bashrc > /root/.bashrc
-				source /root/.bashrc
+                	        cp -ar /opt/bak /opt/shibboleth-idp
                         	service tomcat6 start
 			else
                                 echo "Sorry, nothing to restore."
