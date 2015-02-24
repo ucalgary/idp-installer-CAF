@@ -413,7 +413,7 @@ displayMainMenu() {
 
 	                        service jetty stop
         	                rm -rf /opt/shibboleth-idp
-				rm -rf shibboleth-identity-provider* jetty* /usr/java/
+				rm -rf /opt/shibboleth-identity-provider* /opt/jetty* /usr/java/
                 	        cp -ar /opt/bak /opt/shibboleth-idp
                         	service tomcat6 start
 			else
