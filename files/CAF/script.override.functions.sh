@@ -130,13 +130,11 @@ configShibbolethFederationValidationKey ()
 patchShibbolethConfigs ()
 {
 
-echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
+	echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 
-# patch shibboleth config files
+	# patch shibboleth config files
 	${Echo} "Patching config files for ${my_ctl_federation}"
 	mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
-
-	#cp ${Spath}/files/attribute-filter.xml.swamid /opt/shibboleth-idp/conf/attribute-filter.xml
 
 	${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with CAF defaults"
 
@@ -147,6 +145,7 @@ echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 	dos2unix /opt/shibboleth-idp/conf/metadata-providers.xml
 	patch /opt/shibboleth-idp/conf/metadata-providers.xml -i ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml.diff
 	cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
+        cp ${Spath}/files/${my_ctl_federation}/relying-party.xml /opt/shibboleth-idp/conf/relying-party.xml
 
 	if [ "${google}" != "n" ]; then
 		repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
@@ -210,9 +209,13 @@ echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
 	fi
 
-echo "applying chown "
-chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
+	echo "applying chown "
+	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
+	if [ "${upgrade}" -eq 1 ]; then
+		cat /opt/bak/credentials/idp.crt > /opt/shibboleth-idp/credentials/idp-signing.crt 
+		cat /opt/bak/credentials/idp.key > /opt/shibboleth-idp/credentials/idp-signing.key 
+	fi
 
 }
 
