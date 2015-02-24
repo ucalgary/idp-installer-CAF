@@ -212,11 +212,6 @@ patchShibbolethConfigs ()
 	echo "applying chown "
 	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
-	if [ "${upgrade}" -eq 1 ]; then
-		cat /opt/bak/credentials/idp.crt > /opt/shibboleth-idp/credentials/idp-signing.crt 
-		cat /opt/bak/credentials/idp.key > /opt/shibboleth-idp/credentials/idp-signing.key 
-	fi
-
 }
 
 

@@ -1349,6 +1349,16 @@ patchShibbolethConfigs ()
 
 }
 
+
+performPostUpgradeSteps ()
+{
+        if [ "${upgrade}" -eq 1 ]; then
+                cat /opt/bak/credentials/idp.crt > /opt/shibboleth-idp/credentials/idp-signing.crt
+                cat /opt/bak/credentials/idp.key > /opt/shibboleth-idp/credentials/idp-signing.key
+        fi
+
+}
+
 invokeShibbolethInstallProcessJetty9 ()
 {
 
@@ -1410,8 +1420,9 @@ invokeShibbolethInstallProcessJetty9 ()
 	# Override per federation
 	configShibbolethFederationValidationKey
 
-        # cdinro test
         patchShibbolethConfigs
+
+	performPostUpgradeSteps
 
         jettySetup
 
