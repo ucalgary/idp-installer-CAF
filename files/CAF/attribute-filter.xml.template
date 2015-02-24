@@ -86,6 +86,61 @@
     </afp:AttributeRule>
 </afp:AttributeFilterPolicy>
 
+<!-- ##########################################
+#
+#       CANARIE Attribute Filter Ploicy
+#
+-->
+
+<afp:AttributeFilterPolicy>
+        <afp:PolicyRequirementRule xsi:type="basic:OR">
+                <basic:Rule xsi:type="basic:AttributeRequesterString" value="https://collaboration.canarie.ca/shibboleth"/>
+                <basic:Rule xsi:type="basic:AttributeRequesterString" value="https://science.canarie.ca/shibboleth"/>
+                <basic:Rule xsi:type="basic:AttributeRequesterString" value="http://adfsgw.canarie.ca/adfs/services/trust"/>
+        </afp:PolicyRequirementRule>
+
+        <afp:AttributeRule attributeID="eduPersonTargetedID">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="eduPersonPrincipalName">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="mail">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="email">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="cn">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="surname">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="mail">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="givenName">
+                <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="eduPersonScopedAffiliation">
+                 <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="eduPersonAffiliation">
+                 <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="displayName">
+                 <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="eduPersonEntitlement">
+                 <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+        <afp:AttributeRule attributeID="preferredLanguage">
+                 <afp:PermitValueRule xsi:type="basic:ANY" />
+        </afp:AttributeRule>
+</afp:AttributeFilterPolicy>
+
+
 <!-- EPTID FILTER PLACEHOLDER -->
 
 </afp:AttributeFilterPolicyGroup>
