@@ -205,12 +205,12 @@ patchShibbolethConfigs ()
 		repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
 		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
-                repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
 		repStr='<!-- EPTID FILTER PLACEHOLDER -->'
 		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
 	fi
+
+        repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
+        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
 	echo "applying chown "
 	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
