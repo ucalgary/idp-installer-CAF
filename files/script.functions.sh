@@ -68,26 +68,6 @@ patchFirewall()
 
 }
 
-fetchJavaIfNeeded ()
-
-{
-	${Echo} "setJavaHome deprecates fetchJavaIfNeeded and ensures latest java is used"
-	# install java if needed
-	#javaBin=`which java 2>/dev/null`
-	#if [ ! -s "${javaBin}" ]; then
-	#	eval ${distCmd2}
-	#	eval ${distCmd3}
-		
-	#	javaBin=`which java 2>/dev/null`
-	#fi
-	#if [ ! -s "${javaBin}" ]; then
-	#	${Echo} "No java could be found! Install a working JRE and re-run this script."
-	#	${Echo} "Try: ${distCmd2} and ${distCmd3}"
-	#	cleanBadInstall
-	#fi
-
-}
-
 notifyMessageDeployBeginning ()
 {
 	${Echo} "Starting deployment!"
@@ -133,7 +113,6 @@ setJavaHome () {
 	fi
 
         unset JAVA_HOME
-        eval ${distCmd2} &> >(tee -a ${statusFile})
 
         #Install from src
         javaSrc="jre-8u25-linux-x64.tar.gz"
@@ -382,17 +361,6 @@ fetchCas() {
 	fi
 }
 
-fetchMysqlCon() {
-
-	echo "Mysql Connector now in the download folder"
-	#  Deprecated fetching to presence in downloadPath
-
-	#	if [ ! -s "${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz" ]; then
-	#		${Echo} "Error while downloading mysql-connector, aborting."
-	#		cleanBadInstall
-	#	fi
-}
-
 
 
 installFticksIfEnabled() {
@@ -486,7 +454,6 @@ EOM
 			fi
 		fi
 
-		fetchMysqlCon
 		cd /opt
 		tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
 		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
@@ -733,69 +700,6 @@ askForConfigurationData() {
 	httpspass=$(askString "HTTPS Keystore password" "The webserver uses a separate keystore for itself. Please input your Keystore password for the end user facing HTTPS.\n\nAn empty string generates a randomized new password" "" 1)
 	fi
 }
-
-#setDistCommands() {
-#	if [ ${dist} = "ubuntu" ]; then
-#		distCmdU=${ubuntuCmdU}
-#		distCmdUa=${ubuntuCmdUa}
-#		distCmd1=${ubuntuCmd1}
-#		distCmd2=${ubuntuCmd2}
-#		distCmd3=${ubuntuCmd3}
-#		distCmd4=${ubuntuCmd4}
-#		distCmd5=${ubuntuCmd5}
-#		tomcatSettingsFile=${tomcatSettingsFileU}
-#		dist_install_nc=${ubutnu_install_nc}
-#		dist_install_ldaptools=${ubuntu_install_ldaptools}
-#		distCmdEduroam=${ubuntuCmdEduroam}
-#	elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
-#		if [ ${dist} = "centos" ]; then
-#			redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
-#			distCmdU=${centosCmdU}
-#			distCmdUa=${centosCmdUa}
-#			distCmd1=${centosCmd1}
-#			distCmd2=${centosCmd2}
-#			distCmd3=${centosCmd3}
-#			distCmd4=${centosCmd4}
-#			distCmd5=${centosCmd5}
-#			dist_install_nc=${centos_install_nc}
-#                	dist_install_ldaptools=${centos_install_ldaptools}
-#			distCmdEduroam=${centosCmdEduroam}
-#		else
-#			redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
-#			distCmdU=${redhatCmdU}
-#			distCmd1=${redhatCmd1}
-#			distCmd2=${redhatCmd2}
-#			distCmd3=${redhatCmd3}
-#			distCmd4=${redhatCmd4}
-#			distCmd5=${redhatCmd5}
-#			dist_install_nc=${redhat_install_nc}
-#                        dist_install_ldaptools=${redhat_install_ldaptools}
-#			distCmdEduroam=${redhatCmdEduroam}
-#		fi
-#		tomcatSettingsFile=${tomcatSettingsFileC}
-#
-#		if [ "$redhatDist" -eq "6" ]; then
-#			redhatEpel=${redhatEpel6}
-#		else
-#			redhatEpel=${redhatEpel5}
-#		fi
-#
-#		#if [ ! -z "`rpm -q epel-release | grep ' is not installed'`" ]; then
-#		#	
-#		#	# Consider this base requirement for system, or maybe move it to the installation phase for Shibboleth??
-#		#	#
-#		##	continueF="y"
-#     #			if [ "${continueF}" = "y" ]; then
-#     #				installEPEL
-#     #			fi
-#     #		fi
-#     #		if [ "`which host 2>/dev/null`" == "" ]; then
-#     #			${Echo} "Installing bind-utils..."
-#     #			yum -y -q install bind-utils >> ${statusFile} 2>&1
-#     #		fi
-#	fi
-#}
-
 
 prepConfirmBox() {
 	cat > ${downloadPath}/confirm.tx << EOM
