@@ -1407,8 +1407,10 @@ enableJettyOnRestart ()
                 do
                         ${ckCmd} ${ckArgs} ${myService} ${ckState}
                 done
-        fi
 
+	else
+		update-rc.d jetty defaults
+	fi
 }
 
 
