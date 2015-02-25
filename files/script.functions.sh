@@ -840,6 +840,12 @@ configShibbolethXMLAttributeResolverForLDAP ()
 		> ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml
 	files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml"
 
+        cat ${Spath}/xml/${my_ctl_federation}/ldapconn.template \
+                | sed -re "s/AtTrFiLtEr/${attr_filter}/" \
+                > ${Spath}/xml/${my_ctl_federation}/ldapconn.txt
+        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/ldapconn.txt"
+
+
 }
 
 runShibbolethInstaller ()
