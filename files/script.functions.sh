@@ -1253,7 +1253,6 @@ jettySetup() {
 
         if [ "${dist}" != "ubuntu" ]; then
                 chkconfig jetty on
-        fi
         else
                 update-rc.d jetty defaults
         fi
