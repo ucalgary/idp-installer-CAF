@@ -1250,8 +1250,12 @@ jettySetup() {
         sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
         useradd -d /opt/jetty -s /bin/bash jetty
         ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
+
         if [ "${dist}" != "ubuntu" ]; then
                 chkconfig jetty on
+        fi
+        else
+                update-rc.d jetty defaults
         fi
 
         cat ${Spath}/files/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
