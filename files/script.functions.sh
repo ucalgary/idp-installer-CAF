@@ -97,10 +97,9 @@ setVarUpgradeType ()
 
 {
 
-	if [ -L "/opt/${shibDir}" -a -d "/opt/shibboleth-idp" ]; then
+	if [ -d "/opt/shibboleth-idp" ]; then
 		upgrade=1
 	fi
-
 }
 
 setVarPrepType ()
@@ -127,7 +126,7 @@ setJavaHome () {
 
 	if [ -L "/usr/java/default" -a -d "/usr/java/jre${javaVer}" ]; then
 		${Echo} "Dected Java allready installed."
-                export JAVA_HOME=/usr/java/default/jre	
+                export JAVA_HOME=/usr/java/default	
 		return 0
 	fi
 
@@ -470,7 +469,8 @@ EOM
                 fetchMysqlCon
                 cd /opt
                 tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
-                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
+                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
+		/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
         fi
 
@@ -485,7 +485,7 @@ if [ "${type}" = "cas" ]; then
 	if [ ! -f "${downloadPath}/cas-client-${casVer}-release.zip" ]; then
 		fetchCas
 	fi
-	unzip -q ${downloadPath}/cas-client-${casVer}-release.zip -d /opt
+	unzip -qo ${downloadPath}/cas-client-${casVer}-release.zip -d /opt
 	if [ ! -s "/opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar" ]; then
 		${Echo} "Unzip of cas-client failed, check zip file: ${downloadPath}/cas-client-${casVer}-release.zip"
 		cleanBadInstall
@@ -836,9 +836,14 @@ configShibbolethXMLAttributeResolverForLDAP ()
 	cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml.template \
 		| sed -re "s/NiNcRePlAcE/${ninc}/;s/CeRtAcRoNyM/${certAcro}/;s/CeRtOrG/${certOrg}/;s/CeRtC/${certC}/;s/CeRtLoNgC/${certLongC}/" \
 		| sed -re "s/SCHAC_HOME_ORG/${orgTopDomain}/" \
-		| sed -re "s/AtTrFiLtEr/${attr_filter}/" \
 		> ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml
 	files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml"
+
+        cat ${Spath}/xml/${my_ctl_federation}/ldapconn.template \
+                | sed -re "s/AtTrFiLtEr/${attr_filter}/" \
+                > ${Spath}/xml/${my_ctl_federation}/ldapconn.txt
+        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/ldapconn.txt"
+
 
 }
 
@@ -1196,18 +1201,21 @@ ${Echo} "Previous installation found, performing upgrade."
 	tar xzf ${downloadPath}/${shibDir}-${shibVer}.tar.gz -C /opt
 	chmod -R 755 /opt/${shibDir}-${shibVer}
 
-        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/${shibDir}/src/main/webapp/metadata.xml
-        tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
+	# Backup previous V2 environment
+        #tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
+        service tomcat6 stop
+
+	if [ ! -d /opt/bak ]; then
+		cp -ar /opt/shibboleth-idp /opt/bak 2>/dev/null
+	fi
+
+        rm -rf /opt/shibboleth-idp
 
 	unlink /opt/${shibDir}
 	ln -s /opt/${shibDir}-${shibVer} /opt/${shibDir}
 
 	if [ -d "/opt/cas-client-${casVer}" ]; then
 		installCasClientIfEnabled
-	fi
-
-	if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
-		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/${shibDir}/lib/
 	fi
 
 	setJavaHome
@@ -1247,8 +1255,11 @@ jettySetup() {
         sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
         useradd -d /opt/jetty -s /bin/bash jetty
         ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
+
         if [ "${dist}" != "ubuntu" ]; then
                 chkconfig jetty on
+        else
+                update-rc.d jetty defaults
         fi
 
         cat ${Spath}/files/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
@@ -1283,11 +1294,12 @@ patchShibbolethConfigs ()
 
 {
 
-# patch shibboleth config files
+	# patch shibboleth config files
         ${Echo} "Patching config files"
         mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
         cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
-        patch /opt/shibboleth-idp/conf/handler.xml -i ${Spath}/${prep}/handler.xml.diff >> ${statusFile} 2>&1
+	cp ${Spath}/files/${my_ctl_federation}/relying-party.xml /opt/shibboleth-idp/conf/relying-party.xml
+	dos2unix /opt/shibboleth-idp/conf/metadata-providers.xml
         patch /opt/shibboleth-idp/conf/metadata-providers.xml -i ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml.diff
         cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
 
@@ -1308,18 +1320,20 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${eptid}" != "n" ]; then
-                epass=`${passGenCmd}`
-#               grant sql access for shibboleth
-                esalt=`openssl rand -base64 36 2>/dev/null`
-                cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+                if [ -z "${epass}" ]; then
+                        epass=`${passGenCmd}`
+                        grant sql access for shibboleth
+                        esalt=`openssl rand -base64 36 2>/dev/null`
+                        cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+                        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
 
-                ${Echo} "Create MySQL database and shibboleth user."
-                mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                retval=$?
-                if [ "${retval}" -ne 0 ]; then
-                        ${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-                        ${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+                        ${Echo} "Create MySQL database and shibboleth user."
+                        mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+                        retval=$?
+                        if [ "${retval}" -ne 0 ]; then
+                                ${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+                                ${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+                        fi
                 fi
 
                 cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
@@ -1340,6 +1354,16 @@ patchShibbolethConfigs ()
                 sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
         fi
 
+
+}
+
+
+performPostUpgradeSteps ()
+{
+        if [ "${upgrade}" -eq 1 ]; then
+                cat /opt/bak/credentials/idp.crt > /opt/shibboleth-idp/credentials/idp-signing.crt
+                cat /opt/bak/credentials/idp.key > /opt/shibboleth-idp/credentials/idp-signing.key
+        fi
 
 }
 
@@ -1383,11 +1407,11 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
 
-	installEPTIDSupport
-
 	configShibbolethXMLAttributeResolverForLDAP
 
 	runShibbolethInstaller
+
+        installEPTIDSupport
 
 	installCasClientIfEnabled
 
@@ -1404,12 +1428,11 @@ invokeShibbolethInstallProcessJetty9 ()
 	# Override per federation
 	configShibbolethFederationValidationKey
 
-        # cdinro test
         patchShibbolethConfigs
 
-        if [ ! -s "/opt/jetty" ]; then
-                jettySetup
-        fi
+	performPostUpgradeSteps
+
+        jettySetup
 
 	updateMachineTime
 
