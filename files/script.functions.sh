@@ -887,9 +887,10 @@ runShibbolethInstaller ()
               #Set idp.authn.LDAP.authenticator
               ldapAuthenticator="adAuthenticator"
 	      # Extract AD domain from baseDN
-	      ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
-	      ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
-	      ldapDnFormat="%s@${ldapDomain}"
+	      #ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
+	      #ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
+	      #ldapDnFormat="%s@${ldapDomain}"
+	      ldapDnFormat="%s@${ldapserver}"	
 
 	 # Other LDAP implementations
 	 else
