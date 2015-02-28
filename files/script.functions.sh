@@ -890,7 +890,7 @@ runShibbolethInstaller ()
 	      #ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
 	      #ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
 	      #ldapDnFormat="%s@${ldapDomain}"
-	      ldapDnFormat="%s@${ldapserver}"	
+	      ldapDnFormat="%s@${ldapdn}"	
 
 	 # Other LDAP implementations
 	 else
