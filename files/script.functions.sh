@@ -922,7 +922,7 @@ EOM
 	# Set LDAP configuration (needed for both cas and ldap)
         cat << EOM > ldap.properties.tmp
 idp.authn.LDAP.authenticator                    = ${ldapAuthenticator}
-idp.authn.LDAP.ldapURL                          = ldap://${ldapserver}
+idp.authn.LDAP.ldapURL                          = ${ldapUrl}
 idp.authn.LDAP.useStartTLS                      = ${ldapStartTLS}
 idp.authn.LDAP.useSSL                           = ${ldapSSL}
 idp.authn.LDAP.sslConfig                        = certificateTrust
