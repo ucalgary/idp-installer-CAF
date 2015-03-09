@@ -887,9 +887,10 @@ runShibbolethInstaller ()
               #Set idp.authn.LDAP.authenticator
               ldapAuthenticator="adAuthenticator"
 	      # Extract AD domain from baseDN
-	      ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
-	      ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
-	      ldapDnFormat="%s@${ldapDomain}"
+	      #ldapbasedn_tmp=$(echo ${ldapbasedn}  | tr '[:upper:]' '[:lower:]')
+	      #ldapDomain=$(echo ${ldapbasedn_tmp#ou*dc=} | sed "s/,dc=/./g")
+	      #ldapDnFormat="%s@${ldapDomain}"
+	      ldapDnFormat="%s@${ldapdn}"	
 
 	 # Other LDAP implementations
 	 else
@@ -922,7 +923,7 @@ EOM
 	# Set LDAP configuration (needed for both cas and ldap)
         cat << EOM > ldap.properties.tmp
 idp.authn.LDAP.authenticator                    = ${ldapAuthenticator}
-idp.authn.LDAP.ldapURL                          = ldap://${ldapserver}
+idp.authn.LDAP.ldapURL                          = ${ldapUrl}
 idp.authn.LDAP.useStartTLS                      = ${ldapStartTLS}
 idp.authn.LDAP.useSSL                           = ${ldapSSL}
 idp.authn.LDAP.sslConfig                        = certificateTrust
