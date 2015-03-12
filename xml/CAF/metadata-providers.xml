@@ -111,5 +111,4 @@
                          backingFile="/opt/shibboleth-idp/metadata/testshib-providers.xml">
          </MetadataProvider>
  
-<MetadataProvider id="URLMDTest" xsi:type="FilesystemMetadataProvider" metadataFile="/opt/shibboleth-idp/metadata/sp-metadata.xml"/>    
 </MetadataProvider>
