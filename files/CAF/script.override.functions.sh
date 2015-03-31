@@ -142,10 +142,9 @@ patchShibbolethConfigs ()
 	chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
 	${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
-	dos2unix /opt/shibboleth-idp/conf/metadata-providers.xml
-	patch /opt/shibboleth-idp/conf/metadata-providers.xml -i ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml.diff
-	cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
-        cp ${Spath}/files/${my_ctl_federation}/relying-party.xml /opt/shibboleth-idp/conf/relying-party.xml
+	cat ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml > /opt/shibboleth-idp/conf/metadata-providers.xml
+	cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml > /opt/shibboleth-idp/conf/attribute-resolver.xml
+        cat ${Spath}/files/${my_ctl_federation}/relying-party.xml > /opt/shibboleth-idp/conf/relying-party.xml
 
 	if [ "${google}" != "n" ]; then
 		repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
