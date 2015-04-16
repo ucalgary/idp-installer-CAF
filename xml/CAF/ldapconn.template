@@ -11,7 +11,7 @@
         principalCredential="%{idp.attribute.resolver.LDAP.bindDNCredential}">
         <dc:FilterTemplate>
             <![CDATA[
-                (sAMAccountName=${requestContext.principalName})
+                (AtTrFiLtEr=${requestContext.principalName})
             ]]>
         </dc:FilterTemplate>
         <dc:StartTLSTrustCredential id="LDAPtoIdPCredential" xsi:type="sec:X509Filesystem">
