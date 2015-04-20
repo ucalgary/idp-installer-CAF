@@ -63,6 +63,9 @@ patchFirewall()
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
                 systemctl enable iptables
                 systemctl start iptables
+
+	elif [ "${dist}" == "ubuntu" ]; then
+		DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent	
         fi
 
 }
@@ -1279,14 +1282,18 @@ restartJettyService ()
         fi
         service jetty start
 
-        if [ -z "`grep '7443' /etc/sysconfig/iptables`" ]; then
-                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
-                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
-                iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
-                iptables-save > /etc/sysconfig/iptables
-        fi
-        service iptables restart
+        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
+        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
+        iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
+        
+        if [ "${dist}" == "centos" ]; then
+		iptables-save > /etc/sysconfig/iptables
+        elif [ "${dist}" == "ubuntu" ]; then
+	 	iptables-save > /etc/iptables/rules.v4
+	fi
+
+	service iptables restart
 
 }
 
