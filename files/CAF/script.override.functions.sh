@@ -164,7 +164,7 @@ patchShibbolethConfigs ()
 	if [ "${eptid}" != "n" ]; then
                 if [ -z "${epass}" ]; then
                         epass=`${passGenCmd}`
-                        grant sql access for shibboleth
+                        # grant sql access for shibboleth
                         esalt=`openssl rand -base64 36 2>/dev/null`
                         cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
                         files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
