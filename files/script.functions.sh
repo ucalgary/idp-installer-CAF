@@ -118,6 +118,11 @@ setVarCertCN ()
 certCN=`${Echo} ${idpurl} | cut -d/ -f3`
 
 }
+setVarIdPScope ()
+{
+
+	idpScope="${freeRADIUS_realm}"
+}
 
 setJavaHome () {
 
@@ -946,7 +951,7 @@ EOM
 	-Didp.src.dir=./ \
 	-Didp.target.dir=/opt/shibboleth-idp \
 	-Didp.host.name="${certCN}" \
-	-Didp.scope="${certCN}" \
+	-Didp.scope="${idpScope}" \
 	-Didp.keystore.password="${pass}" \
 	-Didp.sealer.password="${pass}" \
 	-Dldap.merge.properties=./ldap.properties.tmp \
@@ -1408,7 +1413,8 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	setVarPrepType
 	setVarCertCN
-
+	setVarIdPScope
+	
 	installDependanciesForInstallation
 
 	setJavaCACerts
