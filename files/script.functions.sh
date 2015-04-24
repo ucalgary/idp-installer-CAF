@@ -118,6 +118,11 @@ setVarCertCN ()
 certCN=`${Echo} ${idpurl} | cut -d/ -f3`
 
 }
+setVarIdPScope ()
+{
+
+	idpScope="${freeRADIUS_realm}"
+}
 
 setJavaHome () {
 
@@ -906,6 +911,7 @@ runShibbolethInstaller ()
 	if [ "${type}" = "ldap" ]; then
 
 	       cat << EOM > idp.properties.tmp
+idp.scope 			    =${idpScope} 
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
@@ -915,6 +921,7 @@ EOM
 	elif [ "${type}" = "cas" ]; then
 
                 cat << EOM > idp.properties.tmp
+idp.scope 			    =${idpScope} 
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
@@ -926,7 +933,7 @@ EOM
 	# Set LDAP configuration (needed for both cas and ldap)
         cat << EOM > ldap.properties.tmp
 idp.authn.LDAP.authenticator                    = ${ldapAuthenticator}
-idp.authn.LDAP.ldapURL                          = ${ldapUrl}
+idp.authn.LDAP.ldapURL                          = ${ldapurl}
 idp.authn.LDAP.useStartTLS                      = ${ldapStartTLS}
 idp.authn.LDAP.useSSL                           = ${ldapSSL}
 idp.authn.LDAP.sslConfig                        = certificateTrust
@@ -946,7 +953,7 @@ EOM
 	-Didp.src.dir=./ \
 	-Didp.target.dir=/opt/shibboleth-idp \
 	-Didp.host.name="${certCN}" \
-	-Didp.scope="${certCN}" \
+	-Didp.scope="${idpScope}" \
 	-Didp.keystore.password="${pass}" \
 	-Didp.sealer.password="${pass}" \
 	-Dldap.merge.properties=./ldap.properties.tmp \
@@ -1408,7 +1415,8 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	setVarPrepType
 	setVarCertCN
-
+	setVarIdPScope
+	
 	installDependanciesForInstallation
 
 	setJavaCACerts
