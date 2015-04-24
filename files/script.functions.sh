@@ -911,6 +911,7 @@ runShibbolethInstaller ()
 	if [ "${type}" = "ldap" ]; then
 
 	       cat << EOM > idp.properties.tmp
+idp.scope 			    =${idpScope} 
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
@@ -920,6 +921,7 @@ EOM
 	elif [ "${type}" = "cas" ]; then
 
                 cat << EOM > idp.properties.tmp
+idp.scope 			    =${idpScope} 
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
