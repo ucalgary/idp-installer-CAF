@@ -8,6 +8,36 @@ from your repository for your OS as well as the necessary certificates.
 
 Branch	Details
 
+
+2.2.0-CAF 
+		Commit notes:
+		
+		    New Features:
+		    - Added support for CentOS7
+			- Added support for Ubuntu14.04LTS
+			- Jetty is now used instead of Tomcat6 for the Servlet container
+			- Oracle JDK 1.8 is now used instead of OpenJDK
+			- FreeRADIUS 3.0.1 now used instead of 2.1.12
+			- Samba 4.1.1 now used instead of 3.6.9
+			- Mysql 5.6 Community Release now used instead of 5.1.73
+
+		Version compatibility:
+			This tool is an installer tool and usually only used once to perform an installation.
+			To this end, we recommend using the latest version of this tool when doing installations.
+		
+			If you installed with the 2.1.0-CAF release or earlier and want to upgrade, you are electing to do a fresh install.
+				- create a new VM to work with 		
+				- Re-install with this version of the tool to use the v2.4.4 IdP on a clean VM with your existing config file
+				- Migrate the tomcat and shibboleth keystores for webserver and IdP certificates respectively
+				- Regenerate any changes to the look and feel of the IdP
+		
+		Known Issues
+			Build is designed for Active Directory installation via LDAP and depends on 'sAMAccountName' in various places.
+			  Workaround:
+			  	Pure LDAP installation *IS* possible but must happen over LDAPS (636) by just entering your LDAP server.
+			  	Post installation, replace sAMAccountName wherver it occurs in /opt/shibboleth-idp/conf/ with 'uid' to match your LDAP schema for both attribute-resolver.xml and login.xml
+
+
 2.1.0-CAF 
 		Commit notes:
 			- This version is now managed by branching in github rather than tagging 

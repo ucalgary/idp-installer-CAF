@@ -8,7 +8,7 @@ services.
 
 Configured deployment profiles listed alphabetically are:
  
- CAF - Canadian Access Federation  ( http://www.canarie.ca/en/caf-service/about )
+ CAF - Canadian Access Federation  ( http://www.canarie.ca/identity/caf )
  SWAMID - Swedish Academic Identity ( http://www.swamid.se/ )
 
 
@@ -23,8 +23,9 @@ Supported Platforms
 -------------------------------------------------------------------------------
 
 This installer script is intended to be used on a clean install of:
- - Ubuntu Server 12.04   (SWAMID only)
- - CentOS 6.5 'minimal'  (SWAMID or CAF only)
+ - Ubuntu Server 14.04   (SWAMID or CAF)
+ - CentOS 7 'minimal'  (SWAMID or CAF)
+ - 
 
 It *MAY* run on pre-existing installations of these OS', but steps in the installer
 presume the installed services are 'alone' on the machine and may modify your
@@ -93,17 +94,15 @@ Please see: ~/docs/README.<federation_name> for federation specific usage
 Profile of installed software 
 -------------------------------------------------------------------------------
 SAML2 Uses: 
-      tomcat6                                                        
-      shibboleth-identityprovider-2.4.3                                    
+      jetty 9.2.3.x                                                     
+      shibboleth-identityprovider-2.4.4                                    
       cas-client-3.3.3-release                                             
-      mysql-connector-java-5.1.32 (for EPTID)                              
-      apache-maven-3.1.1 (for building FTICKS plugin) 
-
-
+      mysql-connector-java-5.1.32 (for EPTID)
+      Oracle JDK 1.8                              
 
 eduroam uses:																 
-      freeRADIUS-2.1.12                                                    
-      samba-3.6.9 (to connect to AD for MS-CHAPv2)                         
+      freeRADIUS-3.0.1                                                    
+      samba-4.1.1 (to connect to AD for MS-CHAPv2)                         
 
 
 Disclamer
@@ -127,3 +126,4 @@ Contributors
 -------------------------------------------------------------------------------
  Anders Lördal, SWAMID
  Chris Phillips, CANARIE
+ Members of Cybera.ca
