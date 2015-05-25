@@ -11,15 +11,17 @@ Branch	Details
 
 2.2.0-CAF 
 		Commit notes:
+			Shibboleth version in this release: 		2.4.4
+			eduroam FreeRADIUS version in this release: 3.0.1
 		
 		    New Features:
-		    - Added support for CentOS7
-			- Added support for Ubuntu14.04LTS
-			- Jetty is now used instead of Tomcat6 for the Servlet container
+		    - FreeRADIUS 3.0.1 now used instead of 2.1.12
+			- Jetty 9.x is now used instead of Tomcat6 for the Servlet container
 			- Oracle JDK 1.8 is now used instead of OpenJDK
-			- FreeRADIUS 3.0.1 now used instead of 2.1.12
 			- Samba 4.1.1 now used instead of 3.6.9
 			- Mysql 5.6 Community Release now used instead of 5.1.73
+		    - Added support for CentOS7
+			- Added support for Ubuntu14.04LTS
 
 		Version compatibility:
 			This tool is an installer tool and usually only used once to perform an installation.
