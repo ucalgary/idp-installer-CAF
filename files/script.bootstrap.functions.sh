@@ -302,7 +302,7 @@ fi
 elo "${Echo} Port availability checking..."
 
 # netcat with 5 second timeout to prevent long hangs
-nc_cmd="/bin/nc -w 7"
+nc_cmd="nc -w 7"
 
 output=$(${nc_cmd} ${ldapserver} 636 < /dev/null 2>&1)
 if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"
