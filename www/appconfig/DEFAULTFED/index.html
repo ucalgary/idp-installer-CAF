@@ -405,7 +405,7 @@ function formSubmit() {
                                            <tr>
 <td colspan="2" align="right">
 <table><tr><td colspan="1" align="left"><font size="-1">WinBIND krb5 settings</font></td></tr></table>
-Active Directory Default AD DOMAIN:<input id="krb5_libdef_default_realm" type="text" placeholder="DOMAIN.LOCAL" onchange="update()"><br>
+Active Directory Default AD DOMAIN:<input id="krb5_libdef_default_realm" type="text" style="text-transform: uppercase" placeholder="DOMAIN.LOCAL" onchange="update()"><br>
 
 <!-- AD Default AD DOMAIN lowercased: --> <input id="krb5_realms_def_dom" type="hidden" placeholder="e.g. domain.local" onchange="update()">
 
@@ -415,7 +415,7 @@ Active Directory Internet Domain:<input id="krb5_domain_realm" type="domain.ca" 
 Active Directory Domain Name - pre-windows2000/NETBIOS Name:<input id="smb_workgroup" type="text" placeholder="e.g. DOMAIN" onchange="update()"><br>
 Legacy NETBIOS host name in Active Directory:<input id="smb_netbios_name" type="text" placeholder="e.g. APP1" onchange="update()"><br>
 IP Address of your Primary AD DC:<input id="smb_passwd_svr" type="text" placeholder="e.g. 1.2.3.4" onchange="update()"><br>
-SAMBA Active Directory DOMAIN:<input id="smb_realm" type="text" placeholder="e.g. DOMAIN.LOCAL" onchange="update()"><br>
+SAMBA Active Directory DOMAIN:<input id="smb_realm" type="text" style="text-transform: uppercase" placeholder="e.g. DOMAIN.LOCAL" onchange="update()"><br>
 
 </td></tr>
 
@@ -481,7 +481,7 @@ Federated SSO needs credentials to connect to your Directory for 'find and bind'
                                           </td><td></tr>
                                            <tr>
 <td colspan="2" align="right">
-Servlet Container:<input id="appserv" type="text" placeholder="tomcat" value="tomcat" readonly onchange="update()"><BR>
+Servlet Container:<input id="appserv" type="text" placeholder="jetty" value="jetty" readonly onchange="update()"><BR>
 Authentication type (ldap):<input id="type" type="text" placeholder="ldap" value="ldap" readonly onchange="update()"><BR>
 ntpserver:
 <!-- <input id="fedSSO_ntpserver" type="text" placeholder="" onchange="update()"> --> 
@@ -591,7 +591,7 @@ Keystore password for HTTPS Server encryption keys <input  style="width: 250px;"
                                         It is recommended that the person collecting the information and using this tool has working knowledge of:<br>
                                         <ul><li>Operating wireless networks and related infrastructure
                                         <li>An understanding of Microsoft Active Directory and is familiar with their local  installation of it
-                                        <li>how to prepare a basic CentOS 'minimal install' image to use the installer on. 
+                                        <li>how to prepare a basic Linux image to use the installer on. 
                                         </ul>
 
                                        <h3>How Much Time Should I Plan For?</h3>

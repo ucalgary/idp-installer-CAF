@@ -144,7 +144,7 @@ guessLinuxDist() {
 	then
 		dist="redhat"
 	else
-		really=$(askYesNo "Distribution" "Can not guess linux distribution, procede assuming ubuntu(ish)?")
+		really=$(askYesNo "Distribution" "Can not guess linux distribution, procede assuming debian(ish)?")
 
 		if [ "${really}" != "n" ]
 		then
@@ -155,15 +155,76 @@ guessLinuxDist() {
 	fi
 }
 
+setDistCommands() {
+        if [ ${dist} = "ubuntu" ]; then
+		redhatDist="none"
+		debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
+                distCmdU=${ubuntuCmdU}
+                distCmdUa=${ubuntuCmdUa}
+                distCmd1=${ubuntuCmd1}
+                distCmd5=${ubuntuCmd5}
+                tomcatSettingsFile=${tomcatSettingsFileU}
+                dist_install_nc=${ubutnu_install_nc}
+                dist_install_ldaptools=${ubuntu_install_ldaptools}
+                distCmdEduroam=${ubuntuCmdEduroam}
+		distEduroamPath=${ubuntuEduroamPath}
+		distRadiusGroup=${ubuntuRadiusGroup}
+		templatePathEduroamDist=${templatePathEduroamUbuntu}
+		distEduroamModules=${UbuntuEduroamModules}
+        elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
+                if [ ${dist} = "centos" ]; then
+			redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
+                        #redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
+                        distCmdU=${centosCmdU}
+                        distCmdUa=${centosCmdUa}
+                        distCmd1=${centosCmd1}
+                        distCmd5=${centosCmd5}
+                        dist_install_nc=${centos_install_nc}
+                        dist_install_ldaptools=${centos_install_ldaptools}
+                        distCmdEduroam=${centosCmdEduroam}
+			distEduroamPath=${centosEduroamPath}
+			distRadiusGroup=${centosRadiusGroup}
+			if [ ${redhatDist} = "7"  ]; then
+				templatePathEduroamDist=${templatePathEduroamCentOS7}
+				distEduroamModules=${CentOS7EduroamModules}
+			else
+				templatePathEduroamDist=${templatePathEduroamCentOS}
+				distEduroamModules=${CentOSEduroamModules}
+			fi
+                else
+                        redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
+                        distCmdU=${redhatCmdU}
+                        distCmd1=${redhatCmd1}
+                        distCmd5=${redhatCmd5}
+                        dist_install_nc=${redhat_install_nc}
+                        dist_install_ldaptools=${redhat_install_ldaptools}
+                        distCmdEduroam=${redhatCmdEduroam}
+			distEduroamPath=${redhatEduroamPath}
+			distRadiusGroup=${redhatRadiusGroup}
+			templatePathEduroamDist=${templatePathEduroamRedhat}
+			distEduroamModules=${RedhatEduroamModules}
+                fi
+                tomcatSettingsFile=${tomcatSettingsFileC}
+
+                if [ "$redhatDist" -eq "6" ]; then
+                        redhatEpel=${redhatEpel6}
+                else
+                        redhatEpel=${redhatEpel5}
+                fi
+
+        fi
+}
+
+
 validateConnectivity()
 
 {
-
+if [ "$1" == "test" ]; then return 0; fi 
 ##############################
 # variables definition
 ##############################
-distr_install_nc='yum install -y nc'
-distr_install_ldaptools='yum install -y openldap-clients'
+#distr_install_nc='yum install -y nc'
+#distr_install_ldaptools='yum install -y openldap-clients'
 
 ##############################
 # functions definition
@@ -184,8 +245,8 @@ function el () {
 ##############################
 elo "${Echo} ---------------------------------------------"
 elo "${Echo} Installing additional software..."
-elo "$distr_install_nc"
-elo "$distr_install_ldaptools"
+elo "$dist_install_nc"
+elo "$dist_install_ldaptools"
 elo "${Echo} Validating ${ldapserver} reachability..."
 
 ##############################
@@ -240,8 +301,11 @@ fi
 ##############################
 elo "${Echo} Port availability checking..."
 
-el "nc -z -w5 ${ldapserver} 636 "
-  if [ $? == "0" ]
+# netcat with 5 second timeout to prevent long hangs
+nc_cmd="nc -w 7"
+
+output=$(${nc_cmd} ${ldapserver} 636 < /dev/null 2>&1)
+if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"
     then
         elo "${Echo} port 636 - - - - ok"
         PORT636="ok"
@@ -250,8 +314,8 @@ el "nc -z -w5 ${ldapserver} 636 "
         PORT636="failed"
   fi
 
-el "nc -z -w5 ${ldapserver} 389"
-  if [ $? == "0" ]
+output=$(${nc_cmd} ${ldapserver} 389 < /dev/null 2>&1)
+if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"
     then
         elo "${Echo} port 389 - - - - ok"
         PORT389="ok"
@@ -315,7 +379,7 @@ fi
 elo "${Echo} LDAP bind checking...(might take few minutes)"
 ${Echo} "TLS_REQCERT ALLOW" > /root/.ldaprc
 ${Echo} "ldapwhoami -vvv -H ldaps://${ldapserver} -D \"${ldapbinddn}\" -x -w \"<removed>\"" >> ${statusFile}
-ldapwhoami -vvv -H ldaps://${ldapserver} -D "${ldapbinddn}" -x -w "${ldappass}" &>> ${statusFile}
+(export LDAPTLS_REQCERT="allow";ldapwhoami -vvv -H ldaps://${ldapserver} -D "${ldapbinddn}" -x -w "${ldappass}") &>> ${statusFile}
   if [ $? == "0" ]
     then
         elo "${Echo} ldap bind - - - - ok"
@@ -329,16 +393,22 @@ ldapwhoami -vvv -H ldaps://${ldapserver} -D "${ldapbinddn}" -x -w "${ldappass}" 
 # ntp server check
 ##############################
 elo "${Echo} Validating ntpserver (${ntpserver}) reachability..."
-${Echo} "ntpdate ${ntpserver}" >> ${statusFile}
-ntpcheck=$(ntpdate ${ntpserver} 2>&1 | tee -a ${statusFile} | awk -F":" '{print $4}' | awk '{print $1 $2}')
-
-if [ $ntpcheck == "noserver"  ]
-        then
-                elo "${Echo} ntpserver - - - - failed"
-                NTPSERVER="failed"
-        else
-                elo "${Echo} ntpserver - - - - ok"
-                NTPSERVER="ok"
+${Echo} "ntpdate ${ntpserver}" &> >(tee -a ${statusFile})
+ntpcheck=$(ntpdate ${ntpserver} 2>&1 | head -n1 | awk '{print $1 $2}')
+if [ $ntpcheck == "Errorresolving" ]
+	then
+		elo "${Echo} ntpserver - - - - failed"
+		NTPSERVER="failed"
+	else
+	ntpcheck=$(ntpdate ${ntpserver} 2>&1 | head -n1 | awk -F":" '{print $4}' | awk '{print $1 $2}')
+	if [ $ntpcheck == "adjusttime"  ]
+        	then
+			elo "${Echo} ntpserver - - - - ok"
+                        NTPSERVER="ok"
+        	else
+			elo "${Echo} ntpserver - - - - failed"
+                        NTPSERVER="failed"
+	fi
 fi
 ###############################
 # summary results
@@ -360,7 +430,10 @@ if [ $CERTIFICATE == "failed" -o $LDAP == "failed" ]
         then
                 MESSAGE="[ERROR] Reachability test has been failed. Installation will exit [press Enter key]: "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+            	fi
                 if [ ! -z $choice ]
                 then
                         if [ $choice != "continue" ]
@@ -376,7 +449,10 @@ elif [ $PING == "failed" -o $PING == "warning" -o $PORT389 == "failed" -o $CERTI
         then
                 MESSAGE="[WARNING] Reachability test completed with some uncritical exceptions. Do you want to continue? [Y/n] "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+            	fi
                 if [ ! -z $choice ]
                 then
                         if [ $choice == "Y" -o $choice == "y" -o $choice == "yes" ]
@@ -392,7 +468,10 @@ elif [ $PING == "failed" -o $PING == "warning" -o $PORT389 == "failed" -o $CERTI
         else
                 MESSAGE="[SUCCESS] Reachability test has been completed successfully. [press Enter to continue] "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+                fi
 fi
 
 ${Echo} "Starting installation script..."
@@ -400,3 +479,51 @@ ${Echo} "Starting installation script..."
 
 }
 
+
+checkEptidDb() {
+    if [ "${eptid}" = "n" ]; then
+	return 0
+    fi
+
+    ${Echo} "Checking for existing EPTID database..."
+    if [ ! -f /etc/init.d/mysqld ]; then
+	${Echo} "MySQL not installed, skipping"
+	return 0
+    fi
+
+    if [ ! -f /opt/shibboleth-idp/conf/attribute-resolver.xml ]; then
+	mysql --no-defaults -uroot --password="" -e "" > /dev/null 2>&1
+
+	if [ $? -ne 0 ]; then
+	    ${Echo} "ERROR: Existing EPTID configuration not found but MySQL root password is set. Please remove the MySQL root password then try again."
+	    exit 1
+	fi
+
+	return 0
+    fi
+
+    ${Echo} "/opt/shibboleth/conf/attribute-resolver exists, installer will use existing salt and password"
+
+    epass=$(grep jdbcPassword /opt/shibboleth-idp/conf/attribute-resolver.xml | grep -v 'jdbcPassword="mypassword"' | awk -F '"' '{print $2}')
+    esalt=$(grep salt /opt/shibboleth-idp/conf/attribute-resolver.xml | grep -v 'salt="your random string here"' | awk -F '"' '{print $2}')
+
+    if [ -z "${epass}" ]; then
+	${Echo} "ERROR: Could not retrieve MySQL password from attribute-resolver.xml"
+	exit 1
+    fi
+    
+    if [ -z "${esalt}" ]; then
+	${Echo} "ERROR: Could not retrieve salt from attribute-resolver.xml"
+	exit 1
+    fi
+
+    ${Echo} "Testing existing MySQL password..."
+    mysql --no-defaults -ushibboleth --password="${epass}" -e "" > /dev/null 2>&1
+
+    if [ $? -ne 0 ]; then
+        ${Echo} "ERROR: Failed to connect to MySQL using user 'shibboleth' and password from /opt/shibboleth-idp/conf/attribute-resolver.xml. Please correct the password in attribute-resolver.xml or remove the file entirely if the EPTID table needs to be created."
+        exit 1
+    fi
+
+    ${Echo} "MySQL password works!"
+}

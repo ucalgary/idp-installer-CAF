@@ -321,24 +321,6 @@
     </resolver:DataConnector>
     -->
 
-    <!-- Example Relational Database Connector -->
-    <!--
-    <resolver:DataConnector id="mySIS" xsi:type="dc:RelationalDatabase">
-        <dc:ApplicationManagedConnection jdbcDriver="oracle.jdbc.driver.OracleDriver"
-                                         jdbcURL="jdbc:oracle:thin:@db.example.org:1521:SomeDB" 
-                                         jdbcUserName="myid" 
-                                         jdbcPassword="mypassword" />
-        <dc:QueryTemplate>
-            <![CDATA[
-                SELECT * FROM student WHERE gzbtpid = '$requestContext.principalName'
-            ]]>
-        </dc:QueryTemplate>
-
-        <dc:Column columnName="gzbtpid" attributeID="uid" />
-        <dc:Column columnName="fqlft" attributeID="gpa" type="Float" />
-    </resolver:DataConnector>
-     -->
-
     <!-- Example LDAP Connector -->
     <!--
     <resolver:DataConnector id="myLDAP" xsi:type="dc:LDAPDirectory"
@@ -360,7 +342,7 @@
 		principalCredential="LdApPaSsWoRd">
 		<dc:FilterTemplate>
 		<![CDATA[
-			(sAMAccountName=$requestContext.principalName)
+			(uid=$requestContext.principalName)
 		]]>
 		</dc:FilterTemplate>
 	</resolver:DataConnector>
@@ -384,17 +366,6 @@
         </Attribute>
     </resolver:DataConnector>
     
-    <!-- Computed targeted ID connector -->
-    <!--
-    <resolver:DataConnector xsi:type="dc:ComputedId"
-                            id="computedID"
-                            generatedAttributeID="computedID"
-                            sourceAttributeID="uid"
-                            salt="your random string here">
-        <resolver:Dependency ref="myLDAP" />
-    </resolver:DataConnector> 
-    -->
-
 <!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->
 
 
