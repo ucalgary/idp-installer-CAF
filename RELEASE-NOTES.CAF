@@ -7,18 +7,6 @@ This tool benefits from, and relies on you being online and connected to your en
 from your repository for your OS as well as the necessary certificates.
 
 Branch	Details
-2.1.1-CAF
-		Commit notes:
-			- Updated Shibboleth IdP to v2.4.4 to respond to OpenSAML-J vulnerability 
-			(http://shibboleth.net/community/news/20150225.html)
-			New Features:
-			- No new features added
-		Version Compatibility:
-			- no changes from 2.1.0-CAF (see below)
-		Known Issues:
-			- no changes from 2.1.0-CAF except for the following:
-			- Connecting to an Active Direcory 2003 instance requires adjustments to the installer to successfully run
-				- documented in issue #53 (https://github.com/canariecaf/idp-installer-CAF/issues/53 )
 
 
 2.2.0-CAF 
@@ -50,6 +38,18 @@ Branch	Details
 			  Workaround:
 			  	Pure LDAP installation *IS* possible but must happen over LDAPS (636) by just entering your LDAP server.
 			  	Post installation, replace sAMAccountName wherver it occurs in /opt/shibboleth-idp/conf/ with 'uid' to match your LDAP schema for both attribute-resolver.xml and login.xml
+2.1.1-CAF
+		Commit notes:
+			- Updated Shibboleth IdP to v2.4.4 to respond to OpenSAML-J vulnerability 
+			(http://shibboleth.net/community/news/20150225.html)
+			New Features:
+			- No new features added
+		Version Compatibility:
+			- no changes from 2.1.0-CAF (see below)
+		Known Issues:
+			- no changes from 2.1.0-CAF except for the following:
+			- Connecting to an Active Direcory 2003 instance requires adjustments to the installer to successfully run
+				- documented in issue #53 (https://github.com/canariecaf/idp-installer-CAF/issues/53 )
 
 
 2.1.0-CAF 
