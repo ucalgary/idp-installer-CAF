@@ -209,7 +209,7 @@ client your-access-point-2 {
 #
 
 client canada-flr-prod1-west {
-        ipaddr                  = 128.189.4.1 # moose.bc.net
+        ipaddr                  = 128.189.5.5 # prod1-west.eduroam.ca
 	netmask			= 32
         secret                  = PrOd_EduRoAm_PhRaSe 
 	shortname		= canada-flr-prod1-west
@@ -217,7 +217,7 @@ client canada-flr-prod1-west {
 	virtual_server		= eduroam
 }
 client canada-flr-prod2-west {
-        ipaddr                = 142.231.112.1 #grizzley.bc.net
+        ipaddr                = 142.231.112.1 # prod2-west.eduroam.ca
 	netmask			= 32
         secret                  = PrOd_EduRoAm_PhRaSe 
 	shortname		= canada-flr-prod2-west
@@ -235,7 +235,7 @@ client canada-flr-prod3-west {
 client canada-flr-prod1-east {
         ipaddr                  = 205.189.33.100 #prod1-east.eduroam.ca
         netmask			= 32
-        secret                  = KqETPP8dSOOSMGrVPLOiJJ3z
+        secret                  = PrOd_EduRoAm_PhRaSe
 	shortname		= canada-flr-prod1-east
 	nastype			= other
 	virtual_server		= eduroam
