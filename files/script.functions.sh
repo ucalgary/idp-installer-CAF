@@ -107,8 +107,8 @@ setJavaHome () {
         # including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
 
 	if [ -L "/usr/java/default" -a -d "/usr/java/jre${javaVer}" ]; then
-		${Echo} "Dected Java allready installed."
-                export JAVA_HOME=/usr/java/default/jre	
+		${Echo} "Detected Java allready installed."
+                export JAVA_HOME=/usr/java/default/jre${javaVer}
 		return 0
 	fi
 
