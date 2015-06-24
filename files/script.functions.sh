@@ -1137,7 +1137,7 @@ installJetty() {
 #Download latest stable
 jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
 jetty9Path=`basename ${jetty9File}  .tar.gz`
-jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
+jetty9URL="${jettyBaseURL}${jetty9File}"
 
         if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]
         then
