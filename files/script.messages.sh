@@ -10,6 +10,12 @@ casVer="3.3.3"
 mysqlConVer="5.1.34"
 javaVer="1.8.0_25"
 
+# This URL determines which base to derive 'latest' from
+# --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
+# Below is the 9.2.11 one
+jettyBaseURL="http://download.eclipse.org/jetty/9.2.11.v20150529/dist/"
+
+
 files=""
 ts=`date "+%s"`
 whiptailBin=`which whiptail`
@@ -55,6 +61,7 @@ distCmdUa=""
 distCmd1=""
 distCmd5=""
 dist_install_nc=""
+dist_install_netstat=""
 dist_install_ldaptools=""
 distCmdEduroam=""
 distEduroamPath=""
@@ -87,14 +94,15 @@ redhatCmdU="yum -y update"
 redhatCmd1="yum -y install patch ntpdate unzip curl"
 redhatCmd5="yum -y install mysql-server"
 redhat_install_nc="yum -y install nc"
+redhat_install_netstat="yum -y install net-tools"
 redhat_install_ldaptools="yum -y install openldap-clients"
 redhatEduroamPath="/etc/raddb"
 redhatRadiusGroup="radiusd"
 
 ubuntuCmdEduroam="apt-get install -y ntp samba winbind freeradius freeradius-krb5 freeradius-ldap freeradius-utils freeradius-mysql make"
-redhatCmdEduroam="yum -y install bind-utils samba samba-winbind samba-winbind-clients freeradius freeradius-krb5 freeradius-ldap freeradius-perl freeradius-python freeradius-utils freeradius-mysql make" 
+redhatCmdEduroam="yum -y install bind-utils net-tools samba samba-winbind samba-winbind-clients freeradius freeradius-krb5 freeradius-ldap freeradius-perl freeradius-python freeradius-utils freeradius-mysql make" 
 #redhatCmdFedSSO="yum -y install java-1.6.0-openjdk-devel tomcat6 mysql-server mysql"
-centosCmdEduroam="yum -y install bind-utils samba samba-winbind samba-winbind-clients freeradius freeradius-krb5 freeradius-ldap freeradius-perl freeradius-python freeradius-utils freeradius-mysql make" 
+centosCmdEduroam="yum -y install bind-utils net-tools samba samba-winbind samba-winbind-clients freeradius freeradius-krb5 freeradius-ldap freeradius-perl freeradius-python freeradius-utils freeradius-mysql make" 
 centosCmdFedSSO="yum -y install java-1.6.0-openjdk-devel tomcat6 mysql-server mysql"
 
 centosCmdU="yum -y update"
@@ -103,6 +111,7 @@ centosCmd1="yum -y install patch ntpdate unzip curl"
 centosCmd5="yum -y install mysql-server"
 tomcatSettingsFileC="/etc/sysconfig/tomcat6"
 centos_install_nc="yum -y install nc"
+centos_install_netstat="yum -y install net-tools"
 centos_install_ldaptools="yum -y install openldap-clients"
 centosEduroamPath="/etc/raddb"
 centosRadiusGroup="radiusd"

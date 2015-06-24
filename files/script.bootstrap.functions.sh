@@ -180,6 +180,7 @@ setDistCommands() {
                         distCmd1=${centosCmd1}
                         distCmd5=${centosCmd5}
                         dist_install_nc=${centos_install_nc}
+                        dist_install_netstat=${centos_install_netstat}
                         dist_install_ldaptools=${centos_install_ldaptools}
                         distCmdEduroam=${centosCmdEduroam}
 			distEduroamPath=${centosEduroamPath}
@@ -197,6 +198,7 @@ setDistCommands() {
                         distCmd1=${redhatCmd1}
                         distCmd5=${redhatCmd5}
                         dist_install_nc=${redhat_install_nc}
+                        dist_install_netstat=${redhat_install_netstat}
                         dist_install_ldaptools=${redhat_install_ldaptools}
                         distCmdEduroam=${redhatCmdEduroam}
 			distEduroamPath=${redhatEduroamPath}
@@ -246,6 +248,7 @@ function el () {
 elo "${Echo} ---------------------------------------------"
 elo "${Echo} Installing additional software..."
 elo "$dist_install_nc"
+elo "$dist_install_netstat"
 elo "$dist_install_ldaptools"
 elo "${Echo} Validating ${ldapserver} reachability..."
 

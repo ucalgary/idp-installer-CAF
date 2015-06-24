@@ -103,14 +103,17 @@ setJavaHome () {
         # force the latest java onto the system to ensure latest is available for all operations.
         # including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
 
-        # force the latest java onto the system to ensure latest is available for all operations.
-        # including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
+        # June 23, 2015, altering java detection behaviour to be more platform agnostic
 
 	if [ -L "/usr/java/default" -a -d "/usr/java/jre${javaVer}" ]; then
-		${Echo} "Dected Java allready installed."
-                export JAVA_HOME=/usr/java/default/jre	
-		return 0
-	fi
+		
+                export JAVA_HOME=/usr/java/default/jre${javaVer}
+                ${Echo} "Detected Java allready installed in ${JAVA_HOME}."
+
+				# return 0  This is not accurate, we need to prepare the host for java settings regardless.
+	else
+
+		${Echo} "Java not detected, downloading and installing.."
 
         unset JAVA_HOME
 
@@ -124,17 +127,22 @@ setJavaHome () {
         ln -s /usr/java/jre${javaVer}/ /usr/java/latest
         ln -s /usr/java/latest /usr/java/default
         export JAVA_HOME="/usr/java/default"
-	export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+		export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
         #Set the alternatives
         for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
         for i in `ls $JAVA_HOME/bin/`;do update-alternatives --set $i $JAVA_HOME/bin/$i; done
 
         echo "***javahome is: ${JAVA_HOME}"
         # validate java_home and ensure it runs as expected before going any further
+        
+    fi
+
+    	# Regardless of origin, let's validate it's existence then ensure it's in our .bashrc and our path
+
+
         ${JAVA_HOME}/bin/java -version >> ${statusFile} 2>&1
+		retval=$?
 
-
-        retval=$?
         if [ "${retval}" -ne 0 ]; then
                 ${Echo} "\n\n\nAn error has occurred in the configuration of the JAVA_HOME variable."
                 ${Echo} "Please review the java installation and status.log to see what went wrong."
@@ -158,6 +166,14 @@ setJavaHome () {
                          ${Echo} "\n A new JAVA_HOME has been appended to end of /root/.bashrc to ensure the latest javahome is used. Hand edit as needed\n\n"
 
                  fi
+
+                 # Ensure the java is in our execution path both in execution AND in the .bashrc
+                 
+                 jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
+                 ${Echo} "${jEnvPathString}" >> /root/.bashrc
+                 ${Echo} "\n\n\n Updated PATH to add java bin dir at end of /root/.bashrc"
+
+                 export PATH=${PATH}:${JAVA_HOME}/bin
 
         fi
 
@@ -1124,9 +1140,9 @@ installJetty() {
 #jetty9Path=`basename ${jetty9File}  .tar.gz`
 
 #Download latest stable
-jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
 jetty9Path=`basename ${jetty9File}  .tar.gz`
-jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
+jetty9URL="${jettyBaseURL}${jetty9File}"
 
         if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]
         then
