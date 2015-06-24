@@ -167,7 +167,12 @@ setJavaHome () {
 
                  fi
 
-                 # Ensure the java is in our execution path
+                 # Ensure the java is in our execution path both in execution AND in the .bashrc
+                 
+                 jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
+                 ${Echo} "${jEnvPathString}" >> /root/.bashrc
+                 ${Echo} "\n\n\n Updated PATH to add java bin dir at end of /root/.bashrc"
+
                  export PATH=${PATH}:${JAVA_HOME}/bin
 
         fi
