@@ -94,7 +94,7 @@ Please see: ~/docs/README.<federation_name> for federation specific usage
 Profile of installed software 
 -------------------------------------------------------------------------------
 SAML2 Uses: 
-      jetty 9.2.3.x                                                     
+      jetty 9.2.11.v20150529                                                    
       shibboleth-identityprovider-2.4.4                                    
       cas-client-3.3.3-release                                             
       mysql-connector-java-5.1.32 (for EPTID)

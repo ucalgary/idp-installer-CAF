@@ -7,7 +7,31 @@ This tool benefits from, and relies on you being online and connected to your en
 from your repository for your OS as well as the necessary certificates.
 
 Branch	Details
+2.2.1-CAF 
+		Commit notes:
+			Shibboleth version in this release: 		2.4.4
+			eduroam FreeRADIUS version in this release: 3.0.1
+		
+		    New Features:
+		    - Improved java detection for various platforms 
+		    - Jetty version fixed to 9.2.11.v20150529 
+		    - netstat now originates from different package on centOS7, resolved detection  
 
+		Version compatibility:
+			This tool is an installer tool and usually only used once to perform an installation.
+			To this end, we recommend using the latest version of this tool when doing installations.
+		
+			If you installed with the 2.1.0-CAF release or earlier and want to upgrade, you are electing to do a fresh install.
+				- create a new VM to work with 		
+				- Re-install with this version of the tool to use the v2.4.4 IdP on a clean VM with your existing config file
+				- Migrate the tomcat and shibboleth keystores for webserver and IdP certificates respectively
+				- Regenerate any changes to the look and feel of the IdP
+		
+		Known Issues
+			Build is designed for Active Directory installation via LDAP and depends on 'sAMAccountName' in various places.
+			  Workaround:
+			  	Pure LDAP installation *IS* possible but must happen over LDAPS (636) by just entering your LDAP server.
+			  	Post installation, replace sAMAccountName wherver it occurs in /opt/shibboleth-idp/conf/ with 'uid' to match your LDAP schema for both attribute-resolver.xml and login.xml
 
 2.2.0-CAF 
 		Commit notes:
