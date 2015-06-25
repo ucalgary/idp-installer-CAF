@@ -1263,9 +1263,9 @@ jettySetup() {
         #jetty9Path=`basename ${jetty9File}  .tar.gz`
 
         #Download latest stable
-        jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
-        jetty9Path=`basename ${jetty9File}  .tar.gz`
-        jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
+        jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+		jetty9Path=`basename ${jetty9File}  .tar.gz`
+		jetty9URL="${jettyBaseURL}${jetty9File}"
 
         if [ ! -s "${downloadPath}/${jetty9File}" ]; then
                 echo "Fetching Jetty from ${jetty9URL}"

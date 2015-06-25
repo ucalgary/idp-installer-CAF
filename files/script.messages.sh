@@ -11,6 +11,11 @@ casVer="3.3.3"
 mysqlConVer="5.1.34"
 javaVer="1.8.0_25"
 
+# This URL determines which base to derive 'latest' from
+# --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
+# Below is the 9.2.11 one
+jettyBaseURL="http://download.eclipse.org/jetty/9.2.11.v20150529/dist/"
+
 files=""
 ts=`date "+%s"`
 whiptailBin=`which whiptail`
