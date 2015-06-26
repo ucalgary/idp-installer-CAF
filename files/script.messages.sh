@@ -8,7 +8,7 @@ upgrade=0
 shibDir="shibboleth-identity-provider"
 shibVer="3.1.1"
 casVer="3.3.3"
-mysqlConVer="5.1.34"
+mysqlConVer="5.1.35"
 javaVer="1.8.0_25"
 
 # This URL determines which base to derive 'latest' from
