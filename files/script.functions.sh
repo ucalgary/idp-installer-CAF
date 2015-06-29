@@ -856,6 +856,9 @@ configShibbolethXMLAttributeResolverForLDAP ()
 	done
 	ldapServerStr=`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`
 	orgTopDomain=`${Echo} ${certCN} | cut -d. -f2-`
+
+	${Echo} "Processing Attribute-resolver.xml customizations"
+	
 	cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml.template \
 		| sed -re "s/NiNcRePlAcE/${ninc}/;s/CeRtAcRoNyM/${certAcro}/;s/CeRtOrG/${certOrg}/;s/CeRtC/${certC}/;s/CeRtLoNgC/${certLongC}/" \
 		| sed -re "s/SCHAC_HOME_ORG/${orgTopDomain}/" \
