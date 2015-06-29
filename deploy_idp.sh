@@ -93,7 +93,7 @@ if [ ! -f "/usr/bin/host" -o ! -f "/usr/bin/dos2unix" ]; then
 	if [ "${dist}" = "ubuntu" ]; then
 		apt-get -y install dos2unix &> >(tee -a ${statusFile})
 	else
-		yum -y install bind-utils ntpdate dos2unix &> >(tee -a ${statusFile})
+		yum -y install bind-utils net-tools ntpdate dos2unix &> >(tee -a ${statusFile})
 	fi
 fi
 
