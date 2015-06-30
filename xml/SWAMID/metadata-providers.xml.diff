@@ -6,13 +6,13 @@
 < 	
 ---
 > <!--
->     <security:Credential id="IdPCredential" xsi:type="security:X509Filesystem">
+>     <security:Credential id="IdPCredential" xsi:type="security:X509ResourceBacked">
 >         <security:PrivateKey>/opt/shibboleth-idp/credentials/idp.key</security:PrivateKey>
 >         <security:Certificate>/opt/shibboleth-idp/credentials/idp.crt</security:Certificate>
 >     </security:Credential>
 > -->
 >         <security:TrustEngine id="federation-metadata-signer" xsi:type="security:StaticExplicitKeySignature">
->                 <security:Credential id="MyFederation1Credentials" xsi:type="security:X509Filesystem">
+>                 <security:Credential id="MyFederation1Credentials" xsi:type="security:X509ResourceBacked">
 >                         <security:Certificate>/opt/shibboleth-idp/credentials/md-signer.crt</security:Certificate>
 >                 </security:Credential>
 >         </security:TrustEngine>
