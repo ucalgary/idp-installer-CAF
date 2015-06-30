@@ -821,11 +821,11 @@ installer_section3_title:
 
                   :
                  <select id="ldapSSL"  onchange="updateCtx(this)" >
-                    <option name="ssl_no" value="false" selected>
+                    <option name="ssl_no" value="false" >
                       No
                     </option>
-                    <option name="ssl_yes" value="true">
-                      Yes
+                    <option name="ssl_yes" value="true" selected>
+                      Yes (recommended)
                     </option>
                  </select>
 
@@ -837,10 +837,10 @@ installer_section3_title:
 
                   :
                  <select id="ldapStartTLS"  onchange="updateCtx(this)" >
-                    <option name="tls_no" value="false">
-                      No
+                    <option name="tls_no" value="false" selected>
+                      No(recomm. with ldapssl=yes)
                     </option>
-                    <option name="tls_yes" value="true" selected>
+                    <option name="tls_yes" value="true" >
                       Yes
                     </option>
                  </select>
