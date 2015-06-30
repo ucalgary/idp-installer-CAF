@@ -386,7 +386,7 @@ setHostnames() {
 	if [ "${FQDN}" = "Host" ]
 	then
 		eval ${dist_install_netstat} >> ${statusFile} 2>&1
-		
+
 		myInterface=`netstat -nr | grep "^0.0.0.0" | awk '{print $NF}'`
 		myIP=`ip addr list ${myInterface} | grep "inet " | cut -d' ' -f6 | cut -d/ -f1`
 		Dname=`host -t A ${myIP} | head -1 | awk '{print $NF}' | cut -d\. -f2- | sed 's/\.$//'`
@@ -1298,6 +1298,17 @@ jettySetup() {
         # Setting ownership
         chown jetty:jetty /opt/jetty/ -R
         chown -R jetty:jetty /opt/shibboleth-idp/
+
+        # ensure Jetty has proper startup environment for Java for all platforms
+        jettyDefaults="/etc/default/jetty"
+        jEnvString="export JAVA_HOME=${JAVA_HOME}"
+ 		jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
+		${Echo} "${jEnvString}" >> ${jettyDefaults}
+       	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
+        ${Echo} "Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
+
+
+
 }
 
 
