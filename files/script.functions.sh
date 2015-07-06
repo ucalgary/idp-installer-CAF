@@ -214,6 +214,69 @@ setJavaCACerts ()
 }
 
 
+setJavaCryptographyExtensions ()
+{
+# requires that Oracle's java is already installed in the system and will auto-accept the license.
+# download instructions are found here: http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
+#
+# because they are crypto settings, this function is abstracted out
+
+	${Echo} "Setting Java Cryptography Extensions to unlimited strength" | tee -a ${statusFile}
+
+# Backup originals
+	JCEBkp1="local_policy.jar"
+	JCEBkp2="US_export_policy.jar"
+	JCEBkpPostfix=`date +%F-%s`
+	${Echo} "Backing up ${JCEBkp1} and ${JCEBkp1} from ${JAVA_HOME} to ${Spath}/backups" | tee -a ${statusFile}
+	eval "cp ${JAVA_HOME}/lib/security/${JCEBkp1} ${Spath}/backups/${JCEBkp1}-${JCEBkpPostfix}" &> >(tee -a ${statusFile})
+	eval "cp ${JAVA_HOME}/lib/security/${JCEBkp2} ${Spath}/backups/${JCEBkp2}-${JCEBkpPostfix}" &> >(tee -a ${statusFile})
+
+# Fetch new policy file
+	${Echo} "Fetching Java Cryptography Extensions from Oracle" | tee -a ${statusFile}
+
+        jcePolicySrc="jce_policy-8.zip"
+
+        if [ ! -s "${downloadPath}/${jcePolicySrc}" ]; then
+                ${fetchCmd} ${downloadPath}/${jcePolicySrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie"  http://download.oracle.com/otn-pub/java/jce/8/${jcePolicySrc} >> ${statusFile} 2>&1
+        fi
+       
+# Extract locally into downloads directory
+
+       eval "(pushd ${downloadPath}; unzip ${downloadPath}/${jcePolicySrc}; popd)" &> >(tee -a ${statusFile})
+
+# copy into place
+	${Echo} "Putting Java Cryptography Extensions from Oracle into ${JAVA_HOME}/lib/security/" | tee -a ${statusFile}
+
+	JCEWorkingDir="${downloadPath}/UnlimitedJCEPolicyJDK8"
+	eval "cp ${JCEWorkingDir}/${JCEBkp1} ${JAVA_HOME}/lib/security/${JCEBkp1}" &> >(tee -a ${statusFile})
+	eval "cp ${JCEWorkingDir}/${JCEBkp2} ${JAVA_HOME}/lib/security/${JCEBkp2}" &> >(tee -a ${statusFile})
+
+	${Echo} "Testing Java Cryptography Extensions" | tee -a ${statusFile}
+	JCEUnlimitedResponse="2147483647"
+	JCETestCmd="java -classpath ${downloadPath} checkJCEStrength"
+	JCETestResults= $(eval ${JCETestCmd}) 
+
+	if [ "${JCETestResults}" ==  "${JCEUnlimitedResponse}" ]
+	     then
+            ${Echo} "Java Cryptography Extensions update succeeded" | tee -a ${statusFile}
+	else
+			${Echo} "**Java Cryptography Extensions update failed! rolling back using backups**" | tee -a ${statusFile}
+			${Echo} "**Install will succeed but you will not operate at full crypto strength **" | tee -a ${statusFile}
+			${Echo} "**Some Service Providers will fail to negotiate. See https://github.com/canariecaf/idp-installer-CAF/issues/71 **" | tee -a ${statusFile}
+
+	eval "cp  ${Spath}/backups/${JCEBkp1}-${JCEBkpPostfix} ${JAVA_HOME}/lib/security/${JCEBkp1}" &> >(tee -a ${statusFile})
+	eval "cp ${Spath}/backups/${JCEBkp2}-${JCEBkpPostfix} ${JAVA_HOME}/lib/security/${JCEBkp2}" &> >(tee -a ${statusFile})
+
+
+	fi
+
+
+
+}
+
+
+
+
 generatePasswordsForSubsystems ()
 
 {
@@ -1451,6 +1514,9 @@ invokeShibbolethInstallProcessJetty9 ()
 	installDependanciesForInstallation
 
 	setJavaCACerts
+
+	setJavaCryptographyExtensions
+
 
 	generatePasswordsForSubsystems
 
