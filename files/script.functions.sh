@@ -133,7 +133,7 @@ setJavaHome () {
 
 	if [ -L "/usr/java/default" -a -d "/usr/java/jre${javaVer}" ]; then
 		
-                export JAVA_HOME=/usr/java/default/jre${javaVer}
+                export JAVA_HOME=/usr/java/default
                 ${Echo} "Detected Java allready installed in ${JAVA_HOME}."
 
 				# return 0  This is not accurate, we need to prepare the host for java settings regardless.
