@@ -90,8 +90,10 @@ installCertificates ()
 # 		ccnt=`expr ${ccnt} + 1`
 # 	done
 
-# Fetch ldap cert
-${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > ${certpath}/ldap-server.crt
+	# Fetch ldap cert
+	for loopServer in ${ldapserver}; do
+		${Echo} "QUIT" | openssl s_client -connect ${loopServer}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' >> ${certpath}/ldap-server.crt
+	done
 
 }
 
