@@ -971,7 +971,7 @@ runShibbolethInstaller ()
         fi
 
         if [ -x ${ldap_attr} ]; then
-                ldap_attr="cn,mail"
+                ldap_attr=""
         fi
 
 	# ActiveDirectory specific
