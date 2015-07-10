@@ -242,7 +242,7 @@ setJavaCryptographyExtensions ()
        
 # Extract locally into downloads directory
 
-       eval "(pushd ${downloadPath}; unzip ${downloadPath}/${jcePolicySrc}; popd)" &> >(tee -a ${statusFile})
+       eval "(pushd ${downloadPath}; unzip -o ${downloadPath}/${jcePolicySrc}; popd)" &> >(tee -a ${statusFile})
 
 # copy into place
 	${Echo} "Putting Java Cryptography Extensions from Oracle into ${JAVA_HOME}/lib/security/" | tee -a ${statusFile}
