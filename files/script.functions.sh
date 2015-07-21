@@ -242,7 +242,7 @@ setJavaCryptographyExtensions ()
        
 # Extract locally into downloads directory
 
-       eval "(pushd ${downloadPath}; unzip ${downloadPath}/${jcePolicySrc}; popd)" &> >(tee -a ${statusFile})
+       eval "(pushd ${downloadPath}; unzip -o ${downloadPath}/${jcePolicySrc}; popd)" &> >(tee -a ${statusFile})
 
 # copy into place
 	${Echo} "Putting Java Cryptography Extensions from Oracle into ${JAVA_HOME}/lib/security/" | tee -a ${statusFile}
@@ -682,8 +682,10 @@ ${Echo} "Fetching TCS CA chain from web"
                 ccnt=`expr ${ccnt} + 1`
         done
 
-# Fetch ldap cert
-${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > ${certpath}/ldap-server.crt
+	# Fetch ldap cert
+	for loopServer in ${ldapserver}; do
+		${Echo} "QUIT" | openssl s_client -connect ${loopServer}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' >> ${certpath}/ldap-server.crt
+	done
 
 }
 
@@ -969,7 +971,7 @@ runShibbolethInstaller ()
         fi
 
         if [ -x ${ldap_attr} ]; then
-                ldap_attr="cn,mail"
+                ldap_attr=""
         fi
 
 	# ActiveDirectory specific
@@ -1409,7 +1411,7 @@ patchShibbolethConfigs ()
 
         ${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with CAF defaults"
 
-        cp ${Spath}/files/CAF/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
+        cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
         chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
         ${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
@@ -1469,6 +1471,11 @@ patchShibbolethConfigs ()
                 sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
         fi
 
+        repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
+        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+	echo "applying chown "
+	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
 }
 

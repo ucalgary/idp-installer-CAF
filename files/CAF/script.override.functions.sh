@@ -90,8 +90,10 @@ installCertificates ()
 # 		ccnt=`expr ${ccnt} + 1`
 # 	done
 
-# Fetch ldap cert
-${Echo} "QUIT" | openssl s_client -connect ${ldapserver}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' > ${certpath}/ldap-server.crt
+	# Fetch ldap cert
+	for loopServer in ${ldapserver}; do
+		${Echo} "QUIT" | openssl s_client -connect ${loopServer}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' >> ${certpath}/ldap-server.crt
+	done
 
 }
 
@@ -138,7 +140,7 @@ patchShibbolethConfigs ()
 
 	${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with CAF defaults"
 
-	cp ${Spath}/files/CAF/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
+	cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
 	chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
 	${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
