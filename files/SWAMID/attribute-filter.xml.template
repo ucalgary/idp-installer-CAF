@@ -27,7 +27,7 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 
 <!-- entity-category-sfs-1993-1153 -->
 <afp:AttributeFilterPolicy id="entity-category-sfs-1993-1153">
-	<afp:PolicyRequirementRule xsi:type="saml:AttributeRequesterEntityAttributeExactMatch"
+	<afp:PolicyRequirementRule xsi:type="saml:EntityAttributeExactMatch"
 			attributeName="http://macedir.org/entity-category"
 			attributeValue="http://www.swamid.se/category/sfs-1993-1153" />
 
@@ -40,7 +40,7 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 
 <!-- GEANT Dataprotection Code of Conduct -->
 <afp:AttributeFilterPolicy id="releaseToCoC">
-	<afp:PolicyRequirementRule xsi:type="saml:AttributeRequesterEntityAttributeExactMatch"
+	<afp:PolicyRequirementRule xsi:type="saml:EntityAttributeExactMatch"
 		attributeName="http://macedir.org/entity-category"
 		attributeValue="http://www.geant.net/uri/dataprotection-code-of-conduct/v1" />
 
@@ -73,7 +73,7 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 
 <!-- REFEDS Research and Schoolarship -->
 <afp:AttributeFilterPolicy id="releaseToRandS">
-	<afp:PolicyRequirementRule xsi:type="saml:AttributeRequesterEntityAttributeExactMatch"
+	<afp:PolicyRequirementRule xsi:type="saml:EntityAttributeExactMatch"
 		attributeName="http://macedir.org/entity-category"
 		attributeValue="http://refeds.org/category/research-and-scholarship" />
 
@@ -111,18 +111,18 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 <afp:AttributeFilterPolicy id="entity-category-research-and-education">
 	<afp:PolicyRequirementRule xsi:type="basic:AND">
 		<basic:Rule xsi:type="basic:OR">
-			<basic:Rule xsi:type="saml:AttributeRequesterEntityAttributeExactMatch"
+			<basic:Rule xsi:type="saml:EntityAttributeExactMatch"
 				attributeName="http://macedir.org/entity-category"
 				attributeValue="http://www.swamid.se/category/eu-adequate-protection" />
-			<basic:Rule xsi:type="saml:AttributeRequesterEntityAttributeExactMatch"
+			<basic:Rule xsi:type="saml:EntityAttributeExactMatch"
 				attributeName="http://macedir.org/entity-category"
 				attributeValue="http://www.swamid.se/category/nren-service" />
-			<basic:Rule xsi:type="saml:AttributeRequesterEntityAttributeExactMatch"
+			<basic:Rule xsi:type="saml:EntityAttributeExactMatch"
 				attributeName="http://macedir.org/entity-category"
 				attributeValue="http://www.swamid.se/category/hei-service" />
 		</basic:Rule>
 
-		<basic:Rule xsi:type="saml:AttributeRequesterEntityAttributeExactMatch"
+		<basic:Rule xsi:type="saml:EntityAttributeExactMatch"
 			attributeName="http://macedir.org/entity-category"
 			attributeValue="http://www.swamid.se/category/research-and-education" />
 	</afp:PolicyRequirementRule>
