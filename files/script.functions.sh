@@ -811,6 +811,11 @@ askForConfigurationData() {
 		httpspass=$(askString "HTTPS Keystore password" "The webserver uses a separate keystore for itself. Please input your Keystore password for the end user facing HTTPS.\n\nAn empty string generates a randomized new password" "" 1)
 	fi
 
+	if [ -z "${consentEnabled}" ]; then
+		subsearch=$(askYesNo "User consent" "Do you want to enable user consent?")
+	fi
+
+
 }
 
 
@@ -1419,7 +1424,9 @@ patchShibbolethConfigs ()
         cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml > /opt/shibboleth-idp/conf/attribute-resolver.xml
         cat ${Spath}/files/${my_ctl_federation}/relying-party.xml > /opt/shibboleth-idp/conf/relying-party.xml
 
-
+	if [ "${consentEnabled}" = "n" ]; then
+		sed -i 's#<bean parent="Shibboleth.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="Shibboleth.SSO" />#;s#<bean parent="SAML2.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="SAML2.SSO" />#' /opt/shibboleth-idp/conf/relying-party.xml
+	fi
 
         if [ "${google}" != "n" ]; then
                 repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'

@@ -403,9 +403,9 @@ validateConnectivity()
 		# bind LDAP user
 		##############################
 		elo "${Echo} LDAP bind checking...(might take few minutes)"
-# 		if [ -z "`grep 'TLS_REQCERT' /root/.ldaprc 2>/dev/null`" ]; then
-# 			${Echo} "TLS_REQCERT ALLOW" >> /root/.ldaprc
-# 		fi
+		if [ -z "`grep 'TLS_REQCERT' /root/.ldaprc 2>/dev/null`" ]; then
+			${Echo} "TLS_REQCERT ALLOW" >> /root/.ldaprc
+		fi
 		ldapBaseDN=`echo ${ldapbinddn} | cut -d, -f2-`
 		ldapSearchValue=`echo ${ldapbinddn} | cut -d, -f1`
 		${Echo} "ldapsearch -vvv -H ldaps://$server -D \"${ldapbinddn}\" -b \"${ldapBaseDN}\" -x -w \"<removed>\" \"${ldapSearchValue}\"" >> ${statusFile}
