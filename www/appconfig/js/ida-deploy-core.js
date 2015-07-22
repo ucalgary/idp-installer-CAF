@@ -257,6 +257,7 @@ var requiredFieldKeysShibboleth = {
       "certAcro": 0,
       "certLongC": 0,
       "selfsigned": 0,
+      "consentEnabled": 0,
 
     "freeRADIUS_svr_country": 0,
     "freeRADIUS_svr_state": 0,
@@ -603,6 +604,7 @@ output += "ninc=\'"+ $("#ninc").val()+ "\'\n";
 output += "certAcro=\'"+ $("#certAcro").val()+ "\'\n";
 output += "certLongC=\'"+ $("#certLongC").val()+ "\'\n";
 output += "selfsigned=\'"+ $("#selfsigned").val()+ "\'\n";
+output += "consentEnabled=\'"+ $("#consentEnabled").val()+ "\'\n";
 
 
 output += "my_eduroamDomain=\'"+ $("#my_eduroamDomain").val()+ "\'\n";

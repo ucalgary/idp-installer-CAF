@@ -210,6 +210,18 @@ Enable Support to sign into Google Apps:<select id="google"  onchange="updateCtx
                                                <option name="googleY" value="y">Yes</option>
                                              </select>
                                              <br />
+
+                      Enable user consent
+                      <select id="consentEnabled"  onchange="updateCtx(this)" >
+                        <option name="consentEnabledY" value="y">
+                          Yes
+                        </option>
+                        <option name="consentEnabledN" value="n" selected>
+                          No(recommended)
+                        </option>
+                      </select>
+                      <br>
+
 <span id="googleRow">
 Google Apps domain:<input style="width: 250px;" id="googleDom" type="text" placeholder="apps.domain.se" onchange="updateCtx(this)" /><br />
 </span>

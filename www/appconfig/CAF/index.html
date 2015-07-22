@@ -966,6 +966,22 @@ installer_section3_title:
                         </option>
                       </select>
                       <br>
+
+                      Enable user consent
+
+                      <img id="consentToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
+          rel="tooltip" title="If you enable user consent the user will have to consent to the information released from the IDP."
+           />
+                      <select id="consentEnabled"  onchange="updateCtx(this)" >
+                        <option name="consentEnabledY" value="y" selected>
+                          Yes(recommended)
+                        </option>
+                        <option name="consentEnabledN" value="n">
+                          No
+                        </option>
+                      </select>
+                      <br>
+
                       
                       <!-- google apps support, not supported by CAF, but other federations config may permit it, CAF uses hidden value -->
                       
