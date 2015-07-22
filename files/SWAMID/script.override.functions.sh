@@ -32,14 +32,18 @@ installCertificates () {
 
 # change to certificate path whilst doing this part
 	cd ${certpath}
-	${Echo} "Fetching TCS CA chain from web"
-	${fetchCmd} ${certpath}/server.chain ${certificateChain}
-	if [ ! -s "${certpath}/server.chain" ]; then
-		${Echo} "Can not get the certificate chain, aborting install."
-		cleanBadInstall
+	${Echo} "Fetching certificate chain from web"
+	if [ "${SWAMIDcertChain}" = "tcs" ]; then
+		${fetchCmd} ${certpath}/server.chain ${certificateChain}
+	else
+		${fetchCmd} ${certpath}/server.chain ${digicertChain}
 	fi
+        if [ ! -s "${certpath}/server.chain" ]; then
+                ${Echo} "Can not get the certificate chain, aborting install."
+                cleanBadInstall
+        fi
 
-	${Echo} "Installing TCS CA chain in java cacert keystore"
+        ${Echo} "Installing certificate chain in java cacert keystore"
 	cnt=1
 	for i in `cat ${certpath}server.chain | sed -re 's/\ /\*\*\*/g'`; do
 		n=`${Echo} ${i} | sed -re 's/\*\*\*/\ /g'`
