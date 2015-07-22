@@ -1377,7 +1377,10 @@ jettySetup() {
        	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
         ${Echo} "Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
 
-
+	removeCiphers="TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA"
+	for cipher in $removeCiphers; do
+		sed -i "/${cipher}/d" /opt/jetty/jetty-base/etc/jetty.xml
+	done
 
 }
 
