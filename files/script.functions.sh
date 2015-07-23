@@ -933,7 +933,7 @@ configShibbolethXMLAttributeResolverForLDAP ()
 
 	cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml.template \
 		| sed -re "s/NiNcRePlAcE/${ninc}/;s/CeRtAcRoNyM/${certAcro}/;s/CeRtOrG/${certOrg}/;s/CeRtC/${certC}/;s/CeRtLoNgC/${certLongC}/" \
-		| sed -re "s/SCHAC_HOME_ORG/${orgTopDomain}/" \
+		| sed -re "s/SCHAC_HOME_ORG/${orgTopDomain}/;s/LdApUsErAtTr/${attr_filter}/g" \
 		> ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml
 	files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml"
 
@@ -1032,7 +1032,7 @@ idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-s
 idp.authn.LDAP.returnAttributes                 = ${ldap_attr}
 idp.authn.LDAP.baseDN                           = ${ldapbasedn}
 idp.authn.LDAP.subtreeSearch                    = true
-idp.authn.LDAP.userFilter                       = (${attr_filter}=\{${user_field}\})
+idp.authn.LDAP.userFilter                       = (${attr_filter}={user})
 idp.authn.LDAP.bindDN                           = ${ldapbinddn}
 idp.authn.LDAP.bindDNCredential                 = ${ldappass}
 idp.authn.LDAP.dnFormat                         = ${ldapDnFormat}
@@ -1377,7 +1377,10 @@ jettySetup() {
        	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
         ${Echo} "Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
 
-
+	removeCiphers="TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA"
+	for cipher in $removeCiphers; do
+		sed -i "/${cipher}/d" /opt/jetty/jetty-base/etc/jetty.xml
+	done
 
 }
 
@@ -1438,7 +1441,7 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${fticks}" != "n" ]; then
-                patch /opt/shibboleth-idp/conf/logback.xml -i ${Spath}/xml/CAF/fticks.diff >> ${statusFile} 2>&1
+                patch /opt/shibboleth-idp/conf/logback.xml -i ${Spath}/xml/${my_ctl_federation}/fticks.diff >> ${statusFile} 2>&1
                 touch /opt/shibboleth-idp/conf/fticks-key.txt
                 chown ${jettyUser}: /opt/shibboleth-idp/conf/fticks-key.txt
         fi
