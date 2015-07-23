@@ -933,7 +933,7 @@ configShibbolethXMLAttributeResolverForLDAP ()
 
 	cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml.template \
 		| sed -re "s/NiNcRePlAcE/${ninc}/;s/CeRtAcRoNyM/${certAcro}/;s/CeRtOrG/${certOrg}/;s/CeRtC/${certC}/;s/CeRtLoNgC/${certLongC}/" \
-		| sed -re "s/SCHAC_HOME_ORG/${orgTopDomain}/" \
+		| sed -re "s/SCHAC_HOME_ORG/${orgTopDomain}/;s/LdApUsErAtTr/${attr_filter}/g" \
 		> ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml
 	files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml"
 
@@ -1032,7 +1032,7 @@ idp.authn.LDAP.trustStore                       = %{idp.home}/credentials/ldap-s
 idp.authn.LDAP.returnAttributes                 = ${ldap_attr}
 idp.authn.LDAP.baseDN                           = ${ldapbasedn}
 idp.authn.LDAP.subtreeSearch                    = true
-idp.authn.LDAP.userFilter                       = (${attr_filter}=\{${user_field}\})
+idp.authn.LDAP.userFilter                       = (${attr_filter}={user})
 idp.authn.LDAP.bindDN                           = ${ldapbinddn}
 idp.authn.LDAP.bindDNCredential                 = ${ldappass}
 idp.authn.LDAP.dnFormat                         = ${ldapDnFormat}
