@@ -814,6 +814,17 @@ installer_section3_title:
                   </select>
                   <BR>
 
+                  LDAP Connection Encryption technique
+<img id="sslToolTip" src="../img/icon_tooltip.gif" alt="ToolTip"
+          rel="tooltip" title="Use SSL or TLS encryption to connect to the LDAP server(s)?"
+           />
+                  :
+                  <select id="ldapSSL" onchange="updateCtx(this)">
+                    <option name="ldapSSLy" value="true" selected="selected">LDAP SSL</option>
+                    <option name="ldapSSLn" value="false">LDAP TLS</option>
+                  </select>
+
+<!--
                   LDAP SSL
 <img id="sslToolTip" src="../img/icon_tooltip.gif" alt="ToolTip"
           rel="tooltip" title="This LDAP server uses SSL?"
@@ -844,7 +855,7 @@ installer_section3_title:
                       Yes
                     </option>
                  </select>
-
+-->
 		 <BR>
                   LDAP attribute filter
                   <img id="attr_filterToolTip" src="../img/icon_tooltip.gif" alt="ToolTip"
@@ -897,7 +908,7 @@ installer_section3_title:
                   </select>
                   <br>
 
-		<div id="casurlRow">
+		<div class="casurlRow">
                   CAS Server Login URL
                   <img id="casserverToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
           rel="tooltip" title="An unauthenticated user will be redirected to this URL"
@@ -970,7 +981,7 @@ installer_section3_title:
                       Enable user consent
 
                       <img id="consentToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
-          rel="tooltip" title="If you enable user consent the user will have to consent to the information released from the IDP."
+          rel="tooltip" title="If you enable user consent the user will have to consent."
            />
                       <select id="consentEnabled"  onchange="updateCtx(this)" >
                         <option name="consentEnabledY" value="y" selected>
@@ -988,6 +999,7 @@ installer_section3_title:
 <input type=hidden id="googleDom" value="n">
 <input type=hidden id="certAcro" value="">
 <input type=hidden id="certLongC" value="Canada">
+<input type=hidden id="SWAMIDcertChain" value="undefined" />
 <!--
 Enable Support to sign into Google Apps  <select id="google"  onchange="update()">
                                                 <option name="googleY" value="y" selected>Yes</option>
