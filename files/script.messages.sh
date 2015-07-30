@@ -11,6 +11,7 @@ casVer="3.3.3"
 mysqlConVer="5.1.35"
 javaVer="1.8.0_25"
 
+idpInstallerBase="/opt/idp-installer"
 # This URL determines which base to derive 'latest' from
 # --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
 # Below is the 9.2.11 one

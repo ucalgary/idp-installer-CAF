@@ -1204,19 +1204,19 @@ updateMachineHealthCrontab ()
 ${Echo} "Installing and adding daily crontab health checks"
 
 	# make sure directory is in place
-	${ECHO} "Creating IdP Installer installation in ${idpInstallerBase}"
+	${Echo} "Creating IdP Installer installation in ${idpInstallerBase}"
 	idpInstallerBin="${idpInstallerBase}/bin"
 	dailyTasks="${idpInstallerBin}/dailytasks.sh"
 	mkdir -p ${idpInstallerBin}
 
-	${ECHO} "adding dailytasks.sh to ${idpInstallerBin}"
+	${Echo} "adding dailytasks.sh to ${idpInstallerBin}"
 	# note that this file is not federation specific, but generic 
 	# 
 	cp ${Spath}/files/dailytasks.sh.template ${dailytasks}
 	chmod ugo+rx ${dailytasks}
 
 
-	${ECHO} "Preparing Crontab installation"
+	${Echo} "Preparing Crontab installation"
 	
 	test=`crontab -l 2>/dev/null | grep dailytasks`
 	if [ -z "${test}" ]; then
