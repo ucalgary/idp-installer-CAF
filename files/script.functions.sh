@@ -1197,6 +1197,43 @@ updateMachineTime ()
 	fi
 }
 
+updateMachineHealthCrontab ()
+{
+
+
+${Echo} "Installing and adding daily crontab health checks"
+
+	# make sure directory is in place
+	${ECHO} "Creating IdP Installer installation in ${idpInstallerBase}"
+	idpInstallerBin="${idpInstallerBase}/bin"
+	dailyTasks="${idpInstallerBin}/dailytasks.sh"
+	mkdir -p ${idpInstallerBin}
+
+	${ECHO} "adding dailytasks.sh to ${idpInstallerBin}"
+	# note that this file is not federation specific, but generic 
+	# 
+	cp ${Spath}/files/dailytasks.sh.template ${dailytasks}
+	chmod ugo+rx ${dailytasks}
+
+
+	${ECHO} "Preparing Crontab installation"
+	
+	test=`crontab -l 2>/dev/null | grep dailytasks`
+	if [ -z "${test}" ]; then
+		${Echo} "Adding crontab entry for dailytasks.sh "
+		CRONTAB=`crontab -l 2>/dev/null | sed -re 's/^$//'`
+		if [ ! -z "${CRONTAB}" ]; then
+			CRONTAB="${CRONTAB}\n"
+		fi
+		${Echo} "${CRONTAB}*/5 0 23  *   *   *     ${dailytasks} > /dev/null 2>&1" | crontab
+	fi
+		# fetch crontab again to show it
+		CRONTAB=`crontab -l 2>/dev/null | sed -re 's/^$//'`
+	
+${Echo} "Crontab work complete, current crontab: ${CRONTAB} "
+
+}
+
 
 cleanupFilesRoutine ()
 {
@@ -1571,6 +1608,8 @@ invokeShibbolethInstallProcessJetty9 ()
         jettySetup
 
 	updateMachineTime
+
+	updateMachineHealthCrontab
 
 	restartJettyService
 
