@@ -1212,8 +1212,8 @@ ${Echo} "Installing and adding daily crontab health checks"
 	${Echo} "adding dailytasks.sh to ${idpInstallerBin}"
 	# note that this file is not federation specific, but generic 
 	# 
-	cp ${Spath}/files/dailytasks.sh.template ${dailytasks}
-	chmod ugo+rx ${dailytasks}
+	cp ${Spath}/files/dailytasks.sh.template ${dailyTasks}
+	chmod ugo+rx ${dailyTasks}
 
 
 	${Echo} "Preparing Crontab installation"
