@@ -1225,7 +1225,7 @@ ${Echo} "Installing and adding daily crontab health checks"
 		if [ ! -z "${CRONTAB}" ]; then
 			CRONTAB="${CRONTAB}\n"
 		fi
-		${Echo} "${CRONTAB}*/5 0 23  *   *   *     ${dailytasks} > /dev/null 2>&1" | crontab
+		${Echo} "${CRONTAB}0 23  *   *   *     ${dailytasks} > /dev/null 2>&1" | crontab
 	fi
 		# fetch crontab again to show it
 		CRONTAB=`crontab -l 2>/dev/null | sed -re 's/^$//'`
