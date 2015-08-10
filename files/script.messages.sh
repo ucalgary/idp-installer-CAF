@@ -15,7 +15,7 @@ idpInstallerBase="/opt/idp-installer"
 # This URL determines which base to derive 'latest' from
 # --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
 # Below is the 9.2.11 one
-jettyBaseURL="http://download.eclipse.org/jetty/9.2.13.v20150730/dist"
+jettyBaseURL="http://download.eclipse.org/jetty/9.2.13.v20150730/dist/"
 
 files=""
 ts=`date "+%s"`
