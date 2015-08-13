@@ -1369,20 +1369,43 @@ fi
 
 jettySetup() {
 
-        #Install specific version
-        #jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
-        #jetty9File="${jetty9URL##*/}"
-        #jetty9Path=`basename ${jetty9File}  .tar.gz`
+        #Installing a specific version of Jetty
 
-        #Download latest stable
-        jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+        # As of Aug 11, 2015, Jetty 9.3.x has not quieted down from having changes done.
+        # to mitigate issues: ( https://bugs.eclipse.org/bugs/show_bug.cgi?id=473321 )
+        #
+        # This Jetty setup will use a specific Jetty version placed in the ~/downloads directory
+        # Also be warned that the jetty site migrates links from the current jettyBaseURL to an archive
+        # at random times.
+
+		# Variable 'jetty9File' now originates from script.messages.sh to make it easier to 
+		# manage versions
+		
+        #jetty9File='jetty-distribution-9.2.13.v20150730.tar.gz'
+
+		# Ability to override version:
+		# To override the downloads folder containing the binary: jetty-distribution-9.2.13.v20150730.tar.gz
+        # uncomment the below variable assignment to dynamically fetch it instead:
+        # jettyBaseURL is defined in script.messages.sh
+
+        #jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+        
+
 		jetty9Path=`basename ${jetty9File}  .tar.gz`
 		jetty9URL="${jettyBaseURL}${jetty9File}"
 
+		${Echo} "Preparing to install Jetty webserver ${jetty9File}"
+
         if [ ! -s "${downloadPath}/${jetty9File}" ]; then
-                echo "Fetching Jetty from ${jetty9URL}"
+                ${Echo} "Fetching Jetty from ${jetty9URL}"
                 ${fetchCmd} ${downloadPath}/${jetty9File} "{$jetty9URL}"
+        else
+        	${Echo} "Skipping Jetty download, it exists here: ${downloadPath}/${jetty9File}"
+                	
         fi
+
+        # Manipulate Jetty configuration for the deployment
+        
         cd /opt
         tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
         cp -r /opt/${shibDir}/jetty-base /opt/${jetty9Path}/

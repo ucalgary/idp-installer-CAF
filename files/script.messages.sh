@@ -5,18 +5,27 @@ mdSignerFinger="12:60:D7:09:6A:D9:C1:43:AD:31:88:14:3C:A8:C4:B7:33:8A:4F:CB"
 GUIen=y
 cleanUp=1
 upgrade=0
+
+# Important directories
+
 shibDir="shibboleth-identity-provider"
+idpInstallerBase="/opt/idp-installer"
+
+#
+# Key Component Versions
+
 shibVer="3.1.1"
 casVer="3.3.3"
 mysqlConVer="5.1.35"
 javaVer="1.8.0_25"
+jettyVer="9.2.13.v20150730"
 
-idpInstallerBase="/opt/idp-installer"
 # This URL determines which base to derive 'latest' from
 # --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
 # Below is the 9.2.11 one
-jettyBaseURL="http://download.eclipse.org/jetty/9.3.2.v20150730/dist/"
-
+jettyBaseURL="http://download.eclipse.org/jetty/${jettyVer}/dist/"
+# this determines which file to check for in the downloads directory first.
+jetty9File='jetty-distribution-${jettyVer}.tar.gz'
 
 files=""
 ts=`date "+%s"`
