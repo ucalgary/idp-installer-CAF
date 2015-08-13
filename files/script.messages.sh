@@ -25,7 +25,7 @@ jettyVer="9.2.13.v20150730"
 # Below is the 9.2.11 one
 jettyBaseURL="http://download.eclipse.org/jetty/${jettyVer}/dist/"
 # this determines which file to check for in the downloads directory first.
-jetty9File='jetty-distribution-${jettyVer}.tar.gz'
+jetty9File="jetty-distribution-${jettyVer}.tar.gz"
 
 files=""
 ts=`date "+%s"`
