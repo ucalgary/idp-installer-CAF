@@ -25,7 +25,9 @@
 #   other references: https://wiki.shibboleth.net/confluence/display/SHIB2/IdPNameIdentifier
 -->
     <afp:AttributeFilterPolicy id="CAF-IdPInstaller-CAFPolicyReleaseTransientIdToAnyone">
-        <afp:PolicyRequirementRule xsi:type="basic:ANY" />
+
+ <afp:PolicyRequirementRule xsi:type="basic:ANY" />
+
         <afp:AttributeRule attributeID="transientId">
             <afp:PermitValueRule xsi:type="basic:ANY" />
         </afp:AttributeRule>
@@ -44,9 +46,8 @@
 <afp:AttributeFilterPolicy id="CAF-IdPInstaller-CAFPolicyReleaseEptidToCAF">
  
     <!-- Policy requirement rule indicates this policy is active for any request -->
-    <afp:PolicyRequirementRule xsi:type="basic:ANY"/>
-    </afp:AttributeRule>
- 
+     <afp:PolicyRequirementRule xsi:type="basic:ANY" />
+
     <afp:AttributeRule attributeID="eduPersonTargetedID">
                <afp:PermitValueRule xsi:type="basic:ANY" />
     </afp:AttributeRule>

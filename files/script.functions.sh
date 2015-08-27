@@ -1197,6 +1197,43 @@ updateMachineTime ()
 	fi
 }
 
+updateMachineHealthCrontab ()
+{
+
+
+${Echo} "Installing and adding daily crontab health checks"
+
+	# make sure directory is in place
+	${Echo} "Creating IdP Installer installation in ${idpInstallerBase}"
+	idpInstallerBin="${idpInstallerBase}/bin"
+	dailyTasks="${idpInstallerBin}/dailytasks.sh"
+	mkdir -p ${idpInstallerBin}
+
+	${Echo} "adding dailytasks.sh to ${idpInstallerBin}"
+	# note that this file is not federation specific, but generic 
+	# 
+	cp ${Spath}/files/dailytasks.sh.template ${dailyTasks}
+	chmod ugo+rx ${dailyTasks}
+
+
+	${Echo} "Preparing Crontab installation"
+	
+	test=`crontab -l 2>/dev/null | grep dailytasks`
+	if [ -z "${test}" ]; then
+		${Echo} "Adding crontab entry for dailytasks.sh "
+		CRONTAB=`crontab -l 2>/dev/null | sed -re 's/^$//'`
+		if [ ! -z "${CRONTAB}" ]; then
+			CRONTAB="${CRONTAB}\n"
+		fi
+		${Echo} "${CRONTAB}0 23  *   *   *     ${dailyTasks} > /dev/null 2>&1" | crontab
+	fi
+		# fetch crontab again to show it
+		CRONTAB=`crontab -l 2>/dev/null | sed -re 's/^$//'`
+	
+${Echo} "Crontab work complete, current crontab: ${CRONTAB} "
+
+}
+
 
 cleanupFilesRoutine ()
 {
@@ -1332,20 +1369,43 @@ fi
 
 jettySetup() {
 
-        #Install specific version
-        #jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
-        #jetty9File="${jetty9URL##*/}"
-        #jetty9Path=`basename ${jetty9File}  .tar.gz`
+        #Installing a specific version of Jetty
 
-        #Download latest stable
-        jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+        # As of Aug 11, 2015, Jetty 9.3.x has not quieted down from having changes done.
+        # to mitigate issues: ( https://bugs.eclipse.org/bugs/show_bug.cgi?id=473321 )
+        #
+        # This Jetty setup will use a specific Jetty version placed in the ~/downloads directory
+        # Also be warned that the jetty site migrates links from the current jettyBaseURL to an archive
+        # at random times.
+
+		# Variable 'jetty9File' now originates from script.messages.sh to make it easier to 
+		# manage versions
+		
+        #jetty9File='jetty-distribution-9.2.13.v20150730.tar.gz'
+
+		# Ability to override version:
+		# To override the downloads folder containing the binary: jetty-distribution-9.2.13.v20150730.tar.gz
+        # uncomment the below variable assignment to dynamically fetch it instead:
+        # jettyBaseURL is defined in script.messages.sh
+
+        #jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+        
+
 		jetty9Path=`basename ${jetty9File}  .tar.gz`
 		jetty9URL="${jettyBaseURL}${jetty9File}"
 
+		${Echo} "Preparing to install Jetty webserver ${jetty9File}"
+
         if [ ! -s "${downloadPath}/${jetty9File}" ]; then
-                echo "Fetching Jetty from ${jetty9URL}"
+                ${Echo} "Fetching Jetty from ${jetty9URL}"
                 ${fetchCmd} ${downloadPath}/${jetty9File} "{$jetty9URL}"
+        else
+        	${Echo} "Skipping Jetty download, it exists here: ${downloadPath}/${jetty9File}"
+                	
         fi
+
+        # Manipulate Jetty configuration for the deployment
+        
         cd /opt
         tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
         cp -r /opt/${shibDir}/jetty-base /opt/${jetty9Path}/
@@ -1571,6 +1631,8 @@ invokeShibbolethInstallProcessJetty9 ()
         jettySetup
 
 	updateMachineTime
+
+	updateMachineHealthCrontab
 
 	restartJettyService
 
