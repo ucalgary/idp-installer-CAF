@@ -592,14 +592,13 @@ if [ "${type}" = "cas" ]; then
 	fi
 
 	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
+	cp ${Spath}/downloads/shib-cas-authenticator-3.0.0.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
 	cp /opt/shibboleth-idp/webapp/WEB-INF/web.xml /opt/shibboleth-idp/edit-webapp/WEB-INF/
-	
-	cat ${Spath}/${prep}/${shibDir}-web.xml.diff.template \
-		| sed -re "s#IdPuRl#${idpurl}#;s#CaSuRl#${caslogurl}#;s#CaS2uRl#${casurl}#" \
-		> ${Spath}/${prep}/${shibDir}-web.xml.diff
-	files="`${Echo} ${files}` ${Spath}/${prep}/${shibDir}-web.xml.diff"
+	mkdir -p /opt/shibboleth-idp/flows/authn/Shibcas
+	cp ${Spath}/${prep}/shibcas-authn-beans.xml ${Spath}/${prep}/shibcas-authn-flow.xml /opt/shibboleth-idp/flows/authn/Shibcas
 
 	patch /opt/shibboleth-idp/edit-webapp/WEB-INF/web.xml -i ${Spath}/${prep}/${shibDir}-web.xml.diff >> ${statusFile} 2>&1
+	patch /opt/shibboleth-idp/conf/authn/general-authn.xml -i ${Spath}/${prep}/${shibDir}-general-authn.xml.diff >> ${statusFile} 2>&1
 
 	/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
@@ -1001,7 +1000,7 @@ runShibbolethInstaller ()
 	if [ "${type}" = "ldap" ]; then
 
 	       cat << EOM > idp.properties.tmp
-idp.scope 			    =${idpScope} 
+idp.scope               =${idpScope}
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
@@ -1011,11 +1010,14 @@ EOM
 	elif [ "${type}" = "cas" ]; then
 
                 cat << EOM > idp.properties.tmp
-idp.scope 			    =${idpScope} 
-idp.entityID            = https://${certCN}/idp/shibboleth
-idp.sealer.storePassword= ${pass}
-idp.sealer.keyPassword  = ${pass}
-idp.authn.flows         = RemoteUser
+idp.scope                  = ${idpScope}
+idp.entityID               = https://${certCN}/idp/shibboleth
+idp.sealer.storePassword   = ${pass}
+idp.sealer.keyPassword     = ${pass}
+idp.authn.flows            = Shibcas
+shibcas.casServerUrlPrefix = ${casurl}
+shibcas.casServerLoginUrl  = \${shibcas.casServerUrlPrefix}/login
+shibcas.serverName         = https://${certCN}
 EOM
 
 	fi
