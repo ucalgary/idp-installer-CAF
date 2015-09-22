@@ -1470,6 +1470,50 @@ restartJettyService ()
 
 }
 
+applyFTICKS ()
+{
+		# Logic:
+		#		If there is a federation specific setting for the loghost, use it, otherwise overlay configuraiton files
+
+	
+
+	# A. create salt automatically
+	fticksSalt=`openssl rand -base64 36 2>/dev/null`
+
+	# B. overlay new audit.xml, logback.xml so bean and technique is in place (make backup first)
+	overlayFiles="audit.xml logback.xml"
+	for i in "${overlayFiles}"; do  
+
+		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.b4.replacement
+		cp ${Spath}/files/${my_ctl_federation}/${i}.template /opt/shibboleth-idp/conf/${i}
+	done
+
+	# C. place 3 lines at end of idp.properties:
+	# 		idp.fticks.federation=CAF
+	# 		idp.fticks.salt=salt123salt
+	# 		idp.fticks.loghost=localhost unless otherwise specified by existence of fticks-loghost.txt in Federation directory
+
+	my_fticks_loghost_file="${Spath}/files/${my_ctl_federation}/fticks-loghost.txt"
+	my_fticks_loghost_value="localhost"
+
+	 if [ -a "${my_fticks_loghost_file}" ]; then
+                ${Echo} "applyFTICKS detected a loghost file to use"
+                my_fticks_loghost=`cat ${my_fticks_loghost_file}`
+
+        else
+				${Echo} "applyFTICKS did not detect an override to loghost"
+        fi
+
+				${Echo} "applyFTICKS loghost: ${my_fticks_loghost_value}"
+
+
+	cp /opt/shibboleth-idp/conf/idp.properties /opt/shibboleth-idp/conf/idp.properties.b4.replacement
+	echo "idp.fticks.federation=${my_ctl_federation}" >> /opt/shibboleth-idp/conf/idp.properties
+	echo "idp.fticks.salt=${fticksSalt}" >> /opt/shibboleth-idp/conf/idp.properties
+	echo "idp.fticks.loghost=${my_fticks_loghost_value}" >> /opt/shibboleth-idp/conf/idp.properties
+
+	${Echo} "applyFTICKS updates completed"
+}
 
 patchShibbolethConfigs ()
 
@@ -1503,10 +1547,10 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${fticks}" != "n" ]; then
-                patch /opt/shibboleth-idp/conf/logback.xml -i ${Spath}/xml/${my_ctl_federation}/fticks.diff >> ${statusFile} 2>&1
-                touch /opt/shibboleth-idp/conf/fticks-key.txt
-                # chown is done later on after the user is created
-                # chown jetty /opt/shibboleth-idp/conf/fticks-key.txt
+              
+              	# apply an enhanced application of the FTICKS functionality
+
+              	applyFTICKS
         fi
 
         if [ "${eptid}" != "n" ]; then
