@@ -1480,7 +1480,7 @@ applyFTICKS ()
 
 	# B. overlay new audit.xml, logback.xml so bean and technique is in place (make backup first)
 	overlayFiles="audit.xml logback.xml"
-	for i in "${overlayFiles}"; do  
+	for i in ${overlayFiles}; do  
 
 		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.b4.replacement
 		cp ${Spath}/files/${my_ctl_federation}/${i}.template /opt/shibboleth-idp/conf/${i}
@@ -1496,7 +1496,7 @@ applyFTICKS ()
 
 	 if [ -a "${my_fticks_loghost_file}" ]; then
                 ${Echo} "applyFTICKS detected a loghost file to use"
-                my_fticks_loghost=`cat ${my_fticks_loghost_file}`
+                my_fticks_loghost_value=`cat ${my_fticks_loghost_file}`
 
         else
 				${Echo} "applyFTICKS did not detect an override to loghost"
