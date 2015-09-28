@@ -195,3 +195,19 @@ echo "
 Please move the file ${tarFile} to the new IDP and put it in the deployer directory.
 NOTE! The file contains cleartext passwords!
 "
+
+datediff() {
+    d1=$(date -d "$1 + 5 years" +%s)
+    d2=$(date -d "NOW" +%s)
+    echo $(( ($d1 - $d2) / 86400 ))
+}
+dateStr="`openssl x509 -startdate -noout -in /opt/shibboleth-idp/credentials/idp.crt | cut -d= -f2-`"
+daysValid=`datediff "${dateStr}"`
+if [ ${daysValid} -le 0 ]; then
+	echo "Your certificate has been in service for five years or more."
+	echo "A key rollover is highly recommended."
+elif [ ${daysValid} -le 365 ]; then
+        echo "Your certificate has been in service for a long time."
+        echo "${daysValid} days left to a five year lifespan."
+	echo "You should consider a key rollover"
+fi
