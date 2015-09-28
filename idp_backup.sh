@@ -5,7 +5,7 @@ HELP="
 #    NOTE! the tar file WILL contain cleartext passwords.                    #
 #                                                                            #
 # Options                                                                    #
-# -i <idp base directory>         Default: /opt/shibboleth-idp               #
+# -i <idp base directory>               Default: /opt/shibboleth-idp         #
 # -t <tomcat/jetty config directory>    Default: /etc/tomcat6,               #
 #                                                /etc/tomcat7 and            #
 #                                                /opt/jetty/jetty-base       #
@@ -179,6 +179,10 @@ if [ -d "/opt/idp-kerberos" ]; then
 fi
 if [ -f "/opt/shibboleth-idp/conf/fticks-key.txt" ]; then
 	locationsToTar="${locationsToTar} /opt/shibboleth-idp/conf/fticks-key.txt"
+fi
+if [ -s "/opt/shibboleth-idp/conf/idp.properties" ]; then
+	fticksSalt=`grep idp.fticks.salt /opt/shibboleth-idp/conf/idp.properties |cut -d= -f2-`
+	echo "fticksSalt=\"${fticksSalt}\"" >> ${importFile}
 fi
 
 cd ${filesPath}

@@ -1478,11 +1478,13 @@ applyFTICKS ()
 	
 
 	# A. create salt automatically
-	fticksSalt=`openssl rand -base64 36 2>/dev/null`
+	if [ -z "${fticksSalt}" ]; then
+		fticksSalt=`openssl rand -base64 36 2>/dev/null`
+	fi
 
 	# B. overlay new audit.xml, logback.xml so bean and technique is in place (make backup first)
 	overlayFiles="audit.xml logback.xml"
-	for i in "${overlayFiles}"; do  
+	for i in ${overlayFiles}; do
 
 		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.b4.replacement
 		cp ${Spath}/files/${my_ctl_federation}/${i}.template /opt/shibboleth-idp/conf/${i}
@@ -1496,9 +1498,9 @@ applyFTICKS ()
 	my_fticks_loghost_file="${Spath}/files/${my_ctl_federation}/fticks-loghost.txt"
 	my_fticks_loghost_value="localhost"
 
-	 if [ -a "${my_fticks_loghost_file}" ]; then
+	 if [ -s "${my_fticks_loghost_file}" ]; then
                 ${Echo} "applyFTICKS detected a loghost file to use"
-                my_fticks_loghost=`cat ${my_fticks_loghost_file}`
+                my_fticks_loghost_value=`cat ${my_fticks_loghost_file}`
 
         else
 				${Echo} "applyFTICKS did not detect an override to loghost"
@@ -1523,12 +1525,12 @@ patchShibbolethConfigs ()
         ${Echo} "Patching config files"
         mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
 
-        ${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with CAF defaults"
+        ${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with federation defaults"
 
         cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
         chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
-        ${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
+        ${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with federation trusts"
         cat ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml > /opt/shibboleth-idp/conf/metadata-providers.xml
         cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml > /opt/shibboleth-idp/conf/attribute-resolver.xml
         cat ${Spath}/files/${my_ctl_federation}/relying-party.xml > /opt/shibboleth-idp/conf/relying-party.xml
@@ -1614,6 +1616,9 @@ checkAndLoadBackupFile ()
 		mkdir ${Spath}/extract 2>/dev/null
 		cd ${Spath}/extract
 		tar zxf ${Spath}/${backFile}
+		if [ -s "${Spath}/extract/opt/shibboleth-idp/conf/fticks-key.txt" ]; then
+			fticksSalt=`cat ${Spath}/extract/opt/shibboleth-idp/conf/fticks-key.txt`
+		fi
 		. settingsToImport.sh
 		cd ${Spath}
 	else
@@ -1625,7 +1630,7 @@ checkAndLoadBackupFile ()
 loadDatabaseDump ()
 {
 	if [ -s "${Spath}/extract/sql.dump" ]; then
-		if [ "${ehost}" = "localhost" ]; then
+		if [ "${ehost}" = "localhost" -o "${ehost}" = "127.0.0.1" ]; then
 			if [ "${etype}" = "mysql" ]; then
 				mysql -uroot -p"${mysqlPass}" -D ${eDB} < ${Spath}/extract/sql.dump
 			fi
@@ -1638,10 +1643,6 @@ loadDatabaseDump ()
 
 overwriteConfigFiles ()
 {
-	if [ -f "${Spath}/extract/opt/shibboleth-idp/conf/fticks-key.txt" ]; then
-		mv ${Spath}/extract/opt/shibboleth-idp/conf/fticks-key.txt /opt/shibboleth-idp/conf/fticks-key.txt
-		chown jetty /opt/shibboleth-idp/conf/fticks-key.txt
-	fi
 # 	if [ -d "${Spath}/extract/opt/shibboleth-idp/conf" -a "x`ls ${Spath}/extract/opt/shibboleth-idp/conf`" != "x" ]; then
 # 		for i in `ls ${Spath}/extract/opt/shibboleth-idp/conf/`; do
 # 			mv ${Spath}/extract/opt/shibboleth-idp/conf/$i /opt/shibboleth-idp/conf
