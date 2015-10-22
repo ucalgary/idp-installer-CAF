@@ -15,6 +15,132 @@ setEcho() {
 
 echo "loading script.bootstrap.functions.sh"
 
+askList() {
+	title=$1
+	text=$2
+	list=$3
+	string=""
+
+	if [ "${GUIen}" = "y" ]; then
+		WTcmd="${whiptailBin} --backtitle \"${BackTitle}\" --title \"${title}\" --nocancel --menu --clear -- \"${text}\" ${whipSize} 5 ${list} 3>&1 1>&2 2>&3"
+		string=$(eval ${WTcmd})
+	else
+		${Echo} ${text} >&2
+		${Echo} ${list} | sed -re 's/\"([^"]+)\"\ *\"([^"]+)\"\ */\1\ \-\-\ \2\n/g' >&2
+		read string
+		${Echo} "" >&2
+	fi
+
+	${Echo} "${string}"
+}
+
+askYesNo() {
+	title=$1
+	text=$2
+	value=$3
+	string=""
+
+	if [ "${GUIen}" = "y" ]; then
+		if [ ! -z "${value}" ]; then
+			value="--defaultno "
+		fi
+
+		${whiptailBin} --backtitle "${BackTitle}" --title "${title}" ${value}--yesno --clear -- "${text}" ${whipSize} 3>&1 1>&2 2>&3
+		stringNum=$?
+		string="n"
+		if [ "${stringNum}" -eq 0 ]; then
+			string="y"
+		fi
+	else
+		show=""
+		if [ ! -z "${value}" ]; then
+			show="${text} [y/N]: "
+		else
+			show="${text} [Y/n]: "
+		fi
+
+		${Echo} "${show}" >&2
+		read string
+		${Echo} "" >&2
+
+		if [ ! -z "${value}" ]; then
+			if [ "${string}" = "y" -o "${string}" = "Y" ]; then
+				string="y"
+			else
+				string="n"
+			fi
+		else
+			if [ "${string}" = "n" -o "${string}" = "N" ]; then
+				string="n"
+			else
+				string="y"
+			fi
+		fi
+	fi
+
+	${Echo} "${string}"
+}
+
+askString() {
+	title=$1
+	text=$2
+	value=$3
+	null=$4
+	string=""
+
+	while [ -z "${string}" ]; do
+		if [ "${GUIen}" = "y" ]; then
+			string=$(${whiptailBin} --backtitle "${BackTitle}" --title "${title}" --nocancel --inputbox --clear -- "${text}" ${whipSize} "${value}" 3>&1 1>&2 2>&3)
+		else
+			show=${text}
+			if [ ! -z "${value}" ]; then
+				show="${show} [${value}]"
+			fi
+			${Echo} "${show}: " >&2
+			read string
+			${Echo} "" >&2
+			if [ ! -z "${value}" -a -z "${string}" ]; then
+				string=${value}
+			fi
+		fi
+
+		if [ -z "${string}" -a ! -z "${null}" ]; then
+			break
+		fi
+	done
+
+	${Echo} "${string}"
+}
+
+cleanBadInstall() {
+	if [ -d "/opt/${shibDir}" ]; then
+		rm -rf /opt/${shibDir}*
+	fi
+	if [ -d "/opt/cas-client-${casVer}" ]; then
+		rm -rf /opt/cas-client-${casVer}
+	fi
+	if [ -d "/opt/ndn-shib-fticks" ]; then
+		rm -rf /opt/ndn-shib-fticks
+	fi
+	if [ -d "/opt/shibboleth-idp" ]; then
+		rm -rf /opt/shibboleth-idp
+	fi
+	if [ -d "/opt/mysql-connector-java-5.1.27" ]; then
+		rm -rf /opt/mysql-connector-java-5.1.27
+	fi
+	if [ -f "/usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar" ]; then
+		rm /usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar
+	fi
+	if [ -d "/opt/apache-maven-3.1.0/" ]; then
+		rm -rf /opt/apache-maven-3.1.0/
+	fi
+	if [ -s "/etc/profile.d/maven-3.1.sh" ]; then
+		rm -rf /etc/profile.d/maven-3.1.sh
+	fi
+
+	exit 1
+}
+
 
 
 ValidateConfig() {
@@ -334,7 +460,7 @@ validateConnectivity()
 		##############################
 		elo "${Echo} Port availability checking..."
 
-		output=$(nc $server 636 < /dev/null 2>&1)
+		output=$(echo "" | nc -w 3 $server 636 2>&1)
 		if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"; then
 			elo "${Echo} port 636 - - - - ok"
 			PORT636="ok"
@@ -344,7 +470,7 @@ validateConnectivity()
 		fi
 		serverResults[${serverCounter},2]=$PORT636
 
-		output=$(nc $server 389 < /dev/null 2>&1)
+		output=$(echo "" | nc -w 3 $server 389 2>&1)
 		if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"; then
 			elo "${Echo} port 389 - - - - ok"
 			PORT389="ok"
@@ -470,8 +596,8 @@ validateConnectivity()
 		if [ "${installer_interactive}" = "y" ]; then
 			read choice
 		fi
-		if [ ! -z $choice ]; then
-			if [ $choice != "continue" ]
+		if [ ! -z "$choice" ]; then
+			if [ "$choice" != "continue" ]
 				then
 					${Echo} "Installation has been canceled."
 					exit 1
@@ -486,8 +612,8 @@ validateConnectivity()
 		if [ "${installer_interactive}" = "y" ]; then
 			read choice
 		fi
-		if [ ! -z $choice ]; then
-			if [ $choice == "Y" -o $choice == "y" -o $choice == "yes" ]; then
+		if [ ! -z "$choice" ]; then
+			if [ "$choice" == "Y" -o "$choice" == "y" -o "$choice" == "yes" ]; then
 					${Echo} "Continue..."
 				else
 					${Echo} "Installation has been canceled."

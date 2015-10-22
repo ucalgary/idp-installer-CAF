@@ -3,35 +3,6 @@
 
 
 
-cleanBadInstall() {
-	if [ -d "/opt/${shibDir}" ]; then
-		rm -rf /opt/${shibDir}*
-	fi
-	if [ -d "/opt/cas-client-${casVer}" ]; then
-		rm -rf /opt/cas-client-${casVer}
-	fi
-	if [ -d "/opt/ndn-shib-fticks" ]; then
-		rm -rf /opt/ndn-shib-fticks
-	fi
-	if [ -d "/opt/shibboleth-idp" ]; then
-		rm -rf /opt/shibboleth-idp
-	fi
-	if [ -d "/opt/mysql-connector-java-5.1.27" ]; then
-		rm -rf /opt/mysql-connector-java-5.1.27
-	fi
-	if [ -f "/usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar" ]; then
-		rm /usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar
-	fi
-	if [ -d "/opt/apache-maven-3.1.0/" ]; then
-		rm -rf /opt/apache-maven-3.1.0/
-	fi
-	if [ -s "/etc/profile.d/maven-3.1.sh" ]; then
-		rm -rf /etc/profile.d/maven-3.1.sh
-	fi
-
-	exit 1
-}
-
 setBackTitle ()
 {
 	#	echo "in setBackTitle"
@@ -58,6 +29,13 @@ patchFirewall()
 {
         #Replace firewalld with iptables (Centos7)
         if [ "${dist}" == "centos" -a "${redhatDist}" == "7" ]; then
+                systemctl stop firewalld
+                systemctl mask firewalld
+                eval "yum -y install iptables-services" >> ${statusFile} 2>&1
+                systemctl enable iptables
+                systemctl start iptables
+
+        elif [ "${dist}" == "redhat" -a "${redhatDist}" == "7" ]; then
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -148,7 +126,9 @@ setJavaHome () {
         if [ ! -s "${downloadPath}/${javaSrc}" ]; then
                 ${fetchCmd} ${downloadPath}/${javaSrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie"  https://download.oracle.com/otn-pub/java/jdk/8u25-b17/${javaSrc} >> ${statusFile} 2>&1
         fi
-        mkdir /usr/java
+        if [ ! -d "/usr/java" ]; then
+		mkdir /usr/java
+	fi
         tar xzf ${downloadPath}/${javaSrc} -C /usr/java/
         ln -s /usr/java/jre${javaVer}/ /usr/java/latest
         ln -s /usr/java/latest /usr/java/default
@@ -306,105 +286,6 @@ generatePasswordsForSubsystems ()
 
 }
 
-askList() {
-	title=$1
-	text=$2
-	list=$3
-	string=""
-
-	if [ "${GUIen}" = "y" ]; then
-		WTcmd="${whiptailBin} --backtitle \"${BackTitle}\" --title \"${title}\" --nocancel --menu --clear -- \"${text}\" ${whipSize} 5 ${list} 3>&1 1>&2 2>&3"
-		string=$(eval ${WTcmd})
-	else
-		${Echo} ${text} >&2
-		${Echo} ${list} | sed -re 's/\"([^"]+)\"\ *\"([^"]+)\"\ */\1\ \-\-\ \2\n/g' >&2
-		read string
-		${Echo} "" >&2
-	fi
-
-	${Echo} "${string}"
-}
-
-askYesNo() {
-	title=$1
-	text=$2
-	value=$3
-	string=""
-
-	if [ "${GUIen}" = "y" ]; then
-		if [ ! -z "${value}" ]; then
-			value="--defaultno "
-		fi
-
-		
-
-		${whiptailBin} --backtitle "${BackTitle}" --title "${title}" ${value}--yesno --clear -- "${text}" ${whipSize} 3>&1 1>&2 2>&3
-		stringNum=$?
-		string="n"
-		if [ "${stringNum}" -eq 0 ]; then
-			string="y"
-		fi
-	else
-		show=""
-		if [ ! -z "${value}" ]; then
-			show="${text} [y/N]: "
-		else
-			show="${text} [Y/n]: "
-		fi
-
-		${Echo} "${show}" >&2
-		read string
-		${Echo} "" >&2
-
-		if [ ! -z "${value}" ]; then
-			if [ "${string}" = "y" -o "${string}" = "Y" ]; then
-				string="y"
-			else
-				string="n"
-			fi
-		else
-			if [ "${string}" = "n" -o "${string}" = "N" ]; then
-				string="n"
-			else
-				string="y"
-			fi
-		fi
-	fi
-
-	${Echo} "${string}"
-}
-
-askString() {
-	title=$1
-	text=$2
-	value=$3
-	null=$4
-	string=""
-
-	while [ -z "${string}" ]; do
-		if [ "${GUIen}" = "y" ]; then
-			string=$(${whiptailBin} --backtitle "${BackTitle}" --title "${title}" --nocancel --inputbox --clear -- "${text}" ${whipSize} "${value}" 3>&1 1>&2 2>&3)
-		else
-			show=${text}
-			if [ ! -z "${value}" ]; then
-				show="${show} [${value}]"
-			fi
-			${Echo} "${show}: " >&2
-			read string
-			${Echo} "" >&2
-			if [ ! -z "${value}" -a -z "${string}" ]; then
-				string=${value}
-			fi
-		fi
-
-		if [ -z "${string}" -a ! -z "${null}" ]; then
-			break
-		fi
-	done
-
-	${Echo} "${string}"
-}
-
 installEPEL() {
 	
 	if [ ! -z "`rpm -q epel-release | grep ' is not installed'`" ]; then
@@ -486,30 +367,31 @@ installEPTIDSupport ()
         if [ "${eptid}" != "n" ]; then
                 ${Echo} "Installing EPTID support"
 
-                if [ "$dist" == "ubuntu" ]; then
-                        test=`dpkg -s mysql-server > /dev/null 2>&1`
-                        isInstalled=$?
+		if [ "${dist}" == "ubuntu" ]; then
+			test=`dpkg -s mysql-server > /dev/null 2>&1`
+			isInstalled=$?
 
-                elif [ "$dist" == "centos" -a "$redhatDist" == "6" ]; then
-                        [ -f /etc/init.d/mysqld ]
-                        isInstalled=$?
+		elif [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
+			if [ "${redhatDist}" == "6" ]; then
+				[ -f /etc/init.d/mysqld ]
+				isInstalled=$?
 
-                elif [ "$dist" == "centos" -a "$redhatDist" == "7" ]; then
-                        #Add Oracle repos
-                        if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
+			elif [ "${redhatDist}" == "7" ]; then
+				#Add Oracle repos
+				if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
+					${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
+					mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
+					eval $mysqlOracleRepo >> ${statusFile} 2>&1
 
-                                ${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
-                                mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
-                                eval $mysqlOracleRepo >> ${statusFile} 2>&1
+				else
+					${Echo} "Dected MySQL Repo EXIST on this system."
 
-                        else
+				fi
+				test=`rpm -q mysql-community-server > /dev/null 2>&1`
+				isInstalled=$?
 
-                                ${Echo} "Dected MySQL Repo EXIST on this system."
-                        fi
-                        test=`rpm -q mysql-community-server > /dev/null 2>&1`
-                        isInstalled=$?
-
-                fi
+			fi
+		fi
 
                 if [ "${isInstalled}" -ne 0 ]; then
                         export DEBIAN_FRONTEND=noninteractive
@@ -1460,7 +1342,7 @@ restartJettyService ()
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
         iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
         
-        if [ "${dist}" == "centos" ]; then
+        if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 		iptables-save > /etc/sysconfig/iptables
         elif [ "${dist}" == "ubuntu" ]; then
 	 	iptables-save > /etc/iptables/rules.v4
@@ -1682,6 +1564,8 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	containerDist="Jetty9"
 
+	installDependanciesForInstallation
+
 	# check for installed IDP
 	setVarUpgradeType
 
@@ -1707,8 +1591,6 @@ invokeShibbolethInstallProcessJetty9 ()
 	setVarCertCN
 	setVarIdPScope
 	
-	installDependanciesForInstallation
-
 	setJavaCACerts
 
 	setJavaCryptographyExtensions
