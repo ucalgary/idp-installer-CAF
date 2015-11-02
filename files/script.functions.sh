@@ -3,35 +3,6 @@
 
 
 
-cleanBadInstall() {
-	if [ -d "/opt/${shibDir}" ]; then
-		rm -rf /opt/${shibDir}*
-	fi
-	if [ -d "/opt/cas-client-${casVer}" ]; then
-		rm -rf /opt/cas-client-${casVer}
-	fi
-	if [ -d "/opt/ndn-shib-fticks" ]; then
-		rm -rf /opt/ndn-shib-fticks
-	fi
-	if [ -d "/opt/shibboleth-idp" ]; then
-		rm -rf /opt/shibboleth-idp
-	fi
-	if [ -d "/opt/mysql-connector-java-5.1.27" ]; then
-		rm -rf /opt/mysql-connector-java-5.1.27
-	fi
-	if [ -f "/usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar" ]; then
-		rm /usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar
-	fi
-	if [ -d "/opt/apache-maven-3.1.0/" ]; then
-		rm -rf /opt/apache-maven-3.1.0/
-	fi
-	if [ -s "/etc/profile.d/maven-3.1.sh" ]; then
-		rm -rf /etc/profile.d/maven-3.1.sh
-	fi
-
-	exit 1
-}
-
 setBackTitle ()
 {
 	#	echo "in setBackTitle"
@@ -58,6 +29,13 @@ patchFirewall()
 {
         #Replace firewalld with iptables (Centos7)
         if [ "${dist}" == "centos" -a "${redhatDist}" == "7" ]; then
+                systemctl stop firewalld
+                systemctl mask firewalld
+                eval "yum -y install iptables-services" >> ${statusFile} 2>&1
+                systemctl enable iptables
+                systemctl start iptables
+
+        elif [ "${dist}" == "redhat" -a "${redhatDist}" == "7" ]; then
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -148,7 +126,9 @@ setJavaHome () {
         if [ ! -s "${downloadPath}/${javaSrc}" ]; then
                 ${fetchCmd} ${downloadPath}/${javaSrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie"  https://download.oracle.com/otn-pub/java/jdk/8u25-b17/${javaSrc} >> ${statusFile} 2>&1
         fi
-        mkdir /usr/java
+        if [ ! -d "/usr/java" ]; then
+		mkdir /usr/java
+	fi
         tar xzf ${downloadPath}/${javaSrc} -C /usr/java/
         ln -s /usr/java/jre${javaVer}/ /usr/java/latest
         ln -s /usr/java/latest /usr/java/default
@@ -306,105 +286,6 @@ generatePasswordsForSubsystems ()
 
 }
 
-askList() {
-	title=$1
-	text=$2
-	list=$3
-	string=""
-
-	if [ "${GUIen}" = "y" ]; then
-		WTcmd="${whiptailBin} --backtitle \"${BackTitle}\" --title \"${title}\" --nocancel --menu --clear -- \"${text}\" ${whipSize} 5 ${list} 3>&1 1>&2 2>&3"
-		string=$(eval ${WTcmd})
-	else
-		${Echo} ${text} >&2
-		${Echo} ${list} | sed -re 's/\"([^"]+)\"\ *\"([^"]+)\"\ */\1\ \-\-\ \2\n/g' >&2
-		read string
-		${Echo} "" >&2
-	fi
-
-	${Echo} "${string}"
-}
-
-askYesNo() {
-	title=$1
-	text=$2
-	value=$3
-	string=""
-
-	if [ "${GUIen}" = "y" ]; then
-		if [ ! -z "${value}" ]; then
-			value="--defaultno "
-		fi
-
-		
-
-		${whiptailBin} --backtitle "${BackTitle}" --title "${title}" ${value}--yesno --clear -- "${text}" ${whipSize} 3>&1 1>&2 2>&3
-		stringNum=$?
-		string="n"
-		if [ "${stringNum}" -eq 0 ]; then
-			string="y"
-		fi
-	else
-		show=""
-		if [ ! -z "${value}" ]; then
-			show="${text} [y/N]: "
-		else
-			show="${text} [Y/n]: "
-		fi
-
-		${Echo} "${show}" >&2
-		read string
-		${Echo} "" >&2
-
-		if [ ! -z "${value}" ]; then
-			if [ "${string}" = "y" -o "${string}" = "Y" ]; then
-				string="y"
-			else
-				string="n"
-			fi
-		else
-			if [ "${string}" = "n" -o "${string}" = "N" ]; then
-				string="n"
-			else
-				string="y"
-			fi
-		fi
-	fi
-
-	${Echo} "${string}"
-}
-
-askString() {
-	title=$1
-	text=$2
-	value=$3
-	null=$4
-	string=""
-
-	while [ -z "${string}" ]; do
-		if [ "${GUIen}" = "y" ]; then
-			string=$(${whiptailBin} --backtitle "${BackTitle}" --title "${title}" --nocancel --inputbox --clear -- "${text}" ${whipSize} "${value}" 3>&1 1>&2 2>&3)
-		else
-			show=${text}
-			if [ ! -z "${value}" ]; then
-				show="${show} [${value}]"
-			fi
-			${Echo} "${show}: " >&2
-			read string
-			${Echo} "" >&2
-			if [ ! -z "${value}" -a -z "${string}" ]; then
-				string=${value}
-			fi
-		fi
-
-		if [ -z "${string}" -a ! -z "${null}" ]; then
-			break
-		fi
-	done
-
-	${Echo} "${string}"
-}
-
 installEPEL() {
 	
 	if [ ! -z "`rpm -q epel-release | grep ' is not installed'`" ]; then
@@ -486,30 +367,30 @@ installEPTIDSupport ()
         if [ "${eptid}" != "n" ]; then
                 ${Echo} "Installing EPTID support"
 
-                if [ "$dist" == "ubuntu" ]; then
-                        test=`dpkg -s mysql-server > /dev/null 2>&1`
-                        isInstalled=$?
+		if [ "${dist}" == "ubuntu" ]; then
+			test=`dpkg -s mysql-server > /dev/null 2>&1`
+			isInstalled=$?
 
-                elif [ "$dist" == "centos" -o "$dist" == "redhat" ] && [ "$redhatDist" == "6" ]; then
-                        [ -f /etc/init.d/mysqld ]
-                        isInstalled=$?
+		elif [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
+			if [ "${redhatDist}" == "6" ]; then
+				[ -f /etc/init.d/mysqld ]
+				isInstalled=$?
 
-                elif [ "$dist" == "centos" -o "$dist" == "redhat" ] && [ "$redhatDist" == "7" ]; then
-                        #Add Oracle repos
-                        if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
+			elif [ "${redhatDist}" == "7" ]; then
+				#Add Oracle repos
+				if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
+					${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
+					mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
+					eval $mysqlOracleRepo >> ${statusFile} 2>&1
+				else
+					${Echo} "Dected MySQL Repo EXIST on this system."
 
-                                ${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
-                                mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
-                                eval $mysqlOracleRepo >> ${statusFile} 2>&1
+				fi
+				test=`rpm -q mysql-community-server > /dev/null 2>&1`
+				isInstalled=$?
 
-                        else
-
-                                ${Echo} "Dected MySQL Repo EXIST on this system."
-                        fi
-                        test=`rpm -q mysql-community-server > /dev/null 2>&1`
-                        isInstalled=$?
-
-                fi
+			fi
+		fi
 
                 if [ "${isInstalled}" -ne 0 ]; then
                         export DEBIAN_FRONTEND=noninteractive
@@ -592,14 +473,13 @@ if [ "${type}" = "cas" ]; then
 	fi
 
 	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
+	cp ${Spath}/downloads/shib-cas-authenticator-3.0.0.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
 	cp /opt/shibboleth-idp/webapp/WEB-INF/web.xml /opt/shibboleth-idp/edit-webapp/WEB-INF/
-	
-	cat ${Spath}/${prep}/${shibDir}-web.xml.diff.template \
-		| sed -re "s#IdPuRl#${idpurl}#;s#CaSuRl#${caslogurl}#;s#CaS2uRl#${casurl}#" \
-		> ${Spath}/${prep}/${shibDir}-web.xml.diff
-	files="`${Echo} ${files}` ${Spath}/${prep}/${shibDir}-web.xml.diff"
+	mkdir -p /opt/shibboleth-idp/flows/authn/Shibcas
+	cp ${Spath}/${prep}/shibcas-authn-beans.xml ${Spath}/${prep}/shibcas-authn-flow.xml /opt/shibboleth-idp/flows/authn/Shibcas
 
 	patch /opt/shibboleth-idp/edit-webapp/WEB-INF/web.xml -i ${Spath}/${prep}/${shibDir}-web.xml.diff >> ${statusFile} 2>&1
+	patch /opt/shibboleth-idp/conf/authn/general-authn.xml -i ${Spath}/${prep}/${shibDir}-general-authn.xml.diff >> ${statusFile} 2>&1
 
 	/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
@@ -1001,7 +881,7 @@ runShibbolethInstaller ()
 	if [ "${type}" = "ldap" ]; then
 
 	       cat << EOM > idp.properties.tmp
-idp.scope 			    =${idpScope} 
+idp.scope               =${idpScope}
 idp.entityID            = https://${certCN}/idp/shibboleth
 idp.sealer.storePassword= ${pass}
 idp.sealer.keyPassword  = ${pass}
@@ -1011,11 +891,14 @@ EOM
 	elif [ "${type}" = "cas" ]; then
 
                 cat << EOM > idp.properties.tmp
-idp.scope 			    =${idpScope} 
-idp.entityID            = https://${certCN}/idp/shibboleth
-idp.sealer.storePassword= ${pass}
-idp.sealer.keyPassword  = ${pass}
-idp.authn.flows         = RemoteUser
+idp.scope                  = ${idpScope}
+idp.entityID               = https://${certCN}/idp/shibboleth
+idp.sealer.storePassword   = ${pass}
+idp.sealer.keyPassword     = ${pass}
+idp.authn.flows            = Shibcas
+shibcas.casServerUrlPrefix = ${casurl}
+shibcas.casServerLoginUrl  = \${shibcas.casServerUrlPrefix}/login
+shibcas.serverName         = https://${certCN}
 EOM
 
 	fi
@@ -1476,12 +1359,13 @@ applyFTICKS ()
 	
 
 	# A. create salt automatically
-	fticksSalt=`openssl rand -base64 36 2>/dev/null`
+	if [ -z "${fticksSalt}" ]; then
+		fticksSalt=`openssl rand -base64 36 2>/dev/null`
+	fi
 
 	# B. overlay new audit.xml, logback.xml so bean and technique is in place (make backup first)
 	overlayFiles="audit.xml logback.xml"
-	for i in ${overlayFiles}; do  
-
+	for i in ${overlayFiles}; do
 		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.b4.replacement
 		cp ${Spath}/files/${my_ctl_federation}/${i}.template /opt/shibboleth-idp/conf/${i}
 	done
@@ -1494,7 +1378,7 @@ applyFTICKS ()
 	my_fticks_loghost_file="${Spath}/files/${my_ctl_federation}/fticks-loghost.txt"
 	my_fticks_loghost_value="localhost"
 
-	 if [ -a "${my_fticks_loghost_file}" ]; then
+	 if [ -s "${my_fticks_loghost_file}" ]; then
                 ${Echo} "applyFTICKS detected a loghost file to use"
                 my_fticks_loghost_value=`cat ${my_fticks_loghost_file}`
 
@@ -1521,12 +1405,12 @@ patchShibbolethConfigs ()
         ${Echo} "Patching config files"
         mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
 
-        ${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with CAF defaults"
+        ${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with federation defaults"
 
         cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
         chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
-        ${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
+        ${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with federation trusts"
         cat ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml > /opt/shibboleth-idp/conf/metadata-providers.xml
         cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml > /opt/shibboleth-idp/conf/attribute-resolver.xml
         cat ${Spath}/files/${my_ctl_federation}/relying-party.xml > /opt/shibboleth-idp/conf/relying-party.xml
@@ -1554,19 +1438,19 @@ patchShibbolethConfigs ()
         if [ "${eptid}" != "n" ]; then
                 if [ -z "${epass}" ]; then
                         epass=`${passGenCmd}`
-                        # grant sql access for shibboleth
-                        esalt=`openssl rand -base64 36 2>/dev/null`
-                        cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
-
-                        ${Echo} "Create MySQL database and shibboleth user."
-                        mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                        retval=$?
-                        if [ "${retval}" -ne 0 ]; then
-                                ${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-                                ${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
-                        fi
                 fi
+		# grant sql access for shibboleth
+		esalt=`openssl rand -base64 36 2>/dev/null`
+		cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+
+		${Echo} "Create MySQL database and shibboleth user."
+		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		retval=$?
+		if [ "${retval}" -ne 0 ]; then
+			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+		fi
 
                 cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
                         | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
@@ -1604,12 +1488,81 @@ performPostUpgradeSteps ()
 
 }
 
+checkAndLoadBackupFile ()
+{
+	backFile=`ls ${Spath} | egrep "^idp-export-.+tar.gz"`
+	if [ "x${backFile}" != "x" ]; then
+		${Echo} "Found backup, extracting and load settings" >> ${statusFile} 2>&1
+		mkdir ${Spath}/extract 2>/dev/null
+		cd ${Spath}/extract
+		tar zxf ${Spath}/${backFile}
+		if [ -s "${Spath}/extract/opt/shibboleth-idp/conf/fticks-key.txt" ]; then
+			fticksSalt=`cat ${Spath}/extract/opt/shibboleth-idp/conf/fticks-key.txt`
+		fi
+		. settingsToImport.sh
+		cd ${Spath}
+	else
+		${Echo} "No backup found." >> ${statusFile} 2>&1
+	fi
+}
+
+
+loadDatabaseDump ()
+{
+	if [ -s "${Spath}/extract/sql.dump" ]; then
+		if [ "${ehost}" = "localhost" -o "${ehost}" = "127.0.0.1" ]; then
+			if [ "${etype}" = "mysql" ]; then
+				mysql -uroot -p"${mysqlPass}" -D ${eDB} < ${Spath}/extract/sql.dump
+			fi
+		else
+			${Echo} "Database not on localhost, skipping database import." >> ${messages}
+		fi
+	fi
+}
+
+
+overwriteConfigFiles ()
+{
+# 	if [ -d "${Spath}/extract/opt/shibboleth-idp/conf" -a "x`ls ${Spath}/extract/opt/shibboleth-idp/conf`" != "x" ]; then
+# 		for i in `ls ${Spath}/extract/opt/shibboleth-idp/conf/`; do
+# 			mv ${Spath}/extract/opt/shibboleth-idp/conf/$i /opt/shibboleth-idp/conf
+# 			chown jetty /opt/shibboleth-idp/conf/$i
+# 		done
+# 	fi
+	if [ -d "${Spath}/extract/opt/shibboleth-idp/metadata" -a "x`ls ${Spath}/extract/opt/shibboleth-idp/metadata 2>/dev/null`" != "x" ]; then
+		for i in `ls ${Spath}/extract/opt/shibboleth-idp/metadata/`; do
+			mv ${Spath}/extract/opt/shibboleth-idp/metadata/$i /opt/shibboleth-idp/metadata
+			chown jetty /opt/shibboleth-idp/metadata/$i
+		done
+	fi
+}
+
+
+overwriteKeystoreFiles ()
+{
+	if [ -d "${Spath}/extract/opt/shibboleth-idp/credentials" -a "x`ls ${Spath}/extract/opt/shibboleth-idp/credentials 2>/dev/null`" != "x" ]; then
+		mv ${Spath}/extract/opt/shibboleth-idp/credentials/* /opt/shibboleth-idp/credentials
+		chown jetty /opt/shibboleth-idp/credentials/*
+	fi
+	if [ -f "${Spath}/extract/${httpsP12}" ]; then
+		mv ${Spath}/extract/${httpsP12} ${httpsP12}
+		chown jetty ${httpsP12}
+	fi
+	if [ "x${keyFile}" != "x" -a -f "${Spath}/extract/${keyFile}" ]; then
+		mv ${Spath}/extract/${keyFile} ${keyFile}
+		chown jetty ${keyFile}
+	fi
+}
+
+
 invokeShibbolethInstallProcessJetty9 ()
 {
 
         ### Begin of SAML IdP installation Process
 
 	containerDist="Jetty9"
+
+	installDependanciesForInstallation
 
 	# check for installed IDP
 	setVarUpgradeType
@@ -1618,6 +1571,9 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	# Override per federation
 	performStepsForShibbolethUpgradeIfRequired
+
+# 	check for backup file and use it if available
+	checkAndLoadBackupFile
 
 	if [ "${installer_interactive}" = "y" ]
 	then
@@ -1633,8 +1589,6 @@ invokeShibbolethInstallProcessJetty9 ()
 	setVarCertCN
 	setVarIdPScope
 	
-	installDependanciesForInstallation
-
 	setJavaCACerts
 
 	setJavaCryptographyExtensions
@@ -1678,6 +1632,13 @@ invokeShibbolethInstallProcessJetty9 ()
 	updateMachineTime
 
 	updateMachineHealthCrontab
+
+# 	install files from backup
+	overwriteConfigFiles
+	overwriteKeystoreFiles
+
+# 	load the database dump if available
+	loadDatabaseDump
 
 	restartJettyService
 
