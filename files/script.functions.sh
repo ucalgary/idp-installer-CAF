@@ -1035,7 +1035,6 @@ configContainerSSLServerKey()
 
 				svrSubject=`openssl x509 -subject -noout -in ${certpath}server.key | awk -F= '{print $NF}'`
                 ${keytool} -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}server.key -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
-                fi
 
 
         fi
