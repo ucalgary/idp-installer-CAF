@@ -28,7 +28,11 @@ installDependanciesForInstallation ()
 patchFirewall()
 {
         #Replace firewalld with iptables (Centos7)
+        ${Echo} "Updating firewall settings - changing from firewalld to iptables "
+		${Echo} "Working with Distro:${dist} with version: ${redhatDist}"
+        
         if [ "${dist}" == "centos" -a "${redhatDist}" == "7" ]; then
+        ${Echo} "Detected ${dist} ${redhatDist}"
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -36,6 +40,7 @@ patchFirewall()
                 systemctl start iptables
 
         elif [ "${dist}" == "redhat" -a "${redhatDist}" == "7" ]; then
+        ${Echo} "Detected ${dist} ${redhatDist}"
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -43,6 +48,8 @@ patchFirewall()
                 systemctl start iptables
 
 	elif [ "${dist}" == "ubuntu" ]; then
+        ${Echo} "Detected ${dist} ${redhatDist}"
+
 		DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent	
         fi
 
@@ -1020,7 +1027,17 @@ configContainerSSLServerKey()
                 if [ ! -d "/opt/shibboleth-idp/credentials/" ]; then
                         mkdir /opt/shibboleth-idp/credentials/
                 fi
+
+                ${Echo} "Self-signed webserver cert/key generated and placed in PKCS12 format in ${httpsP12} for port 443 usage"
                 openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name container -passout pass:${httpspass}
+        
+    			${Echo} "Loading self-signed webserver cert into ${javaCAcerts} to permit TLS connecSelf-signed webserver key generated and putting in ${httpsP12} for port 443 usage"
+
+				svrSubject=`openssl x509 -subject -noout -in ${certpath}server.key | awk -F= '{print $NF}'`
+                ${keytool} -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}server.key -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+                fi
+
+
         fi
 }
 
@@ -1327,19 +1344,15 @@ jettySetup() {
 
 }
 
-
-restartJettyService ()
+applyIptablesSettings ()
 
 {
-        if [ -f /var/run/jetty.pid ]; then
-                service jetty stop
-        fi
-        service jetty start
 
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
         iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
+        iptables -t nat -I OUTPUT -p tcp -o lo --dport 443 -j REDIRECT --to-ports 7443
         
         if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 		iptables-save > /etc/sysconfig/iptables
@@ -1349,6 +1362,20 @@ restartJettyService ()
 
 	service iptables restart
 
+}
+
+restartJettyService ()
+
+{
+     
+		${Echo} "Restarting Jetty to ensure everything has taken effect"
+
+        if [ -f /var/run/jetty.pid ]; then
+                service jetty stop
+        fi
+        service jetty start
+
+     
 }
 
 applyFTICKS ()
@@ -1639,6 +1666,8 @@ invokeShibbolethInstallProcessJetty9 ()
 
 # 	load the database dump if available
 	loadDatabaseDump
+
+	applyIptablesSettings
 
 	restartJettyService
 
