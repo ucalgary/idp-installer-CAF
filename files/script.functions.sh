@@ -534,6 +534,16 @@ mkdir -p ${certpath}
 
 }
 
+fetchLDAPCertificates ()
+{
+	# Fetch ldap cert
+	${Echo} "Fetching LDAP Certificates for ldap-server.crt used in idp.properties"
+	for loopServer in ${ldapserver}; do
+		${Echo} "QUIT" | openssl s_client -connect ${loopServer}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' >> ${certpath}/ldap-server.crt
+	done
+
+}
+
 installCertificates()
 
 {
@@ -568,11 +578,6 @@ ${Echo} "Fetching TCS CA chain from web"
                 files="`${Echo} ${files}` ${certpath}${ccnt}.root"
                 ccnt=`expr ${ccnt} + 1`
         done
-
-	# Fetch ldap cert
-	for loopServer in ${ldapserver}; do
-		${Echo} "QUIT" | openssl s_client -connect ${loopServer}:636 2>/dev/null | sed -ne '/-----BEGIN CERTIFICATE-----/,/-----END CERTIFICATE-----/p' >> ${certpath}/ldap-server.crt
-	done
 
 }
 
@@ -1641,6 +1646,8 @@ invokeShibbolethInstallProcessJetty9 ()
 	# Override per federation
 	installCertificates
 
+	# process certificates for LDAP connections
+	fetchLDAPCertificates
 	configShibbolethSSLForLDAPJavaKeystore
 
 	# Override per federation
