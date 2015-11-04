@@ -1038,7 +1038,7 @@ configContainerSSLServerKey()
         
     			${Echo} "Loading self-signed webserver cert: ${certpath}server.crt into ${javaCAcerts} to permit TLS port 443 connections"
 
-				svrSubject=`openssl x509 -subject -noout -in ${certpath}server.key | awk -F= '{print $NF}'`
+				svrSubject=`openssl x509 -subject -noout -in ${certpath}server.crt | awk -F= '{print $NF}'`
                 ${keytool} -import -noprompt -alias "${subject}" -file ${certpath}server.crt -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 
         fi
