@@ -1036,7 +1036,7 @@ configContainerSSLServerKey()
                 ${Echo} "Self-signed webserver cert/key generated and placed in PKCS12 format in ${httpsP12} for port 443 usage"
                 openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name container -passout pass:${httpspass}
         
-    			${Echo} "Loading self-signed webserver cert into ${javaCAcerts} to permit TLS port 443 connections"
+    			${Echo} "Loading self-signed webserver cert: ${certpath}server.crt into ${javaCAcerts} to permit TLS port 443 connections"
 
 				svrSubject=`openssl x509 -subject -noout -in ${certpath}server.key | awk -F= '{print $NF}'`
                 ${keytool} -import -noprompt -alias "${subject}" -file ${certpath}server.crt -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
