@@ -1336,7 +1336,9 @@ jettySetup() {
         jettyDefaults="/etc/default/jetty"
         jEnvString="export JAVA_HOME=${JAVA_HOME}"
  		jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
- 		jEnvJavaDefOpts='export JAVA_OPTIONS="-Didp.home=/opt/shibboleth-idp -Xmx1024M -XX:+PrintGCDetails"'
+ 		jEnvJavaDefOpts='export JAVA_OPTIONS="-Didp.home=/opt/shibboleth-idp -Xmx1024M"'
+ 		# suppressed -XX:+PrintGCDetails because it was too noisy
+ 		
 		${Echo} "${jEnvString}" >> ${jettyDefaults}
        	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
        	${Echo} "${jEnvJavaDefOpts}" >> ${jettyDefaults}
