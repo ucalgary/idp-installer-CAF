@@ -1336,8 +1336,11 @@ jettySetup() {
         jettyDefaults="/etc/default/jetty"
         jEnvString="export JAVA_HOME=${JAVA_HOME}"
  		jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
+ 		jEnvJavaDefOpts='export JAVA_OPTIONS="-Didp.home=/opt/shibboleth-idp -Xmx1024M -XX:+PrintGCDetails"'
 		${Echo} "${jEnvString}" >> ${jettyDefaults}
        	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
+       	${Echo} "${jEnvJavaDefOpts}" >> ${jettyDefaults}
+       	
         ${Echo} "Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
 
 	removeCiphers="TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA"
