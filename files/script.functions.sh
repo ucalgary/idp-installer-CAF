@@ -707,6 +707,10 @@ askForConfigurationData() {
 		subsearch=$(askYesNo "User consent" "Do you want to enable user consent?")
 	fi
 
+	if [ -z "${ECPEnabled}" ]; then
+		subsearch=$(askYesNo "Enable ECP" "Do you want to enable SAML2 ECP?")
+	fi
+
 
 }
 
@@ -889,6 +893,19 @@ runShibbolethInstaller ()
 	       ldapDnFormat="uid=%s,${ldapbasedn}"
 	 fi
 
+#  Establish which authentication flows we have to configure
+
+idpAuthnFlows="Password"
+if [ "${ECPEnabled}" = "y" ]; then
+	idpAuthNFlows="${idpAuthnFlows}|RemoteUserInternal"
+else
+	idpAuthNFlows="Shibcas|RemoteUserInternal"
+
+fi
+${Echo} "idp.properties authn flows are set to: ${idpAuthnFlows}"
+
+
+#  Auth flows part 2: what do we need to set for the installation?
 
 	if [ "${type}" = "ldap" ]; then
 
@@ -946,6 +963,78 @@ EOM
 
 }
 
+enableECPUpdateIdPWebXML ()
+{
+		${Echo} "ECP Step: Update the web.xml of the idp and rebuild"
+		${Echo} "ECP Step: make backup of web.xml"
+			webAppWEBINF="/opt/shibboleth-idp/webapp/WEB-INF"
+			webXML="web.xml"
+			cp ${webAppWEBINF}/${webXML} ${webAppWEBINF}/${webXML}.orig
+		${Echo} "ECP Step: modify web.xml to enable ECP features of jetty container"
+			#  NOTE: The use of the greater than overwrites the file web.xml and we cat the fragment to complete it.
+			#  this is intentional			
+			head -n -1 ${webAppWEBINF}/${webXML}.orig > ${webAppWEBINF}/${webXML}
+			cat ${Spath}/${prep}/jetty/web.xml.fragment.template >> ${webAppWEBINF}/${webXML}
+		${Echo} "ECP Step: modify web.xml to enable ECP features of jetty container"
+		
+		mytest=`usr/bin/xmllint ${webAppWEBINF}/${webXML} > /dev/null 2>&1`
+		# $? is the most recent foreground pipeline exit status.  If it's ok, we did our job right.
+		isWebXMLOK=$?
+
+        if [ "${isWebXMLOK}" -ne 0 ]; then
+			${Echo} "ECP Step: RUH-OH! web.xml failed to validate via xmllint. saving to web.xml.failed and reverting to original"
+			cp ${webAppWEBINF}/${webXML} ${webAppWEBINF}/${webXML}.failed
+			cp ${webAppWEBINF}/${webXML}.orig ${webAppWEBINF}/${webXML}
+			${Echo} "ECP Step: URH-OH! manual intervention required for ECP to work, but regular SSO operations should be ok."
+				
+        else
+			${Echo} "ECP Step: web.xml validates via xmllint, good to proceed."
+  
+        fi
+		${Echo} "ECP Step: Proceeding to rebuilding the war and deploying"
+ 		/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
+
+
+}
+
+enableECP ()
+
+{
+
+	# Based off of: https://wiki.shibboleth.net/confluence/display/IDP30/ECPConfiguration
+
+
+	if [ "${ECPEnabled}" = "y" ]; then
+	
+		${Echo} "ECP Enabled is yes, processing ECP steps"
+
+
+		${Echo} "ECP Step: Adding in JAAS connector in idp.home/conf/authn/jaas.config"
+		jaasConfigFile="/opt/shibboleth-idp/conf/authn/jaas.config"
+		ldapServerStr=""
+		for i in `${Echo} ${ldapserver}`; do
+			ldapServerStr="`${Echo} ${ldapServerStr}` ldap://${i}"
+		done
+		ldapServerStr="`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`"
+		ldapUserFilter="${attr_filter}={user})"
+
+		cat ${Spath}/${prep}/jaas.config.template \
+			| sed -re "s#LdApUrI#${ldapServerStr}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/;s/LdApCrEdS/${ldapbinddn}/;s/LdApPaSsWoRd/${ldappass}/;s/LdApUsErFiLtEr/${ldapUserFilter}/;s/LdApSsL/${ldapSSL}/;s/LdApTlS/${ldapStartTLS}/" \
+			> ${jaasConfigFile}
+
+		${Echo} "ECP Step: ensure jetty:jetty owns idp.home/conf/authn/jaas.config"
+		chown jetty:jetty ${jaasConfigFile}
+
+
+		enableECPUpdateIdPWebXML
+
+	else
+				${Echo} "ECP Enabled is disabled, skipping  idp.home/conf/authn/jaas.config processing"
+
+	fi
+
+
+}
 
 configShibbolethSSLForLDAPJavaKeystore()
 
@@ -1269,6 +1358,32 @@ fi
 
 }
 
+jettySetupSetDefaults ()
+{
+
+        # ensure Jetty has proper startup environment for Java for all platforms
+        jettyDefaults="/etc/default/jetty"
+        jEnvString="export JAVA_HOME=${JAVA_HOME}"
+ 		jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
+ 		jEnvJavaDefOpts='export JAVA_OPTIONS="-Didp.home=/opt/shibboleth-idp -Xmx1024M"'
+ 		# suppressed -XX:+PrintGCDetails because it was too noisy
+
+		${Echo} "${jEnvString}" >> ${jettyDefaults}
+       	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
+       	${Echo} "${jEnvJavaDefOpts}" >> ${jettyDefaults}
+       	
+        ${Echo} "Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
+
+}
+jettySetupManageCiphers() {
+
+
+		removeCiphers="TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA"
+	for cipher in $removeCiphers; do
+		sed -i "/${cipher}/d" /opt/jetty/jetty-base/etc/jetty.xml
+	done
+
+}
 
 jettySetup() {
 
@@ -1332,23 +1447,10 @@ jettySetup() {
         chown jetty:jetty /opt/jetty/ -R
         chown -R jetty:jetty /opt/shibboleth-idp/
 
-        # ensure Jetty has proper startup environment for Java for all platforms
-        jettyDefaults="/etc/default/jetty"
-        jEnvString="export JAVA_HOME=${JAVA_HOME}"
- 		jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
- 		jEnvJavaDefOpts='export JAVA_OPTIONS="-Didp.home=/opt/shibboleth-idp -Xmx1024M"'
- 		# suppressed -XX:+PrintGCDetails because it was too noisy
- 		
-		${Echo} "${jEnvString}" >> ${jettyDefaults}
-       	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
-       	${Echo} "${jEnvJavaDefOpts}" >> ${jettyDefaults}
-       	
-        ${Echo} "Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
+        jettySetupSetDefaults
+        
+        jettySetupManageCiphers
 
-	removeCiphers="TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA"
-	for cipher in $removeCiphers; do
-		sed -i "/${cipher}/d" /opt/jetty/jetty-base/etc/jetty.xml
-	done
 
 }
 
@@ -1665,6 +1767,8 @@ invokeShibbolethInstallProcessJetty9 ()
 	performPostUpgradeSteps
 
         jettySetup
+
+	enableECP
 
 	updateMachineTime
 
