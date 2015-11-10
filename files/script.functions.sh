@@ -974,10 +974,10 @@ enableECPUpdateIdPWebXML ()
 			#  NOTE: The use of the greater than overwrites the file web.xml and we cat the fragment to complete it.
 			#  this is intentional			
 			head -n -1 ${webAppWEBINF}/${webXML}.orig > ${webAppWEBINF}/${webXML}
-			cat ${Spath}/${prep}/jetty/web.xml.fragment.template >> ${webAppWEBINF}/${webXML}
+			cat ${Spath}/prep/jetty/web.xml.fragment.template >> ${webAppWEBINF}/${webXML}
 		${Echo} "ECP Step: modify web.xml to enable ECP features of jetty container"
 		
-		mytest=`usr/bin/xmllint ${webAppWEBINF}/${webXML} > /dev/null 2>&1`
+		mytest=`/usr/bin/xmllint ${webAppWEBINF}/${webXML} > /dev/null 2>&1`
 		# $? is the most recent foreground pipeline exit status.  If it's ok, we did our job right.
 		isWebXMLOK=$?
 
@@ -985,7 +985,7 @@ enableECPUpdateIdPWebXML ()
 			${Echo} "ECP Step: RUH-OH! web.xml failed to validate via xmllint. saving to web.xml.failed and reverting to original"
 			cp ${webAppWEBINF}/${webXML} ${webAppWEBINF}/${webXML}.failed
 			cp ${webAppWEBINF}/${webXML}.orig ${webAppWEBINF}/${webXML}
-			${Echo} "ECP Step: URH-OH! manual intervention required for ECP to work, but regular SSO operations should be ok."
+			${Echo} "ECP Step: RUH-OH! manual intervention required for ECP to work, but regular SSO operations should be ok."
 				
         else
 			${Echo} "ECP Step: web.xml validates via xmllint, good to proceed."
