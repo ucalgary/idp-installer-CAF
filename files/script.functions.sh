@@ -1043,15 +1043,11 @@ enableECP ()
 
 		${Echo} "ECP Step: Adding in JAAS connector in idp.home/conf/authn/jaas.config"
 		jaasConfigFile="/opt/shibboleth-idp/conf/authn/jaas.config"
-		ldapServerStr=""
-		for i in `${Echo} ${ldapserver}`; do
-			ldapServerStr="`${Echo} ${ldapServerStr}` ldap://${i}"
-		done
-		ldapServerStr="`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`"
+		
 		ldapUserFilter="${attr_filter}={user}"
 
 		cat ${Spath}/${prep}/jaas.config.template \
-			| sed -re "s#LdApUrI#${ldapServerStr}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/;s/LdApCrEdS/${ldapbinddn}/;s/LdApPaSsWoRd/${ldappass}/;s/LdApUsErFiLtEr/${ldapUserFilter}/;s/LdApSsL/${ldapSSL}/;s/LdApTlS/${ldapStartTLS}/" \
+			| sed -re "s#LdApUrI#${ldapurl}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/;s/LdApCrEdS/${ldapbinddn}/;s/LdApPaSsWoRd/${ldappass}/;s/LdApUsErFiLtEr/${ldapUserFilter}/;s/LdApSsL/${ldapSSL}/;s/LdApTlS/${ldapStartTLS}/" \
 			> ${jaasConfigFile}
 
 		${Echo} "ECP Step: ensure jetty:jetty owns idp.home/conf/authn/jaas.config"
