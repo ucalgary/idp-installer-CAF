@@ -1007,7 +1007,7 @@ enableECPUpdateIdPWebXML ()
 			#  this is intentional			
 			head -n -1 ${tgtFileToUpdateBackup} > ${tgtFileToUpdate}
 			cat ${Spath}/prep/jetty/web.xml.fragment.template >> ${tgtFileToUpdate}
-		${Echo} "ECP Step: modify web.xml to enable ECP features of jetty container"
+		${Echo} "ECP Step: modifications done, attempting to validate web.xml as sane XML"
 		
 		mytest=`/usr/bin/xmllint ${tgtFileToUpdate} > /dev/null 2>&1`
 		# $? is the most recent foreground pipeline exit status.  If it's ok, we did our job right.
