@@ -895,14 +895,25 @@ runShibbolethInstaller ()
 
 #  Establish which authentication flows we have to configure
 
-idpAuthnFlows="Password"
-if [ "${ECPEnabled}" = "y" ]; then
-	idpAuthNFlows="${idpAuthnFlows}|RemoteUserInternal"
+idpAuthnFlowsDefault="Password"
+idpAuthnFlows=""
+
+if [ "${ECPEnabled}" = "y" -a "${type}" = "ldap" ]; then
+
+	idpAuthnFlows="${idpAuthnFlows}|RemoteUserInternal"
+	${Echo} "ECP Specific setting detected: idp.properties authn flows are now set to ldap and ECP: ${idpAuthnFlows}"
+
+elif [ "${ECPEnabled}" = "y" -a "${type}" = "cas" ]; then
+
+	idpAuthnFlows="Shibcas|RemoteUserInternal"
+	${Echo} "ECP Specific setting detected: idp.properties authn flows are now set to CAS and ECP: ${idpAuthnFlows}"
+
 else
-	idpAuthNFlows="Shibcas|RemoteUserInternal"
+	
+	idpAuthnFlows="${idpAuthnFlowsDefault}"
+	${Echo} "idp.properties authn flows are set to the default use of password : ${idpAuthnFlows}"
 
 fi
-${Echo} "idp.properties authn flows are set to: ${idpAuthnFlows}"
 
 
 #  Auth flows part 2: what do we need to set for the installation?
@@ -1037,7 +1048,7 @@ enableECP ()
 			ldapServerStr="`${Echo} ${ldapServerStr}` ldap://${i}"
 		done
 		ldapServerStr="`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`"
-		ldapUserFilter="${attr_filter}={user})"
+		ldapUserFilter="${attr_filter}={user}"
 
 		cat ${Spath}/${prep}/jaas.config.template \
 			| sed -re "s#LdApUrI#${ldapServerStr}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/;s/LdApCrEdS/${ldapbinddn}/;s/LdApPaSsWoRd/${ldappass}/;s/LdApUsErFiLtEr/${ldapUserFilter}/;s/LdApSsL/${ldapSSL}/;s/LdApTlS/${ldapStartTLS}/" \
