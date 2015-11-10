@@ -967,24 +967,45 @@ enableECPUpdateIdPWebXML ()
 {
 		${Echo} "ECP Step: Update the web.xml of the idp and rebuild"
 		${Echo} "ECP Step: make backup of web.xml"
-			webAppWEBINF="/opt/shibboleth-idp/webapp/WEB-INF"
-			webXML="web.xml"
-			cp ${webAppWEBINF}/${webXML} ${webAppWEBINF}/${webXML}.orig
+		webXML="web.xml"
+		webAppWEBINFOverride="/opt/shibboleth-idp/edit-webapp/WEB-INF"
+		webAppWEBINF="/opt/shibboleth-idp/webapp/WEB-INF"
+		# set to the overridden one provided it exists
+		tgtFileToUpdate="${webAppWEBINFOverride}/${webXML}"
+		tgtFileToUpdateBackup="${tgtFileToUpdate}.orig"
+
+		# expected entry conditions of this if-then-else and subsequent logic block:
+		# A. users and this code who touch web.xml will place file in Shibboleth edit-webapp location
+		# B. syntactically the file will have the closing XML tag on the very last line (no extra spaces)
+		# C. regardless of the use of CAS (which places the web.xml in the override location) we will pivot around overriding existing web.xml
+		# D. the function enableECPUpdateIdPWebXML is executed after the detection and manipulation of the items for CAS
+		# E.  the overriden web.xml is syntactically correct (we validate after processing but will not validate before)
+		if [ -s ${tgtFileToUpdate}]; then
+				${Echo} "ECP Step: CAS is your AuthN technique, web.xml being manipulated:${tgtFileToUpdate}"
+		else				
+				${Echo} "ECP Step: Regular Shibboleth AuthN detected, web.xml being cloned from webapp/WEB-INF into edit-webapp/WEB-INF"
+				cp ${webAppWEBINF}/${webXML} ${webAppWEBINFOverride}
+		fi
+
+		# make the backup
+		cp ${tgtFileToUpdate} ${tgtFileToUpdateBackup}
+
+
 		${Echo} "ECP Step: modify web.xml to enable ECP features of jetty container"
 			#  NOTE: The use of the greater than overwrites the file web.xml and we cat the fragment to complete it.
 			#  this is intentional			
-			head -n -1 ${webAppWEBINF}/${webXML}.orig > ${webAppWEBINF}/${webXML}
-			cat ${Spath}/prep/jetty/web.xml.fragment.template >> ${webAppWEBINF}/${webXML}
+			head -n -1 ${tgtFileToUpdateBackup} > ${tgtFileToUpdate}
+			cat ${Spath}/prep/jetty/web.xml.fragment.template >> ${tgtFileToUpdate}
 		${Echo} "ECP Step: modify web.xml to enable ECP features of jetty container"
 		
-		mytest=`/usr/bin/xmllint ${webAppWEBINF}/${webXML} > /dev/null 2>&1`
+		mytest=`/usr/bin/xmllint ${tgtFileToUpdate} > /dev/null 2>&1`
 		# $? is the most recent foreground pipeline exit status.  If it's ok, we did our job right.
 		isWebXMLOK=$?
 
         if [ "${isWebXMLOK}" -ne 0 ]; then
 			${Echo} "ECP Step: RUH-OH! web.xml failed to validate via xmllint. saving to web.xml.failed and reverting to original"
-			cp ${webAppWEBINF}/${webXML} ${webAppWEBINF}/${webXML}.failed
-			cp ${webAppWEBINF}/${webXML}.orig ${webAppWEBINF}/${webXML}
+			cp ${tgtFileToUpdate} ${tgtFileToUpdate}.failed
+			cp ${tgtFileToUpdateBackup} ${tgtFileToUpdate}
 			${Echo} "ECP Step: RUH-OH! manual intervention required for ECP to work, but regular SSO operations should be ok."
 				
         else
