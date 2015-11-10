@@ -900,7 +900,7 @@ idpAuthnFlows=""
 
 if [ "${ECPEnabled}" = "y" -a "${type}" = "ldap" ]; then
 
-	idpAuthnFlows="${idpAuthnFlows}|RemoteUserInternal"
+	idpAuthnFlows="${idpAuthnFlowsDefault}|RemoteUserInternal"
 	${Echo} "ECP Specific setting detected: idp.properties authn flows are now set to ldap and ECP: ${idpAuthnFlows}"
 
 elif [ "${ECPEnabled}" = "y" -a "${type}" = "cas" ]; then
