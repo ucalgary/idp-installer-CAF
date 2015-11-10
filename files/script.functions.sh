@@ -980,7 +980,7 @@ enableECPUpdateIdPWebXML ()
 		# C. regardless of the use of CAS (which places the web.xml in the override location) we will pivot around overriding existing web.xml
 		# D. the function enableECPUpdateIdPWebXML is executed after the detection and manipulation of the items for CAS
 		# E.  the overriden web.xml is syntactically correct (we validate after processing but will not validate before)
-		if [ -s ${tgtFileToUpdate}]; then
+		if [ -s "${tgtFileToUpdate}" ]; then
 				${Echo} "ECP Step: CAS is your AuthN technique, web.xml being manipulated:${tgtFileToUpdate}"
 		else				
 				${Echo} "ECP Step: Regular Shibboleth AuthN detected, web.xml being cloned from webapp/WEB-INF into edit-webapp/WEB-INF"
