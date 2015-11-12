@@ -528,14 +528,20 @@ validateConnectivity()
 		##############################
 		# bind LDAP user
 		##############################
+		#
+		# note that we need to monkey around with the TLS vis-a-vis the LDAP server to avoid validating the unsigned cert
+		# in order to claim we can reach it.  The preflight test is done as a simple one to ensure the credentials are correct
+		# The certificate used will be loaded into the java keystore. 
+		# We may want to rethink the next few lines to see if we need to remove them to have the machine properly configured
+		# for both commandline AND applications (apps use the java keystore) 
 		elo "${Echo} LDAP bind checking...(might take few minutes)"
 		if [ -z "`grep 'TLS_REQCERT' /root/.ldaprc 2>/dev/null`" ]; then
 			${Echo} "TLS_REQCERT ALLOW" >> /root/.ldaprc
 		fi
 		ldapBaseDN=`echo ${ldapbinddn} | cut -d, -f2-`
 		ldapSearchValue=`echo ${ldapbinddn} | cut -d, -f1`
-		${Echo} "ldapsearch -vvv -H ldaps://$server -D \"${ldapbinddn}\" -b \"${ldapBaseDN}\" -x -w \"<removed>\" \"${ldapSearchValue}\"" >> ${statusFile}
-		ldapsearch -vvv -H ldaps://$server -D "${ldapbinddn}" -b "${ldapBaseDN}" -x -w "${ldappass}" "${ldapSearchValue}" &>> ${statusFile}
+		${Echo} "export LDAPTLS_REQCERT=never; ldapsearch -vvv -H ldaps://$server -D \"${ldapbinddn}\" -b \"${ldapBaseDN}\" -x -w \"<removed>\" \"${ldapSearchValue}\"" >> ${statusFile}
+		export LDAPTLS_REQCERT=never; ldapsearch -vvv -H ldaps://$server -D "${ldapbinddn}" -b "${ldapBaseDN}" -x -w "${ldappass}" "${ldapSearchValue}" &>> ${statusFile}
 		if [ $? == "0" ]; then
 			elo "${Echo} ldap bind - - - - ok"
 			LDAP="ok"
