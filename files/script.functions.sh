@@ -16,14 +16,7 @@ setBackTitle ()
 
 }
 
-installDependanciesForInstallation ()
-{
-	${Echo} "Updating repositories and installing generic dependencies"
-	#${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
-	eval ${distCmdU} &> >(tee -a ${statusFile}) 
-	eval ${distCmd1} &> >(tee -a ${statusFile})
-	${Echo} "Done."
-}
+
 
 patchFirewall()
 {
@@ -1008,7 +1001,7 @@ enableECPUpdateIdPWebXML ()
 			head -n -1 ${tgtFileToUpdateBackup} > ${tgtFileToUpdate}
 			cat ${Spath}/prep/jetty/web.xml.fragment.template >> ${tgtFileToUpdate}
 		${Echo} "ECP Step: modifications done, attempting to validate web.xml as sane XML"
-		
+
 		mytest=`/usr/bin/xmllint ${tgtFileToUpdate} > /dev/null 2>&1`
 		# $? is the most recent foreground pipeline exit status.  If it's ok, we did our job right.
 		isWebXMLOK=$?
@@ -1727,7 +1720,7 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	containerDist="Jetty9"
 
-	installDependanciesForInstallation
+	# This is now done in script.bootstrap.functions.sh --> installDependanciesForInstallation
 
 	# check for installed IDP
 	setVarUpgradeType
