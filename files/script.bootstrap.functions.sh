@@ -300,6 +300,8 @@ setDistCommands() {
 		distRadiusGroup=${ubuntuRadiusGroup}
 		templatePathEduroamDist=${templatePathEduroamUbuntu}
 		distEduroamModules=${UbuntuEduroamModules}
+    ${Echo} "Detected OS as Debian based: ${dist}"
+
         elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
                 if [ ${dist} = "centos" ]; then
 			redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
@@ -385,6 +387,16 @@ validateConnectivity()
 	elo "$dist_install_nc"
 	elo "$dist_install_netstat"
 	elo "$dist_install_ldaptools"
+
+	${Echo} "Updating repositories and installing generic dependencies"
+	#${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
+	elo "${distCmdU}"
+	elo "${distCmd1}"
+	#eval ${distCmdU} &> >(tee -a ${statusFile}) 
+	#eval ${distCmd1} &> >(tee -a ${statusFile})
+	elo "${Echo} Done Updating repositories and basic tools"
+
+	
 
 	##############################
 	# ntp server check
