@@ -286,42 +286,7 @@ generatePasswordsForSubsystems ()
 
 }
 
-installEPEL() {
-	
-	if [ ! -z "`rpm -q epel-release | grep ' is not installed'`" ]; then
-			
-		${Echo} "Detected no EPEL and Jpackage, adding repos into /etc/yum.repos.d/ and updating them"	
 
-
-	cat > /etc/yum.repos.d/jpackage-generic-free.repo << EOF
-[jpackage-generic-free]
-name=JPackage generic free
-baseurl=http://ftp.heanet.ie/pub/jpackage/6.0/generic/free
-mirrorlist=http://www.jpackage.org/mirrorlist.php?dist=generic&type=free&release=6.0
-enabled=1
-gpgcheck=1
-gpgkey=http://www.jpackage.org/jpackage.asc
-EOF
-
-	cat > /etc/yum.repos.d/jpackage-generic-devel.repo << EOF
-[jpackage-generic-devel]
-name=JPackage Generic Developer
-baseurl=http://ftp.heanet.ie/pub/jpackage/6.0/generic/free
-mirrorlist=http://www.jpackage.org/mirrorlist.php?dist=generic&type=free&release=6.0
-enabled=1
-gpgcheck=1
-gpgkey=http://www.jpackage.org/jpackage.asc
-EOF
-
-	eval $redhatEpel >> ${statusFile} 2>&1
-
-else
-
-	${Echo} "Dected EPEL and JPackage EXIST on this system. Skipping this step as system already updated"
-fi
-
-
-}
 
 setHostnames() {
 	FQDN=`hostname`
@@ -1756,7 +1721,7 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	patchFirewall
 
-	# installEPEL Sept 26 - no longer needed since Maven is installed via zip
+	
 
 	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
 
