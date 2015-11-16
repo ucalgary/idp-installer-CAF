@@ -359,7 +359,7 @@ c=cFilled;if (this.checked==true){c=cNeeded}
             </td>
           </tr>
           <tr>
-            <td colspan="2">
+            <td colspan="1">
               For eduroam (RADIUS) MSCHAPv2  authentication to work, this machine must join your AD domain.
             </td>
             <td>
@@ -449,7 +449,7 @@ c=cFilled;if (this.checked==true){c=cNeeded}
                 </td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colspan="1">
                   FreeRADIUS will behave as both a proxy and server for local clients.
                   <br>
                   A Client can be anything that talks the RADIUS protocol, including other RADIUS servers, access points, laptops, and/or smart phones.
@@ -548,7 +548,7 @@ installer_section3_title:
         </td>
       </tr>
       <tr>
-        <td colspan="2">
+        <td colspan="1">
           eduroam needs TLS for encrypting tunnels between your server and the person authenticating. 
           Please provide details to create a self signed Certificate Authority(CA) and Server certificate.
           <br>
@@ -686,7 +686,7 @@ installer_section3_title:
                 </td>
               </tr>
               <tr>
-                <td colspan="2">
+                <td colspan="1">
                   Federated SSO needs credentials to connect to your Directory for 'find and bind' operations as well as to access data about a user.
                   <br>
                   
@@ -986,7 +986,7 @@ installer_section3_title:
                       Enable user consent
 
                       <img id="consentToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
-          rel="tooltip" title="If you enable user consent the user will have to consent."
+          rel="tooltip" title="Enabling user consent will require your users to see a consent screen before services"
            />
                       <select id="consentEnabled"  onchange="updateCtx(this)" >
                         <option name="consentEnabledY" value="y" selected>
@@ -997,6 +997,22 @@ installer_section3_title:
                         </option>
                       </select>
                       <br>
+Enable SAML2 ECP for non-web SSO
+
+                      <img id="ECPToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
+          rel="tooltip" title="ECP(Enhanced Client Proxy) is used for non web SAML flows which includes Microsoft Office365"
+           />
+                      <select id="ECPEnabled"  onchange="updateCtx(this)" >
+                        <option name="ECPEnabledY" value="y" selected>
+                          Yes(recommended)
+                        </option>
+                        <option name="ECPEnabledN" value="n">
+                          No
+                        </option>
+                      </select>
+                      <br>
+
+
 
                       
                       <!-- google apps support, not supported by CAF, but other federations config may permit it, CAF uses hidden value -->
