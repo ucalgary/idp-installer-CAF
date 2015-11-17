@@ -932,6 +932,39 @@ EOM
 
 }
 
+
+enableStatusMonitoring() {
+
+	${Echo} "enableStatusMonitoring: Processing started"
+
+	# these are the defaults provided for Shibboleth
+	defaultMonitoringIPs="127.0.0.1/32 ::1/128"
+
+	# set the range to process but if empty, assign default range of localhost ipv4, ipv6
+	rangeToProcess="${iprangesallowed-$defaultMonitoringIPs}"
+	
+	${Echo} "enableStatusMonitoring: Enabling Status Monitoring from the following IP ranges ${rangeToProcess}"
+	declare -a myips=(${rangeToProcess})
+	# take range as a bash array, and then join with a comma, suppressing the last one
+	myRanges=`echo $(printf "'%s',"  "${myips[@]}")|sed 's/\(.*\),/\1/'`
+	
+	${Echo} "enableStatusMonitoring: Backing up original and applying our template to idp.home/conf/access-control.xml"
+
+	# make backup
+	cp /opt/shibboleth-idp/conf/access-control.xml /opt/shibboleth-idp/conf/access-control.xml.b4.replacement
+	# Overlay the template file 
+	cp ${Spath}/prep/shibboleth/conf/access-control.xml.template /opt/shibboleth-idp/conf/access-control.xml
+
+	# Apply the ranges to idp.properties
+	${Echo} "enableStatusMonitoring: Appending Status Monitoring to idp.properties as idp.status.ipranges=${myRanges}"
+	echo "idp.status.ipranges=${myRanges}" >> /opt/shibboleth-idp/conf/idp.properties
+	
+	${Echo} "enableStatusMonitoring: Processing completed"
+
+
+
+}
+
 enableECPUpdateIdPWebXML ()
 {
 		${Echo} "ECP Step: Update the web.xml of the idp and rebuild"
@@ -1755,6 +1788,8 @@ invokeShibbolethInstallProcessJetty9 ()
         jettySetup
 
 	enableECP
+
+	enableStatusMonitoring
 
 	updateMachineTime
 
