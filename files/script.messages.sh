@@ -14,11 +14,13 @@ idpInstallerBase="/opt/idp-installer"
 #
 # Key Component Versions
 
-shibVer="3.1.2"
+shibVer="3.2.0"
 casVer="3.3.3"
 mysqlConVer="5.1.35"
 javaVer="1.8.0_25"
-jettyVer="9.2.13.v20150730"
+jettyVer="9.2.14.v20151106"
+# uncomment if you want an older jetty version: jettyVer="9.2.13.v20150730"
+
 
 # This URL determines which base to derive 'latest' from
 # --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
@@ -26,6 +28,19 @@ jettyVer="9.2.13.v20150730"
 jettyBaseURL="http://download.eclipse.org/jetty/${jettyVer}/dist/"
 # this determines which file to check for in the downloads directory first.
 jetty9File="jetty-distribution-${jettyVer}.tar.gz"
+
+jettyBasePath="/opt/${shibDir}/jetty-base"
+
+# Prior to Shibboleth v3.2.0 the jettyBasePath is as above, otherwise it's this one below
+if [ "${shibVer}" == "3.2.0" ]; then
+	jettyBasePath="/opt/${shibDir}/embedded/jetty-base"
+	# as well, it is also missing the the tmp and logs directories which we will take care of 
+	# in the method to set up things.
+
+fi
+
+
+
 
 files=""
 ts=`date "+%s"`
