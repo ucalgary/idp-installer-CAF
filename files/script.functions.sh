@@ -1380,6 +1380,9 @@ fi
 jettySetupSetDefaults ()
 {
 
+ ${Echo} "jettySetup:jettySetupSetDefaults: Adding file /etc/default/jetty for java home and options"
+
+
         # ensure Jetty has proper startup environment for Java for all platforms
         jettyDefaults="/etc/default/jetty"
         jEnvString="export JAVA_HOME=${JAVA_HOME}"
@@ -1391,10 +1394,13 @@ jettySetupSetDefaults ()
        	${Echo} "${jEnvPathString}" >> ${jettyDefaults}
        	${Echo} "${jEnvJavaDefOpts}" >> ${jettyDefaults}
        	
-        ${Echo} "Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
-
+        ${Echo} "jettySetup:jettySetupSetDefaults: Updated ${jettyDefaults} to add JAVA_HOME: ${JAVA_HOME} and java to PATH"
+        ${Echo} "jettySetup:jettySetupSetDefaults: Done adding file /etc/default/jetty for java home and options"
+ 
 }
 jettySetupManageCiphers() {
+
+      ${Echo} "jettySetup:jettySetupManageCiphers: Starting to fine tuning ciphers from /opt/jetty/jetty-base/etc/jetty.xml "
 
 
 		removeCiphers="TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA"
@@ -1402,8 +1408,27 @@ jettySetupManageCiphers() {
 		sed -i "/${cipher}/d" /opt/jetty/jetty-base/etc/jetty.xml
 	done
 
+	 ${Echo} "jettySetup:jettySetupManageCiphers: Ending fine tuning ciphers from /opt/jetty/jetty-base/etc/jetty.xml "
+
+
 }
 
+jettySetupPrepareBase()
+{
+	   ${Echo} "Preparing jetty-base from: ${jettyBasePath} to /opt/jetty/"
+
+    	cp -r ${jettyBasePath} /opt/jetty/
+
+    	# regardless of jetty version, ensure there's a log and tmp directory like there was in Shib 3.1.2
+    	# if it is idp v3.1.2, these steps are redundant and the chown on the files will happen in the setup
+
+        mkdir -p /opt/jetty/jetty-base/logs
+        mkdir -p /opt/jetty/jetty-base/tmp
+        
+        
+    
+
+}
 jettySetup() {
 
         #Installing a specific version of Jetty
@@ -1427,6 +1452,9 @@ jettySetup() {
 
         #jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
         
+        	   ${Echo} "jettySetup: Starting Jetty servlet container setup"
+
+
 
 		jetty9Path=`basename ${jetty9File}  .tar.gz`
 		jetty9URL="${jettyBaseURL}${jetty9File}"
@@ -1443,10 +1471,15 @@ jettySetup() {
 
         # Manipulate Jetty configuration for the deployment
         
+
         cd /opt
         tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
-        cp -r /opt/${shibDir}/jetty-base /opt/${jetty9Path}/
+        
+        # important to symlink as from here on in jetty to be assumed as 'there'
         ln -s /opt/${jetty9Path} /opt/jetty
+
+		jettySetupPrepareBase
+
         sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
@@ -1469,6 +1502,8 @@ jettySetup() {
         jettySetupSetDefaults
         
         jettySetupManageCiphers
+
+      ${Echo} "jettySetup: Ending Jetty servlet container setup"
 
 
 }
