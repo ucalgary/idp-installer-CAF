@@ -18,8 +18,7 @@ shibVer="3.2.0"
 casVer="3.3.3"
 mysqlConVer="5.1.35"
 javaVer="1.8.0_25"
-9.2.14.v20151106
-jettyVer="9.2.13.v20150730"
+jettyVer="9.2.14.v20151106"
 # uncomment if you want an older jetty version: jettyVer="9.2.13.v20150730"
 
 
