@@ -18,7 +18,9 @@ shibVer="3.2.0"
 casVer="3.3.3"
 mysqlConVer="5.1.35"
 javaVer="1.8.0_25"
+9.2.14.v20151106
 jettyVer="9.2.13.v20150730"
+# uncomment if you want an older jetty version: jettyVer="9.2.13.v20150730"
 
 
 # This URL determines which base to derive 'latest' from
@@ -32,7 +34,9 @@ jettyBasePath="/opt/${shibDir}/jetty-base"
 
 # Prior to Shibboleth v3.2.0 the jettyBasePath is as above, otherwise it's this one below
 if [ "${shibVer}" == "3.2.0" ]; then
-jettyBasePath="/opt/${shibDir}/embedded/jetty-base"
+	jettyBasePath="/opt/${shibDir}/embedded/jetty-base"
+	# as well, it is also missing the the tmp and logs directories which we will take care of 
+	# in the method to set up things.
 
 fi
 
