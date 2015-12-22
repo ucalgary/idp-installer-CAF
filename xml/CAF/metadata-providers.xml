@@ -15,7 +15,7 @@
                          metadataURL="https://caf-shib2ops.ca/CoreServices/caf_metadata_signed_sha256.xml"
                          backingFile="/opt/shibboleth-idp/metadata/caf_metadata_signed.xml"
              maxRefreshDelay="PT1H">
-                    <MetadataFilter xsi:type="SignatureValidation" xmlns="urn:mace:shibboleth:2.0:metadata" requireSignedMetadata="true" 
+                    <MetadataFilter xsi:type="SignatureValidation" xmlns="urn:mace:shibboleth:2.0:metadata" requireSignedRoot="true" 
                             certificateFile="/opt/shibboleth-idp/credentials/md-signer.crt"/>
          </MetadataProvider>
 
@@ -25,7 +25,7 @@
                          metadataURL="https://caf-shib2ops.ca/CoreServices/caf_interfed_signed.xml"
                          backingFile="/opt/shibboleth-idp/metadata/caf_interfed_signed.xml"
              maxRefreshDelay="PT1H">
-                 <MetadataFilter xsi:type="SignatureValidation" xmlns="urn:mace:shibboleth:2.0:metadata" requireSignedMetadata="true" 
+                 <MetadataFilter xsi:type="SignatureValidation" xmlns="urn:mace:shibboleth:2.0:metadata" requireSignedRoot="true" 
                             certificateFile="/opt/shibboleth-idp/credentials/md-signer.crt"/>
          </MetadataProvider>
 
