@@ -14,7 +14,7 @@ idpInstallerBase="/opt/idp-installer"
 #
 # Key Component Versions
 
-shibVer="3.2.0"
+shibVer="3.2.1"
 casVer="3.3.3"
 mysqlConVer="5.1.35"
 javaVer="1.8.0_25"
