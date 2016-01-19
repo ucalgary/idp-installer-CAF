@@ -1576,6 +1576,105 @@ applyFTICKS ()
 	${Echo} "applyFTICKS updates completed"
 }
 
+
+applyNameIDC14Settings ()
+
+{
+
+# https://wiki.shibboleth.net/confluence/display/IDP30/PersistentNameIDGenerationConfiguration
+# C14= Canonicalization BTW :)
+# Enables the saml-nameid.properties file for persistent identifiers and configures the existing file for use
+# 
+local tgtFile="${idpConfPath}/saml-nameid.properties"
+
+	${Echo} "Applying NameID settings to ${tgtFile}"
+
+# Make a backup of our file
+cp "${tgtFile}" "${tgtFile}.b4Changes"
+
+# The following uncomments certain lines that ship with the file:
+# lines 8,9 activate the generator 
+	sed -i '' '/idp.nameid.saml2.legacyGenerator/s/^#//' "${tgtFile}"
+	sed -i '' '/idp.nameid.saml1.legacyGenerator/s/^#//' "${tgtFile}"
+
+#lines 22 and 26 respectively which we'll adjust in a moment
+	sed -i '' '/idp.persistentId.sourceAttribute/s/^#//' "${tgtFile}"
+
+# this replaces the string for the attribute filter (uid/sAMAccountName) as the key element for the hash
+	sed -i '' 's/changethistosomethingreal/${attr_filter}/' "${tgtFile}"	
+
+# lines 26: uncomment the salt and replace it with the right thing
+# note that this is the same salt as the ePTId
+	sed -i '' '/idp.persistentId.salt/s/^#//' "${tgtFile}"
+	sed -i '' 's/changethistosomethingrandom/${esalt}/' "${tgtFile}"	
+
+# line 31. Uncomment it to use the 'MyPersistentIdStore' it references elsewhere
+	sed -i '' '/idp.persistentId.store/s/^#//' "${tgtFile}"
+
+
+}
+
+prepareDatabase ()
+{
+	${Echo} "Preparing Mysql DB for storing identifiers"
+
+	# relies upon epass from script.messages.sh for the sqlpassword for userid 'shibboleth'
+
+	 	#TODO: remove the following TODOs if all is ok since they are now wovern in elsewhere
+	 	#TODO: if [ -z "${epass}" ]; then
+        #TODO:           epass=`${passGenCmd}`
+        #TODO:  fi
+		# grant sql access for shibboleth
+		# esalt generation moved to script.messages.sh to be used in more locations than just here
+		# TODO remove: esalt=`openssl rand -base64 36 2>/dev/null`
+
+	cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+
+		${Echo} "Create MySQL database and shibboleth user."
+		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		retval=$?
+		if [ "${retval}" -ne 0 ]; then
+			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+		fi
+
+}
+
+applyEptidSettings ()
+
+{
+	${Echo} "Applying EPTID settings to attribute-resolver.xml"
+
+	 	cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
+        | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
+               > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
+       files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
+       
+       repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+       repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+	   repStr='<!-- EPTID FILTER PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+      
+}
+applyLDAPSettings ()
+{
+		${Echo} "Patching config files"
+
+
+		repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
+        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+
+}
+
 patchShibbolethConfigs ()
 
 {
@@ -1608,52 +1707,28 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${fticks}" != "n" ]; then
-              
               	# apply an enhanced application of the FTICKS functionality
-
-              	applyFTICKS
+				applyFTICKS
         fi
+
+        	# This loads the necessary schema for the database to prepare for
+        	#  eptid usage OR 
+        	# applyingNameIDC14Settings
+        	prepareDatabase
 
         if [ "${eptid}" != "n" ]; then
-                if [ -z "${epass}" ]; then
-                        epass=`${passGenCmd}`
-                fi
-		# grant sql access for shibboleth
-		esalt=`openssl rand -base64 36 2>/dev/null`
-		cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
 
-		${Echo} "Create MySQL database and shibboleth user."
-		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		retval=$?
-		if [ "${retval}" -ne 0 ]; then
-			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
-		fi
-
-                cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
-                        | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
-                        > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
-                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
-
-                repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID FILTER PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+        		applyEptidSettings
         fi
 
-        repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
-        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+        applyLDAPSettings
 
+        
 	echo "applying chown "
 	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
+
+	applyNameIDC14Settings
+
 
 }
 

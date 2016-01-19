@@ -252,8 +252,6 @@ patchShibbolethLDAPLoginConfigs ()
 
 echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 
-#FIXME: alter override for federation aware setting rather than just the 'CAF' one
-
 
 	# 	application server specific
 	if [ "${type}" = "ldap" ]; then
