@@ -17,3 +17,8 @@ Ans: When a specific technique or function is removed one should:
 #### depending on how invasive the change is, remove the elements or
 #### if desiring a 'sunset' of the feature comment out the dependant lines with:
 ##### #Deprecated:YYYY-MM-DD:TODO: [remove next release|short phrase of action here]
+
+# Style Guide
+
+## How are file paths as variables referred to -- trailing slash or no trailing slash?
+### No trailing slash. /this/is/the/way  /not/this/way/  
