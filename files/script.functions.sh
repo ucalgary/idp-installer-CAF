@@ -1694,22 +1694,22 @@ local tgtFile="${idpConfPath}/saml-nameid.properties"
 
 # The following uncomments certain lines that ship with the file:
 # lines 8,9 activate the generator 
-	sed -i '' '/idp.nameid.saml2.legacyGenerator/s/^#//' "${tgtFile}"
-	sed -i '' '/idp.nameid.saml1.legacyGenerator/s/^#//' "${tgtFile}"
+	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
+	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
 
 #lines 22 and 26 respectively which we'll adjust in a moment
-	sed -i '' '/idp.persistentId.sourceAttribute/s/^#//' "${tgtFile}"
+	sed -i  "/idp.persistentId.sourceAttribute/s/^#//" "${tgtFile}"
 
 # this replaces the string for the attribute filter (uid/sAMAccountName) as the key element for the hash
-	sed -i '' 's/changethistosomethingreal/${attr_filter}/' "${tgtFile}"	
+	sed -i  "s/changethistosomethingreal/${attr_filter}/" "${tgtFile}"	
 
 # lines 26: uncomment the salt and replace it with the right thing
 # note that this is the same salt as the ePTId
-	sed -i '' '/idp.persistentId.salt/s/^#//' "${tgtFile}"
-	sed -i '' 's/changethistosomethingrandom/${esalt}/' "${tgtFile}"	
+	sed -i  "/idp.persistentId.salt/s/^#//" "${tgtFile}"
+	sed -i  "s/changethistosomethingrandom/${esalt}/" "${tgtFile}"	
 
 # line 31. Uncomment it to use the 'MyPersistentIdStore' it references elsewhere
-	sed -i '' '/idp.persistentId.store/s/^#//' "${tgtFile}"
+	sed -i  "/idp.persistentId.store/s/^#//" "${tgtFile}"
 
 
 	local tgtFilexml="${idpConfPath}/saml-nameid.properties"
