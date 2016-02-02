@@ -1713,7 +1713,7 @@ local tgtFile="${idpConfPath}/saml-nameid.properties"
 
 
 	local tgtFilexml="${idpConfPath}/saml-nameid.properties"
-	local samlnameidTemplate="cat ${Spath}/prep/saml-nameid.xml.template"
+	local samlnameidTemplate="${Spath}/prep/saml-nameid.xml.template"
 
 	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
 
