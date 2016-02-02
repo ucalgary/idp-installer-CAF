@@ -1701,14 +1701,14 @@ applyNameIDC14Settings ()
 
 # https://wiki.shibboleth.net/confluence/display/IDP30/PersistentNameIDGenerationConfiguration
 # C14= Canonicalization BTW :)
-# Enables the saml-nameid.properties file for persistent identifiers and configures the existing file for use
+# Enables the saml-nameid.properties file for persistent identifiers and configures xml file for use
 # 
 local tgtFile="${idpConfPath}/saml-nameid.properties"
 
-	${Echo} "Applying NameID settings to ${tgtFile}"
+	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
 
 # Make a backup of our file
-cp "${tgtFile}" "${tgtFile}.b4Changes"
+	cp "${tgtFile}" "${tgtFile}.b4Changes"
 
 # The following uncomments certain lines that ship with the file:
 # lines 8,9 activate the generator 
@@ -1730,6 +1730,21 @@ cp "${tgtFile}" "${tgtFile}.b4Changes"
 	sed -i '' '/idp.persistentId.store/s/^#//' "${tgtFile}"
 
 
+	local tgtFilexml="${idpConfPath}/saml-nameid.properties"
+	local samlnameidTemplate="cat ${Spath}/prep/saml-nameid.xml.template"
+
+	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFilexml}" "${tgtFilexml}.b4Changes"
+
+# perform overlay of our template with necessary substitutions
+	cat ${samlnameidTemplate} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
+
+	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
+
+${Echo} "Applying NameID settings complete" >> ${statusFile} 2>&1
+	
 }
 
 prepareDatabase ()
@@ -1738,13 +1753,9 @@ prepareDatabase ()
 
 	# relies upon epass from script.messages.sh for the sqlpassword for userid 'shibboleth'
 
-	 	#TODO: remove the following TODOs if all is ok since they are now wovern in elsewhere
-	 	#TODO: if [ -z "${epass}" ]; then
-        #TODO:           epass=`${passGenCmd}`
-        #TODO:  fi
-		# grant sql access for shibboleth
+	 	# grant sql access for shibboleth
 		# esalt generation moved to script.messages.sh to be used in more locations than just here
-		# TODO remove: esalt=`openssl rand -base64 36 2>/dev/null`
+		
 
 	cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
 		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
@@ -1762,7 +1773,7 @@ prepareDatabase ()
 applyEptidSettings ()
 
 {
-	${Echo} "Applying EPTID settings to attribute-resolver.xml"
+	${Echo} "Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
 
 	 	cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
         | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
@@ -1832,6 +1843,7 @@ patchShibbolethConfigs ()
         	# This loads the necessary schema for the database to prepare for
         	#  eptid usage OR 
         	# applyingNameIDC14Settings
+
         	prepareDatabase
 
         if [ "${eptid}" != "n" ]; then

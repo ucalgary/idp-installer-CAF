@@ -2,7 +2,7 @@
 
 # announce the override action since this is just a plain include
 my_local_override_msg="Overriden by ${my_ctl_federation}"
-my_ctl_functionOverrides="configContainerSSLServerKey installCertificates configShibbolethFederationValidationKey performStepsForShibbolethUpgradeIfRequired askForSaveConfigToLocalDisk patchShibbolethLDAPLoginConfigs"
+my_ctl_functionOverrides="configContainerSSLServerKey installCertificates configShibbolethFederationValidationKey performStepsForShibbolethUpgradeIfRequired askForSaveConfigToLocalDisk "
 
 echo -e "Overriding functions: ${my_ctl_functionOverrides}" >> ${statusFile} 2>&1
 
@@ -74,98 +74,97 @@ configShibbolethFederationValidationKey ()
 
 }
 
-patchShibbolethConfigs ()
-{
+# REVIEW patchShibbolethConfigs ()
+# REVIEW {
 
-	echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
+#	echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 
 	# patch shibboleth config files
-	${Echo} "Patching config files for ${my_ctl_federation}"
-	mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
+#	${Echo} "Patching config files for ${my_ctl_federation}"
+#	mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
 
-	${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with CAF defaults"
+#	${Echo} "patchShibbolethConfigs:Overlaying attribute-filter.xml with CAF defaults"
 
-	cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
-	chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
+#	cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml.template /opt/shibboleth-idp/conf/attribute-filter.xml
+#	chmod ugo+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
-	${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
-	cat ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml > /opt/shibboleth-idp/conf/metadata-providers.xml
-	cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml > /opt/shibboleth-idp/conf/attribute-resolver.xml
-        cat ${Spath}/files/${my_ctl_federation}/relying-party.xml > /opt/shibboleth-idp/conf/relying-party.xml
+#	${Echo} "patchShibbolethConfigs:Overlaying relying-filter.xml with CAF trusts"
+#	cat ${Spath}/xml/${my_ctl_federation}/metadata-providers.xml > /opt/shibboleth-idp/conf/metadata-providers.xml
+#	cat ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml > /opt/shibboleth-idp/conf/attribute-resolver.xml
+ #       cat ${Spath}/files/${my_ctl_federation}/relying-party.xml > /opt/shibboleth-idp/conf/relying-party.xml
 
-	if [ "${consentEnabled}" = "n" ]; then
-		sed -i 's#<bean parent="Shibboleth.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="Shibboleth.SSO" />#;s#<bean parent="SAML2.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="SAML2.SSO" />#' /opt/shibboleth-idp/conf/relying-party.xml
-	fi
+#	if [ "${consentEnabled}" = "n" ]; then
+#		sed -i 's#<bean parent="Shibboleth.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="Shibboleth.SSO" />#;s#<bean parent="SAML2.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="SAML2.SSO" />#' /opt/shibboleth-idp/conf/relying-party.xml
+#	fi
 
-	if [ "${google}" != "n" ]; then
-		repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
-		cat ${Spath}/xml/google-relay.diff.template | sed -re "s/IdPfQdN/${certCN}/" > ${Spath}/xml/google-relay.diff
-		files="`${Echo} ${files}` ${Spath}/xml/google-relay.diff"
-		patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/google-relay.diff >> ${statusFile} 2>&1
-		cat ${Spath}/xml/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
-	fi
+#	if [ "${google}" != "n" ]; then
+#		repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
+#		sed -i -e "/^${repStr}$/r ${Spath}/xml/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+#		cat ${Spath}/xml/google-relay.diff.template | sed -re "s/IdPfQdN/${certCN}/" > ${Spath}/xml/google-relay.diff
+#		files="`${Echo} ${files}` ${Spath}/xml/google-relay.diff"
+#		patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/google-relay.diff >> ${statusFile} 2>&1
+#		cat ${Spath}/xml/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
+#	fi
 
-	if [ "${fticks}" != "n" ]; then
+#	if [ "${fticks}" != "n" ]; then
 		
-		applyFTICKS
+#		applyFTICKS
 
-	fi
+#	fi
 
-	if [ "${eptid}" != "n" ]; then
-                if [ -z "${epass}" ]; then
-                        epass=`${passGenCmd}`
+# REVIEW	if [ "${eptid}" != "n" ]; then
+ #               if [ -z "${epass}" ]; then
+  #                      epass=`${passGenCmd}`
                         # grant sql access for shibboleth
-                        esalt=`openssl rand -base64 36 2>/dev/null`
-                        cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+  #                      cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+   #                     files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
 
-                        ${Echo} "Create MySQL database and shibboleth user."
-                        mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-                        retval=$?
-                        if [ "${retval}" -ne 0 ]; then
-                                ${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-                                ${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
-                        fi
-                fi
+    #                    ${Echo} "Create MySQL database and shibboleth user."
+     #                   mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+      #                  retval=$?
+       #                 if [ "${retval}" -ne 0 ]; then
+        #                        ${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+         #                       ${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+          #              fi
+           #     fi
 			
-		cat ${Spath}/xml/${my_ctl_federation}/eptid-AR.diff.template \
-			| sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
-			> ${Spath}/xml/${my_ctl_federation}/eptid-AR.diff
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid-AR.diff"
+# REVIEW		cat ${Spath}/xml/${my_ctl_federation}/eptid-AR.diff.template \
+# REVIEW			| sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
+# REVIEW			> ${Spath}/xml/${my_ctl_federation}/eptid-AR.diff
+# REVIEW		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid-AR.diff"
 
 	# following 2 patch lines were commented out jan 28th, 2014, but no longer
-		cp /opt/shibboleth-idp/conf/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml.pre-patching
+# REVIEW		cp /opt/shibboleth-idp/conf/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml.pre-patching
 
  		#patch /opt/shibboleth-idp/conf/attribute-resolver.xml -i ${Spath}/xml/${my_ctl_federation}/eptid-AR.diff >> ${statusFile} 2>&1
  		# commented out below as our default model *IS* to do this release policy
  		# patch /opt/shibboleth-idp/conf/attribute-filter.xml -i ${Spath}/xml/${my_ctl_federation}/eptid-AF.diff >> ${statusFile} 2>&1
 
-		cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
-			| sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
-			> ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
+	#	cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
+#			| sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
+#			> ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
+#		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
 
-		repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+#		repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
+#		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
-		repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+#		repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
+#		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
-		repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+#		repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
+#		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
-		repStr='<!-- EPTID FILTER PLACEHOLDER -->'
-		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
-	fi
+#		repStr='<!-- EPTID FILTER PLACEHOLDER -->'
+#		sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+# REVIEW	fi
 
-        repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
-        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+ #       repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
+#        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
-	echo "applying chown "
-	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
+#	echo "applying chown "
+#	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
 
-}
+# REVIEW }
 
 
 performStepsForShibbolethUpgradeIfRequired ()
