@@ -60,11 +60,11 @@ configShibbolethFederationValidationKey ()
 			mdSignerFinger="${mdSignerFingerSHA256}"
 
 
-	${fetchCmd} ${idpPath}credentials/md-signer.crt ${metadataSigningKeyURL}
+	${fetchCmd} ${idpPath}/credentials/md-signer.crt ${metadataSigningKeyURL}
 	cFinger=`openssl x509 -noout -fingerprint -sha256 -in ${idpPath}/credentials/md-signer.crt | cut -d\= -f2`
 	cCnt=1
 	while [ "${cFinger}" != "${mdSignerFinger}" -a "${cCnt}" -le 10 ]; do
-		${fetchCmd} ${idpPath}credentials/md-signer.crt ${metadataSigningKeyURL}
+		${fetchCmd} ${idpPath}/credentials/md-signer.crt ${metadataSigningKeyURL}
 		cFinger=`openssl x509 -noout -fingerprint -sha256 -in ${idpPath}/credentials/md-signer.crt | cut -d\= -f2`
 		cCnt=`expr ${cCnt} + 1`
 	done
