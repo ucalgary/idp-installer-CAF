@@ -1259,25 +1259,7 @@ configContainerSSLServerKey()
 }
 
 
-patchShibbolethLDAPLoginConfigs ()
 
-{
-	# 	application server specific
-	if [ "${type}" = "ldap" ]; then
-		ldapServerStr=""
-		for i in `${Echo} ${ldapserver}`; do
-			ldapServerStr="`${Echo} ${ldapServerStr}` ldap://${i}"
-		done
-		ldapServerStr="`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`"
-
-		cat ${Spath}/${prep}/login.conf.diff.template \
-			| sed -re "s#LdApUrI#${ldapServerStr}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/" \
-			> ${Spath}/${prep}/login.conf.diff
-		files="`${Echo} ${files}` ${Spath}/${prep}/login.conf.diff"
-		patch /opt/shibboleth-idp/conf/login.config -i ${Spath}/${prep}/login.conf.diff >> ${statusFile} 2>&1
-	fi
-
-}
 
 configShibbolethFederationValidationKey ()
 

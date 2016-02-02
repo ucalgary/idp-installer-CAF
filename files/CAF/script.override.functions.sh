@@ -245,30 +245,5 @@ echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 }
 
 
-patchShibbolethLDAPLoginConfigs ()
-
-{
-
-echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
-
-
-	# 	application server specific
-	if [ "${type}" = "ldap" ]; then
-		ldapServerStr=""
-		for i in `${Echo} ${ldapserver}`; do
-			ldapServerStr="`${Echo} ${ldapServerStr}` ldap://${i}"
-		done
-		ldapServerStr="`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`"
-
-		cat ${Spath}/${prep}/CAF/login.conf.diff.template \
-			| sed -re "s#LdApUrI#${ldapServerStr}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/;s/LdApCrEdS/${ldapbinddn}/;s/LdApPaSsWoRd/${ldappass}/" \
-			> ${Spath}/${prep}/CAF/login.conf.diff
-		files="`${Echo} ${files}` ${Spath}/${prep}/CAF/login.conf.diff"
-		patch /opt/shibboleth-idp/conf/login.config -i ${Spath}/${prep}/CAF/login.conf.diff >> ${statusFile} 2>&1
-	fi
-
-}
-
-# s/LdApCrEdS/${ldapbinddn}/;s/LdApPaSsWoRd/${ldappass}/
 
 
