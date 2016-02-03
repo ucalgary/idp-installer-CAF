@@ -1744,7 +1744,7 @@ else
 	cp "${tgtFilexmlBkp}" "${tgtFilexml}"
 	cp "${tgtFileBkp}" "${tgtFile}"
 
-	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check idp-process.log and idp-warn.log for issues" >> ${statusFile} 2>&1
+	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
 
 fi
 
