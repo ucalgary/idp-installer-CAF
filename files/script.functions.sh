@@ -1685,7 +1685,7 @@ applyNameIDC14Settings ()
 # C14= Canonicalization BTW :)
 # Enables the saml-nameid.properties file for persistent identifiers and configures xml file for use
 # 
-	local failExt=".proposedUpdate"
+	local failExt="proposedUpdate"
 	local tgtFile="${idpConfPath}/saml-nameid.properties"
 	local tgtFileBkp="${tgtFile}.b4Changes"
 	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
@@ -1716,7 +1716,7 @@ applyNameIDC14Settings ()
 	local tgtFilexml="${idpConfPath}/saml-nameid.properties"
 	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
 
-	local samlnameidTemplate="${Spath}/prep/saml-nameid.xml.template"
+	local samlnameidTemplate="${Spath}/prep/shibboleth/conf/saml-nameid.xml.template"
 
 	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
 
