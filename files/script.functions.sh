@@ -1685,12 +1685,13 @@ applyNameIDC14Settings ()
 # C14= Canonicalization BTW :)
 # Enables the saml-nameid.properties file for persistent identifiers and configures xml file for use
 # 
-local tgtFile="${idpConfPath}/saml-nameid.properties"
-
+	local failExt=".proposedUpdate"
+	local tgtFile="${idpConfPath}/saml-nameid.properties"
+	local tgtFileBkp="${tgtFile}.b4Changes"
 	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
 
 # Make a backup of our file
-	cp "${tgtFile}" "${tgtFile}.b4Changes"
+	cp "${tgtFile}" "${tgtFileBkp}"
 
 # The following uncomments certain lines that ship with the file:
 # lines 8,9 activate the generator 
@@ -1713,17 +1714,42 @@ local tgtFile="${idpConfPath}/saml-nameid.properties"
 
 
 	local tgtFilexml="${idpConfPath}/saml-nameid.properties"
+	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+
 	local samlnameidTemplate="${Spath}/prep/saml-nameid.xml.template"
 
 	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
 
 # Make a backup of our file
-	cp "${tgtFilexml}" "${tgtFilexml}.b4Changes"
+
+	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
 
 # perform overlay of our template with necessary substitutions
 	cat ${samlnameidTemplate} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
 
 	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
+
+# verify that the updates proceeded at least to a non zero byte file result
+if [[ -s "${tgtFile}" && -s "${tgtFilexml}" ]]; then
+	${Echo} "${tgtFile} update complete" >> ${statusFile} 2>&1
+else
+	${Echo} "FAILED UPDATE: Issue detected with nameID files. The update to ${tgtFile} and ${tgtFilexml} are rolling back to originals" >> ${statusFile} 2>&1
+	${Echo} "Proposed updates for saml-nameid will be saved in the same directory with a ${failExt} extension" >> ${statusFile} 2>&1
+
+	# copy bad copies for latest investigation
+	cp "${tgtFilexml}" "${tgtFilexml}.${failExt}"
+	cp "${tgtFile}" "${tgtFile}.${failExt}"
+
+	# revert back to original for both 
+	cp "${tgtFilexmlBkp}" "${tgtFilexml}"
+	cp "${tgtFileBkp}" "${tgtFile}"
+
+	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check idp-process.log and idp-warn.log for issues" >> ${statusFile} 2>&1
+
+fi
+
+
+
 
 ${Echo} "Applying NameID settings complete" >> ${statusFile} 2>&1
 	
