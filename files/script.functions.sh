@@ -1687,7 +1687,7 @@ applyNameIDC14Settings ()
 # 
 	local failExt="proposedUpdate"
 	local tgtFile="${idpConfPath}/saml-nameid.properties"
-	local tgtFileBkp="${tgtFile}.b4Changes"
+	local tgtFileBkp="${tgtFile}.b4.replacement"
 	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
 
 # Make a backup of our file
@@ -1695,39 +1695,51 @@ applyNameIDC14Settings ()
 
 # The following uncomments certain lines that ship with the file:
 # lines 8,9 activate the generator 
+${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
+
 	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
 	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
 
 #lines 22 and 26 respectively which we'll adjust in a moment
+${Echo} "Applying NameID settings:${tgtFile}: uncommenting sourceAttribute statement" >> ${statusFile} 2>&1
+
 	sed -i  "/idp.persistentId.sourceAttribute/s/^#//" "${tgtFile}"
 
 # this replaces the string for the attribute filter (uid/sAMAccountName) as the key element for the hash
+${Echo} "Applying NameID settings:${tgtFile}: replaces the string for the attribute filter with ${attr_filter}" >> ${statusFile} 2>&1
+
 	sed -i  "s/changethistosomethingreal/${attr_filter}/" "${tgtFile}"	
 
 # lines 26: uncomment the salt and replace it with the right thing
 # note that this is the same salt as the ePTId
+${Echo} "Applying NameID settings:${tgtFile}: uncomment and set the salt for hashing the value" >> ${statusFile} 2>&1
+
 	sed -i  "/idp.persistentId.salt/s/^#//" "${tgtFile}"
 	sed -i  "s/changethistosomethingrandom/${esalt}/" "${tgtFile}"	
 
 # line 31. Uncomment it to use the 'MyPersistentIdStore' it references elsewhere
+${Echo} "Applying NameID settings:${tgtFile}: uncommenting use of MyPersistentIdStore so DB is used" >> ${statusFile} 2>&1
+
 	sed -i  "/idp.persistentId.store/s/^#//" "${tgtFile}"
 
 
-	local tgtFilexml="${idpConfPath}/saml-nameid.properties"
+	local tgtFilexml="${idpConfPath}/saml-nameid.xml"
 	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
 
 	local samlnameidTemplate="${Spath}/prep/shibboleth/conf/saml-nameid.xml.template"
 
-	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
+${Echo} "Applying NameID settings:${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
 
 # Make a backup of our file
-
 	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
 
+
 # perform overlay of our template with necessary substitutions
+${Echo} "Applying NameID settings:${tgtFilexml}: perform our overlay from template file onto ${tgtFilexml}" >> ${statusFile} 2>&1
+
 	cat ${samlnameidTemplate} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
 
-	${Echo} "Applying NameID settings to ${tgtFilexml}" >> ${statusFile} 2>&1
+${Echo} "Applying NameID settings:${tgtFilexml}: verify successfull update" >> ${statusFile} 2>&1
 
 # verify that the updates proceeded at least to a non zero byte file result
 if [[ -s "${tgtFile}" && -s "${tgtFilexml}" ]]; then
@@ -1747,6 +1759,7 @@ else
 	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
 
 fi
+${Echo} "Applying NameID settings:${tgtFilexml}: verify process complete" >> ${statusFile} 2>&1
 
 
 
