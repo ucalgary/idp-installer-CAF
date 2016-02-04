@@ -1718,9 +1718,14 @@ ${Echo} "Applying NameID settings:${tgtFile}: uncomment and set the salt for has
 	sed -i  "s/changethistosomethingrandom/${esalt}/" "${tgtFile}"	
 
 # line 31. Uncomment it to use the 'MyPersistentIdStore' it references elsewhere
-${Echo} "Applying NameID settings:${tgtFile}: uncommenting use of MyPersistentIdStore so DB is used" >> ${statusFile} 2>&1
+${Echo} "Applying NameID settings:${tgtFile}: uncommenting use of MyPersistentIdStore for DB " >> ${statusFile} 2>&1
 
 	sed -i  "/idp.persistentId.store/s/^#//" "${tgtFile}"
+
+${Echo} "Applying NameID settings:${tgtFile}: appending to file settings using StoredPersistentIdGenerator so DB is used to generate IDs" >> ${statusFile} 2>&1
+
+	${Echo} "# Appended by Idp-Installer to use the proper generator" >> "${tgtFile}"
+	${Echo} "idp.persistentId.generator = shibboleth.StoredPersistentIdGenerator" >> "${tgtFile}"
 
 
 	local tgtFilexml="${idpConfPath}/saml-nameid.xml"
@@ -1790,6 +1795,80 @@ prepareDatabase ()
 		fi
 
 }
+
+
+
+applyGlobalXmlDbSettingsDependancies ()
+
+{
+	${Echo} "$FUNCNAME: adding libraries in edit-webapp/WEB-INF/lib supporting database connectivity" >> ${statusFile} 2>&1
+
+	local commonsDbcp2Jar="commons-dbcp2-${commonsDbcp2Ver}.jar"
+	local commonsPool2Jar="commons-pool2-${commonsDbcp2Ver}.jar"
+	
+	cp ${downloadPath}/${commonsDbcp2Jar} "${idpEditWebappLibDir}"
+	cp ${downloadPath}/${commonsPool2Jar} "${idpEditWebappLibDir}"
+
+	${Echo} "$FUNCNAME: applying jetty user and group ownership to  libraries in edit-webapp/WEB-INF/lib " >> ${statusFile} 2>&1
+		
+	chown -R jetty:jetty "${idpEditWebappLibDir}"
+
+	${Echo} "$FUNCNAME: completed" >> ${statusFile} 2>&1
+
+}
+
+applyGlobalXmlDbSettings ()
+
+{
+
+${Echo} "$FUNCNAME: Working on ${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
+
+	local failExt="proposedUpdate"
+	local tgtFilexml="${idpConfPath}/global.xml"
+	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+
+	local TemplateXml="${Spath}/prep/shibboleth/conf/global.xml.template"
+
+${Echo} "Working on ${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
+
+
+# perform overlay of our template with necessary substitutions
+${Echo} "Working on ${tgtFilexml}: perform our overlay from template file onto ${tgtFilexml}" >> ${statusFile} 2>&1
+
+	cat ${TemplateXml} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
+
+${Echo} "Working on ${tgtFilexml}: verify successfull update" >> ${statusFile} 2>&1
+
+# verify that the updates proceeded at least to a non zero byte file result
+if [ -s "${tgtFilexml}" ]; then
+	${Echo} "Working on ${tgtFilexml}: verification successful. Update completed." >> ${statusFile} 2>&1
+else
+	${Echo} "FAILED UPDATE: Issue detected with ${tgtFilexml} file. The update to ${tgtFilexml} are rolling back to originals" >> ${statusFile} 2>&1
+	${Echo} "Proposed updates will be saved in the same directory with a ${failExt} extension" >> ${statusFile} 2>&1
+
+	# copy bad copies for latest investigation
+	cp "${tgtFilexml}" "${tgtFilexml}.${failExt}"
+
+	# revert back to original for both 
+	cp "${tgtFilexmlBkp}" "${tgtFilexml}"
+
+	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
+
+fi
+
+${Echo} "Working on ${tgtFilexml}: verify process complete" >> ${statusFile} 2>&1
+
+applyGlobalXmlDbSettingsDependancies
+
+
+${Echo} "$FUNCNAME: Work on ${tgtFilexml} and related dependancies completed" >> ${statusFile} 2>&1
+
+
+}
+
 
 applyEptidSettings ()
 
@@ -1866,6 +1945,9 @@ patchShibbolethConfigs ()
         	# applyingNameIDC14Settings
 
         	prepareDatabase
+
+        	applyGlobalXmlDbSettings
+
 
         if [ "${eptid}" != "n" ]; then
 
