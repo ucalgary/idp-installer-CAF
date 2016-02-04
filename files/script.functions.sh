@@ -1804,7 +1804,7 @@ applyGlobalXmlDbSettingsDependancies ()
 	${Echo} "$FUNCNAME: adding libraries in edit-webapp/WEB-INF/lib supporting database connectivity" >> ${statusFile} 2>&1
 
 	local commonsDbcp2Jar="commons-dbcp2-${commonsDbcp2Ver}.jar"
-	local commonsPool2Jar="commons-pool2-${commonsDbcp2Ver}.jar"
+	local commonsPool2Jar="commons-pool2-${commonsPool2Ver}.jar"
 	
 	cp ${downloadPath}/${commonsDbcp2Jar} "${idpEditWebappLibDir}"
 	cp ${downloadPath}/${commonsPool2Jar} "${idpEditWebappLibDir}"
@@ -1821,15 +1821,13 @@ applyGlobalXmlDbSettings ()
 
 {
 
-${Echo} "$FUNCNAME: Working on ${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
-
 	local failExt="proposedUpdate"
 	local tgtFilexml="${idpConfPath}/global.xml"
 	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
 
 	local TemplateXml="${Spath}/prep/shibboleth/conf/global.xml.template"
 
-${Echo} "Working on ${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
+${Echo} "$FUNCNAME:Working on ${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
 
 # Make a backup of our file
 	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
