@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!--
-
-The configuration documented here require Shibboleth IdP v2.3.4 or later, which fully supports using entity attributes in SP metadata as part of an attribute release filter policy
-
--->
-
 <AttributeFilterPolicyGroup id="ShibbolethFilterPolicy"
         xmlns="urn:mace:shibboleth:2.0:afp"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -18,27 +12,18 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 	<AttributeRule attributeID="transientId">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 </AttributeFilterPolicy>
+
+
+
 
 <!-- EPTID FILTER PLACEHOLDER -->
 
-<!-- entity-category-sfs-1993-1153 -->
-<AttributeFilterPolicy id="entity-category-sfs-1993-1153">
-	<PolicyRequirementRule xsi:type="saml:EntityAttributeExactMatch"
-			attributeName="http://macedir.org/entity-category"
-			attributeValue="http://www.swamid.se/category/sfs-1993-1153" />
-
-	<AttributeRule attributeID="norEduPersonNIN">
-		<PermitValueRule xsi:type="ANY" />
-	</AttributeRule>
-
-</AttributeFilterPolicy>
 
 
 <!-- GEANT Dataprotection Code of Conduct -->
-<AttributeFilterPolicy id="releaseToCoC">
-	<PolicyRequirementRule xsi:type="saml:EntityAttributeExactMatch"
+<AttributeFilterPolicy id="releaseToCoCo">
+	<PolicyRequirementRule xsi:type="EntityAttributeExactMatch"
 		attributeName="http://macedir.org/entity-category"
 		attributeValue="http://www.geant.net/uri/dataprotection-code-of-conduct/v1" />
 
@@ -53,14 +38,14 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
 		<PermitValueRule xsi:type="OR">
-			<Rule xsi:type="AttributeValueString" value="faculty" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="student" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="staff" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="alum" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="member" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="affiliate" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="employee" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="library-walk-in" ignoreCase="true" />
+			<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
+			<Rule xsi:type="Value" value="student" ignoreCase="true" />
+			<Rule xsi:type="Value" value="staff" ignoreCase="true" />
+			<Rule xsi:type="Value" value="alum" ignoreCase="true" />
+			<Rule xsi:type="Value" value="member" ignoreCase="true" />
+			<Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
+			<Rule xsi:type="Value" value="employee" ignoreCase="true" />
+			<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
 		</PermitValueRule>
 	</AttributeRule>
 	<AttributeRule attributeID="schacHomeOrganization">
@@ -69,9 +54,11 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 </AttributeFilterPolicy>
 
 
+
+
 <!-- REFEDS Research and Schoolarship -->
 <AttributeFilterPolicy id="releaseToRandS">
-	<PolicyRequirementRule xsi:type="saml:EntityAttributeExactMatch"
+	<PolicyRequirementRule xsi:type="EntityAttributeExactMatch"
 		attributeName="http://macedir.org/entity-category"
 		attributeValue="http://refeds.org/category/research-and-scholarship" />
 
@@ -92,35 +79,37 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
 		<PermitValueRule xsi:type="OR">
-			<Rule xsi:type="AttributeValueString" value="faculty" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="student" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="staff" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="alum" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="member" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="affiliate" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="employee" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="library-walk-in" ignoreCase="true" />
+			<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
+			<Rule xsi:type="Value" value="student" ignoreCase="true" />
+			<Rule xsi:type="Value" value="staff" ignoreCase="true" />
+			<Rule xsi:type="Value" value="alum" ignoreCase="true" />
+			<Rule xsi:type="Value" value="member" ignoreCase="true" />
+			<Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
+			<Rule xsi:type="Value" value="employee" ignoreCase="true" />
+			<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
 		</PermitValueRule>
 	</AttributeRule>
 </AttributeFilterPolicy>
+
+
 
 
 <!-- entity-category-research-and-education -->
 <AttributeFilterPolicy id="entity-category-research-and-education">
 	<PolicyRequirementRule xsi:type="AND">
 		<Rule xsi:type="OR">
-			<Rule xsi:type="saml:EntityAttributeExactMatch"
+			<Rule xsi:type="EntityAttributeExactMatch"
 				attributeName="http://macedir.org/entity-category"
 				attributeValue="http://www.swamid.se/category/eu-adequate-protection" />
-			<Rule xsi:type="saml:EntityAttributeExactMatch"
+			<Rule xsi:type="EntityAttributeExactMatch"
 				attributeName="http://macedir.org/entity-category"
 				attributeValue="http://www.swamid.se/category/nren-service" />
-			<Rule xsi:type="saml:EntityAttributeExactMatch"
+			<Rule xsi:type="EntityAttributeExactMatch"
 				attributeName="http://macedir.org/entity-category"
 				attributeValue="http://www.swamid.se/category/hei-service" />
 		</Rule>
 
-		<Rule xsi:type="saml:EntityAttributeExactMatch"
+		<Rule xsi:type="EntityAttributeExactMatch"
 			attributeName="http://macedir.org/entity-category"
 			attributeValue="http://www.swamid.se/category/research-and-education" />
 	</PolicyRequirementRule>
@@ -155,14 +144,14 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
 		<PermitValueRule xsi:type="OR">
-			<Rule xsi:type="AttributeValueString" value="faculty" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="student" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="staff" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="alum" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="member" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="affiliate" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="employee" ignoreCase="true" />
-			<Rule xsi:type="AttributeValueString" value="library-walk-in" ignoreCase="true" />
+			<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
+			<Rule xsi:type="Value" value="student" ignoreCase="true" />
+			<Rule xsi:type="Value" value="staff" ignoreCase="true" />
+			<Rule xsi:type="Value" value="alum" ignoreCase="true" />
+			<Rule xsi:type="Value" value="member" ignoreCase="true" />
+			<Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
+			<Rule xsi:type="Value" value="employee" ignoreCase="true" />
+			<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
 		</PermitValueRule>
 	</AttributeRule>
 
@@ -189,13 +178,13 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 </AttributeFilterPolicy>
 
 
-<!-- release norEduPersonNIN to antagning.se -->
-<AttributeFilterPolicy id="studeraNU">
-	<PolicyRequirementRule xsi:type="OR">
-		<Rule xsi:type="Requester" value="https://www.antagning.se/aws-sp" />
-		<Rule xsi:type="Requester" value="https://www.antagning.se/ecs-sp" />
-		<Rule xsi:type="Requester" value="https://www.universityadmissions.se/aws-sp-en" />
-	</PolicyRequirementRule>
+
+
+<!-- entity-category-sfs-1993-1153 -->
+<AttributeFilterPolicy id="entity-category-sfs-1993-1153">
+	<PolicyRequirementRule xsi:type="EntityAttributeExactMatch"
+			attributeName="http://macedir.org/entity-category"
+			attributeValue="http://www.swamid.se/category/sfs-1993-1153" />
 
 	<AttributeRule attributeID="norEduPersonNIN">
 		<PermitValueRule xsi:type="ANY" />
@@ -204,7 +193,13 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 </AttributeFilterPolicy>
 
 
+
+
+<!-- Examples of entityId based release to Service Providers -->
+
+
 <!-- Release to testshib.org -->
+<!--
 <AttributeFilterPolicy id="testShib">
 	<PolicyRequirementRule xsi:type="Requester" value="https://sp.testshib.org/shibboleth-sp" />
 
@@ -225,6 +220,53 @@ The configuration documented here require Shibboleth IdP v2.3.4 or later, which 
 	</AttributeRule>
 
 </AttributeFilterPolicy>
+-->
+
+
+
+
+<!-- NyA-webben UHR -->
+<!--
+<AttributeFilterPolicy id="releaseNyAwebbenEntitlement">
+	<PolicyRequirementRule xsi:type="OR">
+		<Rule xsi:type="AttributeRequesterString" value="https://expert.antagning.se/ecs-sp" />
+		<Rule xsi:type="AttributeRequesterString" value="https://expert.testa.antagning.se/ecs-sp" />
+		<Rule xsi:type="AttributeRequesterString" value="https://expert.testb.antagning.se/ecs-sp" />
+	</PolicyRequirementRule>
+
+	<AttributeRule attributeID="NyAwebbenEntitlement">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
+</AttributeFilterPolicy>
+-->
+
+
+
+
+<!--  New TCS Personal -->
+<!--
+<AttributeFilterPolicy id="releaseTcsPersonalEntitlement">
+	<PolicyRequirementRule xsi:type="AttributeRequesterString" value="https://www.digicert.com/sso" />
+
+	<AttributeRule attributeID="displayName">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
+	<AttributeRule attributeID="eduPersonPrincipalName">
+		<PermitValueRule xsi:type="ANY"/>
+	</AttributeRule>
+	<AttributeRule attributeID="tcsPersonalEntitlement">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
+	<AttributeRule attributeID="email">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
+	<AttributeRule attributeID="schacHomeOrganization">
+		<PermitValueRule xsi:type="ANY"/>
+	</AttributeRule>
+</AttributeFilterPolicy>
+-->
+
+
 
 
 <!-- PLACEHOLDER DO NOT REMOVE -->

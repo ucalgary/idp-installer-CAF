@@ -1,10 +1,12 @@
-    <AttributeFilterPolicy id="releasePermanentIdToAnyone">
-       <PolicyRequirementRule xsi:type="ANY" />
-       <AttributeRule attributeID="persistentId">
-          <PermitValueRule xsi:type="ANY" />
-       </AttributeRule>
-       <AttributeRule attributeID="eduPersonTargetedID">
-          <PermitValueRule xsi:type="ANY" />
-       </AttributeRule>
-    </AttributeFilterPolicy>
+<AttributeFilterPolicy id="releasePermanentIdToAnyone">
+	<PolicyRequirementRule xsi:type="ANY" />
+	<AttributeRule attributeID="persistentId">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
+	<AttributeRule attributeID="eduPersonTargetedID">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
+</AttributeFilterPolicy>
+
+
 
