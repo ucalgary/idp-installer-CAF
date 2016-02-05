@@ -18,6 +18,11 @@ shibVer="3.2.1"
 casVer="3.3.3"
 mysqlConVer="5.1.35"
 jettyVer="9.2.14.v20151106"
+
+# database pooling connectivity dependancies
+commonsDbcp2Ver="2.1.1"
+commonsPool2Ver="2.4.2"
+
 # uncomment if you want an older jetty version: jettyVer="9.2.13.v20150730"
 
 javaBuildName="8u65-b17"
@@ -27,6 +32,8 @@ javaVer="1.8.0_65"
 jcePolicySrc="jce_policy-8.zip"
 JCEUnlimitedResponse="2147483647"
 
+# Key Component Versions end
+#
 
 # This URL determines which base to derive 'latest' from
 # --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
@@ -74,13 +81,19 @@ certpath="/opt/shibboleth-idp/ssl/"
 httpsP12="/opt/shibboleth-idp/credentials/https.p12"
 certREQ="${certpath}webserver.csr"
 passGenCmd="openssl rand -base64 20"
+epass=`${passGenCmd}`
 messages="${Spath}/msg.txt"
 statusFile="${Spath}/status.log"
 bupFile="/opt/backup-shibboleth-idp.${ts}.tar.gz"
-idpPath="/opt/shibboleth-idp/"
+
+idpPath="/opt/shibboleth-idp"
+idpConfPath="${idpPath}/conf"
+idpEditWebappDir="${idpPath}/edit-webapp"
+idpEditWebappLibDir="${idpEditWebappDir}/WEB-INF/lib/"
+
+esalt=`openssl rand -base64 36 |tr -d '/\\+' 2>/dev/null`
 certificateChain="https://webkonto.student.hig.se/chain.pem"
 digicertChain="https://webkonto.student.hig.se/digichain.pem"
-tomcatDepend="https://build.shibboleth.net/nexus/content/repositories/releases/edu/internet2/middleware/security/tomcat6/tomcat6-dta-ssl/1.0.0/tomcat6-dta-ssl-1.0.0.jar"
 jettyDepend="https://build.shibboleth.net/nexus/content/repositories/releases/net/shibboleth/utilities/jetty9/jetty9-dta-ssl/1.0.0/jetty9-dta-ssl-1.0.0.jar"
 dist=""
 distCmdU=""
@@ -102,7 +115,6 @@ fetchCmd="curl --silent -k -L --output"
 shibbURL="http://shibboleth.net/downloads/identity-provider/${shibVer}/${shibDir}-${shibVer}.tar.gz"
 casClientURL="http://downloads.jasig.org/cas-clients/cas-client-${casVer}-release.zip"
 mysqlConnectorURL="http://ftp.sunet.se/pub/unix/databases/relational/mysql/Downloads/Connector-J/mysql-connector-java-${mysqlConVer}.tar.gz"
-Rmsg="Do you want to install 'EPEL' and 'jpackage' to automaticly install dependancies? (Without theese depends the install WILL fail!)"
 
 # Titles for the whiptail environment for branding
 BackTitleSWAMID="SWAMID"

@@ -1259,25 +1259,7 @@ configContainerSSLServerKey()
 }
 
 
-patchShibbolethLDAPLoginConfigs ()
 
-{
-	# 	application server specific
-	if [ "${type}" = "ldap" ]; then
-		ldapServerStr=""
-		for i in `${Echo} ${ldapserver}`; do
-			ldapServerStr="`${Echo} ${ldapServerStr}` ldap://${i}"
-		done
-		ldapServerStr="`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`"
-
-		cat ${Spath}/${prep}/login.conf.diff.template \
-			| sed -re "s#LdApUrI#${ldapServerStr}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/" \
-			> ${Spath}/${prep}/login.conf.diff
-		files="`${Echo} ${files}` ${Spath}/${prep}/login.conf.diff"
-		patch /opt/shibboleth-idp/conf/login.config -i ${Spath}/${prep}/login.conf.diff >> ${statusFile} 2>&1
-	fi
-
-}
 
 configShibbolethFederationValidationKey ()
 
@@ -1694,6 +1676,232 @@ applyFTICKS ()
 	${Echo} "applyFTICKS updates completed"
 }
 
+
+applyNameIDC14Settings ()
+
+{
+
+# https://wiki.shibboleth.net/confluence/display/IDP30/PersistentNameIDGenerationConfiguration
+# C14= Canonicalization BTW :)
+# Enables the saml-nameid.properties file for persistent identifiers and configures xml file for use
+# 
+	local failExt="proposedUpdate"
+	local tgtFile="${idpConfPath}/saml-nameid.properties"
+	local tgtFileBkp="${tgtFile}.b4.replacement"
+	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFile}" "${tgtFileBkp}"
+
+# The following uncomments certain lines that ship with the file:
+# lines 8,9 activate the generator 
+${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
+
+	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
+	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
+
+#lines 22 and 26 respectively which we'll adjust in a moment
+${Echo} "Applying NameID settings:${tgtFile}: uncommenting sourceAttribute statement" >> ${statusFile} 2>&1
+
+	sed -i  "/idp.persistentId.sourceAttribute/s/^#//" "${tgtFile}"
+
+# this replaces the string for the attribute filter (uid/sAMAccountName) as the key element for the hash
+${Echo} "Applying NameID settings:${tgtFile}: replaces the string for the attribute filter with ${attr_filter}" >> ${statusFile} 2>&1
+
+	sed -i  "s/changethistosomethingreal/${attr_filter}/" "${tgtFile}"	
+
+# lines 26: uncomment the salt and replace it with the right thing
+# note that this is the same salt as the ePTId
+${Echo} "Applying NameID settings:${tgtFile}: uncomment and set the salt for hashing the value" >> ${statusFile} 2>&1
+
+	sed -i  "/idp.persistentId.salt/s/^#//" "${tgtFile}"
+	sed -i  "s/changethistosomethingrandom/${esalt}/" "${tgtFile}"	
+
+# line 31. Uncomment it to use the 'MyPersistentIdStore' it references elsewhere
+${Echo} "Applying NameID settings:${tgtFile}: uncommenting use of MyPersistentIdStore for DB " >> ${statusFile} 2>&1
+
+	sed -i  "/idp.persistentId.store/s/^#//" "${tgtFile}"
+
+${Echo} "Applying NameID settings:${tgtFile}: appending to file settings using StoredPersistentIdGenerator so DB is used to generate IDs" >> ${statusFile} 2>&1
+
+	${Echo} "# Appended by Idp-Installer to use the proper generator" >> "${tgtFile}"
+	${Echo} "idp.persistentId.generator = shibboleth.StoredPersistentIdGenerator" >> "${tgtFile}"
+
+
+	local tgtFilexml="${idpConfPath}/saml-nameid.xml"
+	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+
+	local samlnameidTemplate="${Spath}/prep/shibboleth/conf/saml-nameid.xml.template"
+
+${Echo} "Applying NameID settings:${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
+
+
+# perform overlay of our template with necessary substitutions
+${Echo} "Applying NameID settings:${tgtFilexml}: perform our overlay from template file onto ${tgtFilexml}" >> ${statusFile} 2>&1
+
+	cat ${samlnameidTemplate} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
+
+${Echo} "Applying NameID settings:${tgtFilexml}: verify successfull update" >> ${statusFile} 2>&1
+
+# verify that the updates proceeded at least to a non zero byte file result
+if [[ -s "${tgtFile}" && -s "${tgtFilexml}" ]]; then
+	${Echo} "${tgtFile} update complete" >> ${statusFile} 2>&1
+else
+	${Echo} "FAILED UPDATE: Issue detected with nameID files. The update to ${tgtFile} and ${tgtFilexml} are rolling back to originals" >> ${statusFile} 2>&1
+	${Echo} "Proposed updates for saml-nameid will be saved in the same directory with a ${failExt} extension" >> ${statusFile} 2>&1
+
+	# copy bad copies for latest investigation
+	cp "${tgtFilexml}" "${tgtFilexml}.${failExt}"
+	cp "${tgtFile}" "${tgtFile}.${failExt}"
+
+	# revert back to original for both 
+	cp "${tgtFilexmlBkp}" "${tgtFilexml}"
+	cp "${tgtFileBkp}" "${tgtFile}"
+
+	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
+
+fi
+${Echo} "Applying NameID settings:${tgtFilexml}: verify process complete" >> ${statusFile} 2>&1
+
+
+
+
+${Echo} "Applying NameID settings complete" >> ${statusFile} 2>&1
+	
+}
+
+prepareDatabase ()
+{
+	${Echo} "Preparing Mysql DB for storing identifiers"
+
+	# relies upon epass from script.messages.sh for the sqlpassword for userid 'shibboleth'
+
+	 	# grant sql access for shibboleth
+		# esalt generation moved to script.messages.sh to be used in more locations than just here
+		
+
+	cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+
+		${Echo} "Create MySQL database and shibboleth user."
+		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		retval=$?
+		if [ "${retval}" -ne 0 ]; then
+			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+		fi
+
+}
+
+
+
+applyGlobalXmlDbSettingsDependancies ()
+
+{
+	${Echo} "$FUNCNAME: adding libraries in edit-webapp/WEB-INF/lib supporting database connectivity" >> ${statusFile} 2>&1
+
+	local commonsDbcp2Jar="commons-dbcp2-${commonsDbcp2Ver}.jar"
+	local commonsPool2Jar="commons-pool2-${commonsPool2Ver}.jar"
+	
+	cp ${downloadPath}/${commonsDbcp2Jar} "${idpEditWebappLibDir}"
+	cp ${downloadPath}/${commonsPool2Jar} "${idpEditWebappLibDir}"
+
+	${Echo} "$FUNCNAME: applying jetty user and group ownership to  libraries in edit-webapp/WEB-INF/lib " >> ${statusFile} 2>&1
+		
+	chown -R jetty:jetty "${idpEditWebappLibDir}"
+
+	${Echo} "$FUNCNAME: completed" >> ${statusFile} 2>&1
+
+}
+
+applyGlobalXmlDbSettings ()
+
+{
+
+	local failExt="proposedUpdate"
+	local tgtFilexml="${idpConfPath}/global.xml"
+	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+
+	local TemplateXml="${Spath}/prep/shibboleth/conf/global.xml.template"
+
+${Echo} "$FUNCNAME:Working on ${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
+
+
+# perform overlay of our template with necessary substitutions
+${Echo} "Working on ${tgtFilexml}: perform our overlay from template file onto ${tgtFilexml}" >> ${statusFile} 2>&1
+
+	cat ${TemplateXml} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
+
+${Echo} "Working on ${tgtFilexml}: verify successfull update" >> ${statusFile} 2>&1
+
+# verify that the updates proceeded at least to a non zero byte file result
+if [ -s "${tgtFilexml}" ]; then
+	${Echo} "Working on ${tgtFilexml}: verification successful. Update completed." >> ${statusFile} 2>&1
+else
+	${Echo} "FAILED UPDATE: Issue detected with ${tgtFilexml} file. The update to ${tgtFilexml} are rolling back to originals" >> ${statusFile} 2>&1
+	${Echo} "Proposed updates will be saved in the same directory with a ${failExt} extension" >> ${statusFile} 2>&1
+
+	# copy bad copies for latest investigation
+	cp "${tgtFilexml}" "${tgtFilexml}.${failExt}"
+
+	# revert back to original for both 
+	cp "${tgtFilexmlBkp}" "${tgtFilexml}"
+
+	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
+
+fi
+
+${Echo} "Working on ${tgtFilexml}: verify process complete" >> ${statusFile} 2>&1
+
+applyGlobalXmlDbSettingsDependancies
+
+
+${Echo} "$FUNCNAME: Work on ${tgtFilexml} and related dependancies completed" >> ${statusFile} 2>&1
+
+
+}
+
+
+applyEptidSettings ()
+
+{
+	${Echo} "Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
+
+	 	cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
+        | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
+               > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
+       files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
+       
+       repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+       repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+	   repStr='<!-- EPTID FILTER PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+      
+}
+applyLDAPSettings ()
+{
+		${Echo} "Patching config files"
+
+
+		repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
+        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+
+}
+
 patchShibbolethConfigs ()
 
 {
@@ -1726,52 +1934,32 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${fticks}" != "n" ]; then
-              
               	# apply an enhanced application of the FTICKS functionality
-
-              	applyFTICKS
+				applyFTICKS
         fi
+
+        	# This loads the necessary schema for the database to prepare for
+        	#  eptid usage OR 
+        	# applyingNameIDC14Settings
+
+        	prepareDatabase
+
+        	applyGlobalXmlDbSettings
+
 
         if [ "${eptid}" != "n" ]; then
-                if [ -z "${epass}" ]; then
-                        epass=`${passGenCmd}`
-                fi
-		# grant sql access for shibboleth
-		esalt=`openssl rand -base64 36 2>/dev/null`
-		cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
 
-		${Echo} "Create MySQL database and shibboleth user."
-		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		retval=$?
-		if [ "${retval}" -ne 0 ]; then
-			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
-		fi
-
-                cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
-                        | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
-                        > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
-                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
-
-                repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID FILTER PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+        		applyEptidSettings
         fi
 
-        repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
-        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+        applyLDAPSettings
 
+        
 	echo "applying chown "
 	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
+
+	applyNameIDC14Settings
+
 
 }
 

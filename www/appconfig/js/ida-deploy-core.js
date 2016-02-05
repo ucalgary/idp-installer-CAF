@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with IDP-Deployer. If not, see <http://www.gnu.org/licenses/>.
 // Set the value below to 1 to enable the logging which will include javascript console and alert popups.
-var loggingEnabled = 2;
+var loggingEnabled = 1;
 
 var generatorVersion = 'v30';
 var builddate = new Date();
@@ -55,6 +55,28 @@ function setiprangesallowed() {
 
         $("#iprangesallowed").val($("#iprangesallowedAdjust").val());
         update(); // update to ensure the configuration is constructed properly.
+
+}
+
+function setLDAPFieldDefaults () {
+   // alert (($("#ldap_type").val() ))
+    if ( ($("#ldap_type").val() ) == 'ad' ) {
+    
+    console.log('setLDAPFieldDefaults:detected Active Directory');
+    if (confirm ("Active Directory defaults are to use sAMAccountName for search filters, override what's there now?") ){
+        $("#attr_filter").val("sAMAccountName");
+        $("#user_field").val("sAMAccountName");
+        }
+
+    }
+    else
+    {
+    console.log('setLDAPFieldDefaults:detected Regular Directory');
+    if (confirm ("LDAP search defaults are to use uid for search filters, override what's there now?") ){
+        $("#attr_filter").val("uid");
+        $("#user_field").val("uid");
+        }
+    }
 
 }
 
@@ -425,6 +447,9 @@ var cNeutral = "#FFFFFF"
 
         update();
     }
+
+
+
 
 
     function update() {
