@@ -10,6 +10,8 @@ upgrade=0
 
 shibDir="shibboleth-identity-provider"
 idpInstallerBase="/opt/idp-installer"
+fileBkpPostfix="b4UpdatesApplied"
+
 
 #
 # Key Component Versions

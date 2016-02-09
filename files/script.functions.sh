@@ -1057,7 +1057,7 @@ enableStatusMonitoring() {
 	${Echo} "enableStatusMonitoring: Backing up original and applying our template to idp.home/conf/access-control.xml"
 
 	# make backup
-	cp /opt/shibboleth-idp/conf/access-control.xml /opt/shibboleth-idp/conf/access-control.xml.b4.replacement
+	cp /opt/shibboleth-idp/conf/access-control.xml /opt/shibboleth-idp/conf/access-control.xml.${fileBkpPostfix}
 	# Overlay the template file 
 	cp ${Spath}/prep/shibboleth/conf/access-control.xml.template /opt/shibboleth-idp/conf/access-control.xml
 
@@ -1645,7 +1645,7 @@ applyFTICKS ()
 	# B. overlay new audit.xml, logback.xml so bean and technique is in place (make backup first)
 	overlayFiles="audit.xml logback.xml"
 	for i in ${overlayFiles}; do
-		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.b4.replacement
+		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.${fileBkpPostfix}
 		cp ${Spath}/files/${my_ctl_federation}/${i}.template /opt/shibboleth-idp/conf/${i}
 	done
 
@@ -1668,7 +1668,7 @@ applyFTICKS ()
 				${Echo} "applyFTICKS loghost: ${my_fticks_loghost_value}"
 
 
-	cp /opt/shibboleth-idp/conf/idp.properties /opt/shibboleth-idp/conf/idp.properties.b4.replacement
+	cp /opt/shibboleth-idp/conf/idp.properties /opt/shibboleth-idp/conf/idp.properties.${fileBkpPostfix}
 	echo "idp.fticks.federation=${my_ctl_federation}" >> /opt/shibboleth-idp/conf/idp.properties
 	echo "idp.fticks.salt=${fticksSalt}" >> /opt/shibboleth-idp/conf/idp.properties
 	echo "idp.fticks.loghost=${my_fticks_loghost_value}" >> /opt/shibboleth-idp/conf/idp.properties
@@ -1687,7 +1687,7 @@ applyNameIDC14Settings ()
 # 
 	local failExt="proposedUpdate"
 	local tgtFile="${idpConfPath}/saml-nameid.properties"
-	local tgtFileBkp="${tgtFile}.b4.replacement"
+	local tgtFileBkp="${tgtFile}.${fileBkpPostfix}"
 	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
 
 # Make a backup of our file
@@ -1729,7 +1729,7 @@ ${Echo} "Applying NameID settings:${tgtFile}: appending to file settings using S
 
 
 	local tgtFilexml="${idpConfPath}/saml-nameid.xml"
-	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+	local tgtFilexmlBkp="${tgtFilexml}.${fileBkpPostfix}"
 
 	local samlnameidTemplate="${Spath}/prep/shibboleth/conf/saml-nameid.xml.template"
 
@@ -1823,7 +1823,7 @@ applyGlobalXmlDbSettings ()
 
 	local failExt="proposedUpdate"
 	local tgtFilexml="${idpConfPath}/global.xml"
-	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+	local tgtFilexmlBkp="${tgtFilexml}.${fileBkpPostfix}"
 
 	local TemplateXml="${Spath}/prep/shibboleth/conf/global.xml.template"
 
@@ -1871,7 +1871,9 @@ ${Echo} "$FUNCNAME: Work on ${tgtFilexml} and related dependancies completed" >>
 applyEptidSettings ()
 
 {
-	${Echo} "Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
+	${Echo} "$FUNCNAME: Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
+
+	${Echo} "$FUNCNAME: Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
 
 	 	cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
         | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
