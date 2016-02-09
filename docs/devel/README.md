@@ -58,4 +58,9 @@ Wherever possible:
 - Alert the installer that there a number of dependancies being automatically installed and highlight any significant assumptions being made.
 
 
+## What's the practice around backing up files?
+
+### It is strongly recommended to backup the file in place with a consistent prefix using the 'fileBkpPostfix' variable prefixed with a dot.  This allows review post installation against what was done and what was in the distribution.
+
+
 
