@@ -1880,14 +1880,14 @@ applyEptidSettings ()
                > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
        
-       repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+      #REVIEW1 repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
+      #REVIEW1 sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
        repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
-       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+#REVIEW1       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
+#REVIEW1       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
 	   repStr='<!-- EPTID FILTER PLACEHOLDER -->'
        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
