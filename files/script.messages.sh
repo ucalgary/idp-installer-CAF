@@ -10,8 +10,9 @@ upgrade=0
 
 shibDir="shibboleth-identity-provider"
 idpInstallerBase="/opt/idp-installer"
+idpInstallerBin="${idpInstallerBase}/bin"
 fileBkpPostfix="b4UpdatesApplied"
-
+systemdHome="/usr/lib/systemd/system"
 
 #
 # Key Component Versions
@@ -33,6 +34,13 @@ javaMajorVersion="8"
 javaVer="1.8.0_65"
 jcePolicySrc="jce_policy-8.zip"
 JCEUnlimitedResponse="2147483647"
+
+#
+# IdP-Installer file manifest (ie the files we create for ourselves)
+
+# these are in the bin directory
+idpIFiledailyTasks="dailytasks.sh"
+idpIFilejettySystemdService="jetty.service"
 
 # Key Component Versions end
 #
@@ -60,9 +68,10 @@ then
 fi
 
 #
-# used in eduroam configs
+# Other variables used in configuration
 #
 backupPath="${Spath}/backups/"
+filesPath="${Spath}/files"
 templatePath="${Spath}/assets"
 templatePathEduroamCentOS="${Spath}/assets/etc/raddb"
 templatePathEduroamCentOS7="${Spath}/assets/etc/raddb7"

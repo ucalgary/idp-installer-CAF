@@ -1517,6 +1517,48 @@ jettySetupPrepareBase()
     
 
 }
+
+jettySetupEnableStartOnBoot ()
+{
+
+	${Echo} "$FUNCNAME: Enabling jetty startup on boot" >> ${statusFile} 2>&1
+
+	idpInstallerBin="${idpInstallerBase}/bin"
+	
+	${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
+	cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
+
+	${Echo} "$FUNCNAME: symlinking IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
+	ln -s  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
+
+	${Echo} "$FUNCNAME: Creating Jetty User " >> ${statusFile} 2>&1
+
+ 		useradd -d /opt/jetty -s /bin/bash jetty
+
+	${Echo} "$FUNCNAME: Creating symlink for legacy service start/stop  " >> ${statusFile} 2>&1
+        ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
+
+	${Echo} "$FUNCNAME: Enabling automatic Jetty Startup " >> ${statusFile} 2>&1        
+       
+        if [ "${dist}" != "ubuntu" ]; then
+            if [ ${redhatDist} = "7"  ]; then
+				${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1        
+				systemctl daemon-reload
+				systemctl enable jetty.service
+
+			else
+				${Echo} "$FUNCNAME: Detected classic service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1        
+			    chkconfig jetty on
+			
+			fi
+        else
+				${Echo} "$FUNCNAME: Detected ubuntu service model, using update-rc.d to enable jetty" >> ${statusFile} 2>&1        
+                update-rc.d jetty defaults
+        fi
+
+
+
+}
 jettySetup() {
 
         #Installing a specific version of Jetty
@@ -1540,9 +1582,7 @@ jettySetup() {
 
         #jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
         
-        	   ${Echo} "jettySetup: Starting Jetty servlet container setup"
-
-
+        ${Echo} "$FUNCNAME: Starting Jetty servlet container setup" >> ${statusFile} 2>&1 
 
 		jetty9Path=`basename ${jetty9File}  .tar.gz`
 		jetty9URL="${jettyBaseURL}${jetty9File}"
@@ -1557,34 +1597,30 @@ jettySetup() {
                 	
         fi
 
-        # Manipulate Jetty configuration for the deployment
-        
-
+ 		${Echo} "$FUNCNAME: Manipulating Jetty config for our deployment" >> ${statusFile} 2>&1 
         cd /opt
         tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
         
-        # important to symlink as from here on in jetty to be assumed as 'there'
+ 		${Echo} "$FUNCNAME: adding symlink for /opt/jetty" >> ${statusFile} 2>&1 
         ln -s /opt/${jetty9Path} /opt/jetty
 
 		jettySetupPrepareBase
+
+ 		${Echo} "$FUNCNAME: manipulating jetty.sh for proper settings" >> ${statusFile} 2>&1 
 
         sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
         sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
-        useradd -d /opt/jetty -s /bin/bash jetty
-        ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
 
-        if [ "${dist}" != "ubuntu" ]; then
-                chkconfig jetty on
-        else
-                update-rc.d jetty defaults
-        fi
+ 		${Echo} "$FUNCNAME: manipulating jetty idp.ini for passphrases in jetty/jetty-base" >> ${statusFile} 2>&1 
+        cat ${filesPath}/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
+        
+        jettySetupEnableStartOnBoot
 
-        cat ${Spath}/files/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
 
-        # Setting ownership
-        chown jetty:jetty /opt/jetty/ -R
+		${Echo} "$FUNCNAME: applying ownership on key directories" >> ${statusFile} 2>&1 
+        chown -R jetty:jetty /opt/jetty/ 
         chown -R jetty:jetty /opt/shibboleth-idp/
 
         jettySetupSetDefaults
