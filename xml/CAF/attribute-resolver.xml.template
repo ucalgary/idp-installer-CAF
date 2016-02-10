@@ -338,7 +338,7 @@
     
     <!-- Computed targeted ID connector -->
     <!-- IdP-Installer: This is left commented out as computedID is no longer referred to above 
-                        This would be used if you wanted hash something based on the uid + salt from the directory
+                        This would be used if you wanted to hash something based on the uid + salt from the directory
                         It is not in the reference configuration by the IdP-Installer at this time.
 
     <resolver:DataConnector xsi:type="dc:ComputedId"
