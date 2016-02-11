@@ -2089,13 +2089,9 @@ makeInstallerHome()
 
 invokeShibbolethInstallProcessJetty9 ()
 {
+	${Echo} "$FUNCNAME: Beginning core installation process " >> ${statusFile} 2>&1
 
-        ### Begin of SAML IdP installation Process
-
-	containerDist="Jetty9"
-
-	# This is now done in script.bootstrap.functions.sh --> installDependanciesForInstallation
-
+    
 	# check for installed IDP
 	setVarUpgradeType
 
