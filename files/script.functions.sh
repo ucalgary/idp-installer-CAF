@@ -1057,7 +1057,7 @@ enableStatusMonitoring() {
 	${Echo} "enableStatusMonitoring: Backing up original and applying our template to idp.home/conf/access-control.xml"
 
 	# make backup
-	cp /opt/shibboleth-idp/conf/access-control.xml /opt/shibboleth-idp/conf/access-control.xml.b4.replacement
+	cp /opt/shibboleth-idp/conf/access-control.xml /opt/shibboleth-idp/conf/access-control.xml.${fileBkpPostfix}
 	# Overlay the template file 
 	cp ${Spath}/prep/shibboleth/conf/access-control.xml.template /opt/shibboleth-idp/conf/access-control.xml
 
@@ -1306,7 +1306,7 @@ ${Echo} "Installing and adding daily crontab health checks"
 	${Echo} "Creating IdP Installer installation in ${idpInstallerBase}"
 	idpInstallerBin="${idpInstallerBase}/bin"
 	dailyTasks="${idpInstallerBin}/dailytasks.sh"
-	mkdir -p ${idpInstallerBin}
+	
 
 	${Echo} "adding dailytasks.sh to ${idpInstallerBin}"
 	# note that this file is not federation specific, but generic 
@@ -1517,6 +1517,48 @@ jettySetupPrepareBase()
     
 
 }
+
+jettySetupEnableStartOnBoot ()
+{
+
+	${Echo} "$FUNCNAME: Enabling jetty startup on boot" >> ${statusFile} 2>&1
+
+	idpInstallerBin="${idpInstallerBase}/bin"
+	
+	${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
+	cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
+
+	${Echo} "$FUNCNAME: symlinking IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
+	ln -s  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
+
+	${Echo} "$FUNCNAME: Creating Jetty User " >> ${statusFile} 2>&1
+
+ 		useradd -d /opt/jetty -s /bin/bash jetty
+
+	${Echo} "$FUNCNAME: Creating symlink for legacy service start/stop  " >> ${statusFile} 2>&1
+        ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
+
+	${Echo} "$FUNCNAME: Enabling automatic Jetty Startup " >> ${statusFile} 2>&1        
+       
+        if [ "${dist}" != "ubuntu" ]; then
+            if [ ${redhatDist} = "7"  ]; then
+				${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1        
+				systemctl daemon-reload
+				systemctl enable jetty.service
+
+			else
+				${Echo} "$FUNCNAME: Detected classic service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1        
+			    chkconfig jetty on
+			
+			fi
+        else
+				${Echo} "$FUNCNAME: Detected ubuntu service model, using update-rc.d to enable jetty" >> ${statusFile} 2>&1        
+                update-rc.d jetty defaults
+        fi
+
+
+
+}
 jettySetup() {
 
         #Installing a specific version of Jetty
@@ -1540,9 +1582,7 @@ jettySetup() {
 
         #jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
         
-        	   ${Echo} "jettySetup: Starting Jetty servlet container setup"
-
-
+        ${Echo} "$FUNCNAME: Starting Jetty servlet container setup" >> ${statusFile} 2>&1 
 
 		jetty9Path=`basename ${jetty9File}  .tar.gz`
 		jetty9URL="${jettyBaseURL}${jetty9File}"
@@ -1557,34 +1597,30 @@ jettySetup() {
                 	
         fi
 
-        # Manipulate Jetty configuration for the deployment
-        
-
+ 		${Echo} "$FUNCNAME: Manipulating Jetty config for our deployment" >> ${statusFile} 2>&1 
         cd /opt
         tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
         
-        # important to symlink as from here on in jetty to be assumed as 'there'
+ 		${Echo} "$FUNCNAME: adding symlink for /opt/jetty" >> ${statusFile} 2>&1 
         ln -s /opt/${jetty9Path} /opt/jetty
 
 		jettySetupPrepareBase
+
+ 		${Echo} "$FUNCNAME: manipulating jetty.sh for proper settings" >> ${statusFile} 2>&1 
 
         sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
         sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
-        useradd -d /opt/jetty -s /bin/bash jetty
-        ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
 
-        if [ "${dist}" != "ubuntu" ]; then
-                chkconfig jetty on
-        else
-                update-rc.d jetty defaults
-        fi
+ 		${Echo} "$FUNCNAME: manipulating jetty idp.ini for passphrases in jetty/jetty-base" >> ${statusFile} 2>&1 
+        cat ${filesPath}/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
+        
+        jettySetupEnableStartOnBoot
 
-        cat ${Spath}/files/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
 
-        # Setting ownership
-        chown jetty:jetty /opt/jetty/ -R
+		${Echo} "$FUNCNAME: applying ownership on key directories" >> ${statusFile} 2>&1 
+        chown -R jetty:jetty /opt/jetty/ 
         chown -R jetty:jetty /opt/shibboleth-idp/
 
         jettySetupSetDefaults
@@ -1645,7 +1681,7 @@ applyFTICKS ()
 	# B. overlay new audit.xml, logback.xml so bean and technique is in place (make backup first)
 	overlayFiles="audit.xml logback.xml"
 	for i in ${overlayFiles}; do
-		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.b4.replacement
+		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.${fileBkpPostfix}
 		cp ${Spath}/files/${my_ctl_federation}/${i}.template /opt/shibboleth-idp/conf/${i}
 	done
 
@@ -1668,7 +1704,7 @@ applyFTICKS ()
 				${Echo} "applyFTICKS loghost: ${my_fticks_loghost_value}"
 
 
-	cp /opt/shibboleth-idp/conf/idp.properties /opt/shibboleth-idp/conf/idp.properties.b4.replacement
+	cp /opt/shibboleth-idp/conf/idp.properties /opt/shibboleth-idp/conf/idp.properties.${fileBkpPostfix}
 	echo "idp.fticks.federation=${my_ctl_federation}" >> /opt/shibboleth-idp/conf/idp.properties
 	echo "idp.fticks.salt=${fticksSalt}" >> /opt/shibboleth-idp/conf/idp.properties
 	echo "idp.fticks.loghost=${my_fticks_loghost_value}" >> /opt/shibboleth-idp/conf/idp.properties
@@ -1687,7 +1723,7 @@ applyNameIDC14Settings ()
 # 
 	local failExt="proposedUpdate"
 	local tgtFile="${idpConfPath}/saml-nameid.properties"
-	local tgtFileBkp="${tgtFile}.b4.replacement"
+	local tgtFileBkp="${tgtFile}.${fileBkpPostfix}"
 	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
 
 # Make a backup of our file
@@ -1729,7 +1765,7 @@ ${Echo} "Applying NameID settings:${tgtFile}: appending to file settings using S
 
 
 	local tgtFilexml="${idpConfPath}/saml-nameid.xml"
-	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+	local tgtFilexmlBkp="${tgtFilexml}.${fileBkpPostfix}"
 
 	local samlnameidTemplate="${Spath}/prep/shibboleth/conf/saml-nameid.xml.template"
 
@@ -1823,7 +1859,7 @@ applyGlobalXmlDbSettings ()
 
 	local failExt="proposedUpdate"
 	local tgtFilexml="${idpConfPath}/global.xml"
-	local tgtFilexmlBkp="${tgtFilexml}.b4Changes"
+	local tgtFilexmlBkp="${tgtFilexml}.${fileBkpPostfix}"
 
 	local TemplateXml="${Spath}/prep/shibboleth/conf/global.xml.template"
 
@@ -1871,21 +1907,23 @@ ${Echo} "$FUNCNAME: Work on ${tgtFilexml} and related dependancies completed" >>
 applyEptidSettings ()
 
 {
-	${Echo} "Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
+	${Echo} "$FUNCNAME: Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
+
+	${Echo} "$FUNCNAME: Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
 
 	 	cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
         | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
                > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
        
-       repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+      #REVIEW1 repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
+      #REVIEW1 sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
        repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
-       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+#REVIEW1       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
+#REVIEW1       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
 	   repStr='<!-- EPTID FILTER PLACEHOLDER -->'
        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
@@ -2039,6 +2077,15 @@ overwriteKeystoreFiles ()
 	fi
 }
 
+makeInstallerHome()
+
+{
+	${Echo} "$FUNCNAME: Creating IdP-Installer support directories in ${idpInstallerBase} " >> ${statusFile} 2>&1
+
+	mkdir -p ${idpInstallerBase}
+	mkdir -p ${idpInstallerBin}
+
+}
 
 invokeShibbolethInstallProcessJetty9 ()
 {
@@ -2054,10 +2101,12 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	setJavaHome
 
+	makeInstallerHome
+
 	# Override per federation
 	performStepsForShibbolethUpgradeIfRequired
 
-# 	check for backup file and use it if available
+	# 	check for backup file and use it if available
 	checkAndLoadBackupFile
 
 	if [ "${installer_interactive}" = "y" ]
