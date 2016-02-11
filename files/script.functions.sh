@@ -1537,7 +1537,7 @@ jettySetupEnableStartOnBoot ()
        
         if [ "${dist}" != "ubuntu" ]; then
             if [ ${redhatDist} = "7"  ]; then
-            	
+
 				${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1        
 	
 				${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
@@ -1638,6 +1638,8 @@ jettySetup() {
 applyIptablesSettings ()
 
 {
+	${Echo} "$FUNCNAME: applying iptables rules and saving them to redirect 443 to 7443 " >> ${statusFile} 2>&1 
+        
 
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
@@ -1647,6 +1649,14 @@ applyIptablesSettings ()
         
         if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 		iptables-save > /etc/sysconfig/iptables
+
+ 		if [ ${redhatDist} = "7"  ]; then
+	${Echo} "$FUNCNAME: ensuring iptables is started upon reboot " >> ${statusFile} 2>&1 
+        
+ 			systemctl enable iptables
+ 		fi
+
+
         elif [ "${dist}" == "ubuntu" ]; then
 	 	iptables-save > /etc/iptables/rules.v4
 	fi
