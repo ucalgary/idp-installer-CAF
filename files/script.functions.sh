@@ -1306,7 +1306,7 @@ ${Echo} "Installing and adding daily crontab health checks"
 	${Echo} "Creating IdP Installer installation in ${idpInstallerBase}"
 	idpInstallerBin="${idpInstallerBase}/bin"
 	dailyTasks="${idpInstallerBin}/dailytasks.sh"
-	mkdir -p ${idpInstallerBin}
+	
 
 	${Echo} "adding dailytasks.sh to ${idpInstallerBin}"
 	# note that this file is not federation specific, but generic 
@@ -2077,6 +2077,15 @@ overwriteKeystoreFiles ()
 	fi
 }
 
+makeInstallerHome()
+
+{
+	${Echo} "$FUNCNAME: Creating IdP-Installer support directories in ${idpInstallerBase} " >> ${statusFile} 2>&1
+
+	mkdir -p ${idpInstallerBase}
+	mkdir -p ${idpInstallerBin}
+
+}
 
 invokeShibbolethInstallProcessJetty9 ()
 {
@@ -2092,10 +2101,12 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	setJavaHome
 
+	makeInstallerHome
+
 	# Override per federation
 	performStepsForShibbolethUpgradeIfRequired
 
-# 	check for backup file and use it if available
+	# 	check for backup file and use it if available
 	checkAndLoadBackupFile
 
 	if [ "${installer_interactive}" = "y" ]
