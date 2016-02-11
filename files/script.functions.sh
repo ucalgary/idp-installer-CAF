@@ -768,11 +768,11 @@ askForConfigurationData() {
 	fi
 
 	if [ -z "${consentEnabled}" ]; then
-		subsearch=$(askYesNo "User consent" "Do you want to enable user consent?")
+		consentEnabled=$(askYesNo "User consent" "Do you want to enable user consent?")
 	fi
 
 	if [ -z "${ECPEnabled}" ]; then
-		subsearch=$(askYesNo "Enable ECP" "Do you want to enable SAML2 ECP?")
+		ECPEnabled=$(askYesNo "Enable ECP" "Do you want to enable SAML2 ECP?")
 	fi
 
 
@@ -2155,11 +2155,11 @@ invokeShibbolethInstallProcessJetty9 ()
 	# Override per federation
 	configShibbolethFederationValidationKey
 
-        patchShibbolethConfigs
+	jettySetup
+
+	patchShibbolethConfigs
 
 	performPostUpgradeSteps
-
-        jettySetup
 
 	enableECP
 
