@@ -1525,12 +1525,7 @@ jettySetupEnableStartOnBoot ()
 
 	idpInstallerBin="${idpInstallerBase}/bin"
 	
-	${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
-	cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
-
-	${Echo} "$FUNCNAME: symlinking IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
-	ln -s  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
-
+	
 	${Echo} "$FUNCNAME: Creating Jetty User " >> ${statusFile} 2>&1
 
  		useradd -d /opt/jetty -s /bin/bash jetty
@@ -1542,7 +1537,15 @@ jettySetupEnableStartOnBoot ()
        
         if [ "${dist}" != "ubuntu" ]; then
             if [ ${redhatDist} = "7"  ]; then
+            	
 				${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1        
+	
+				${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
+					cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
+
+				${Echo} "$FUNCNAME: copying IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
+					cp  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
+
 				systemctl daemon-reload
 				systemctl enable jetty.service
 
