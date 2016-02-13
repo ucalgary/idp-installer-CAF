@@ -21,11 +21,11 @@ setBackTitle ()
 patchFirewall()
 {
         #Replace firewalld with iptables (Centos7)
-        ${Echo} "Updating firewall settings - changing from firewalld to iptables "
-		${Echo} "Working with Distro:${dist} with version: ${redhatDist}"
+	${Echo} "Working with Distro:${dist} with version: ${redhatDist}"
         
         if [ "${dist}" == "centos" -a "${redhatDist}" == "7" ]; then
-        ${Echo} "Detected ${dist} ${redhatDist}"
+		${Echo} "Updating firewall settings - changing from firewalld to iptables "
+		${Echo} "Detected ${dist} ${redhatDist}"
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -33,7 +33,8 @@ patchFirewall()
                 systemctl start iptables
 
         elif [ "${dist}" == "redhat" -a "${redhatDist}" == "7" ]; then
-        ${Echo} "Detected ${dist} ${redhatDist}"
+		${Echo} "Updating firewall settings - changing from firewalld to iptables "
+		${Echo} "Detected ${dist} ${redhatDist}"
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -41,7 +42,7 @@ patchFirewall()
                 systemctl start iptables
 
 	elif [ "${dist}" == "ubuntu" ]; then
-        ${Echo} "Detected ${dist} ${redhatDist}"
+		${Echo} "Detected ${dist} ${redhatDist}"
 
 		DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent	
         fi
@@ -442,6 +443,12 @@ installEPTIDSupport ()
 			test=`dpkg -s mysql-server > /dev/null 2>&1`
 			isInstalled=$?
 
+                elif [ "$dist" == "sles" ]; then
+			#package catalog test
+			#test=`zypper search -i mysql > /dev/null 2>&1`
+                        [ -f /etc/init.d/mysql ]
+                        isInstalled=$?
+
 		elif [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 			if [ "${redhatDist}" == "6" ]; then
 				[ -f /etc/init.d/mysqld ]
@@ -470,6 +477,9 @@ installEPTIDSupport ()
                         mysqldTest=`pgrep mysqld`
                         if [ -z "${mysqldTest}" ]; then
                                 if [ ${dist} == "ubuntu" ]; then
+                                        service mysql restart >> ${statusFile} 2>&1
+                                elif [ "${dist}" == "sles" ]; then
+					systemctl enable mysql
                                         service mysql restart >> ${statusFile} 2>&1
                                 else
                                         service mysqld restart >> ${statusFile} 2>&1
@@ -501,7 +511,7 @@ EOM
                         fi
 
 
-                        if [ "${dist}" != "ubuntu" ]; then
+			if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
                                 /sbin/chkconfig mysqld on
                         fi
                 fi
@@ -1528,35 +1538,39 @@ jettySetupEnableStartOnBoot ()
 	
 	${Echo} "$FUNCNAME: Creating Jetty User " >> ${statusFile} 2>&1
 
- 		useradd -d /opt/jetty -s /bin/bash jetty
+	useradd -d /opt/jetty -s /bin/bash -U jetty
 
 	${Echo} "$FUNCNAME: Creating symlink for legacy service start/stop  " >> ${statusFile} 2>&1
         ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
 
-	${Echo} "$FUNCNAME: Enabling automatic Jetty Startup " >> ${statusFile} 2>&1        
-       
-        if [ "${dist}" != "ubuntu" ]; then
-            if [ ${redhatDist} = "7"  ]; then
-            	
-				${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1        
-	
-				${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
-					cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
+	${Echo} "$FUNCNAME: Enabling automatic Jetty Startup " >> ${statusFile} 2>&1
 
-				${Echo} "$FUNCNAME: copying IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
-					cp  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
-
-				systemctl daemon-reload
-				systemctl enable jetty.service
-
-			else
-				${Echo} "$FUNCNAME: Detected classic service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1        
-			    chkconfig jetty on
-			
-			fi
-        else
-				${Echo} "$FUNCNAME: Detected ubuntu service model, using update-rc.d to enable jetty" >> ${statusFile} 2>&1        
+        if [ "${dist}" == "ubuntu" ]; then
+		${Echo} "$FUNCNAME: Detected ubuntu service model, using update-rc.d to enable jetty" >> ${statusFile} 2>&1
                 update-rc.d jetty defaults
+	elif [ "${dist}" == "sles" ]; then
+		${Echo} "$FUNCNAME: Detected suse service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1
+		chkconfig --add jetty
+		chkconfig jetty on
+	else
+		if [ ${redhatDist} = "7"  ]; then
+
+			${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1
+	
+			${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
+			cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
+
+			${Echo} "$FUNCNAME: copying IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
+			cp  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
+
+			systemctl daemon-reload
+			systemctl enable jetty.service
+
+		else
+			${Echo} "$FUNCNAME: Detected classic service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1
+			chkconfig jetty on
+			
+		fi
         fi
 
 
@@ -1638,35 +1652,57 @@ jettySetup() {
 applyIptablesSettings ()
 
 {
+	${Echo} "$FUNCNAME: applying firewall rules and saving them to redirect 443 to 7443 " >> ${statusFile} 2>&1
+        if [ "${dist}" == "sles" ]; then
+		SuSEfirewall2 open EXT TCP 443 7443 8443
 
-        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
-        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
-        iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
-        iptables -t nat -I OUTPUT -p tcp -o lo --dport 443 -j REDIRECT --to-ports 7443
-        
+		slesRedir=`grep "^FW_REDIRECT=" /etc/sysconfig/SuSEfirewall2 | cut -d\" -f2 | sed s/\n//`
+		slesStr="0/0,0/0,tcp,443,8443"
+		if [ ! -z "${slesRedir}" ]; then
+			slesRedir="${slesRedir} "
+		fi
+		if [ -z "`echo $slesRedir | grep ${slesStr}`" ]; then
+			slesRedir="${slesRedir}${slesStr}"
+			echo "FW_REDIRECT=\"${slesRedir}\"" >> /etc/sysconfig/SuSEfirewall2
+		fi
+
+		SuSEfirewall2
+	else
+		iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+		iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
+		iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
+		iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
+		iptables -t nat -I OUTPUT -p tcp -o lo --dport 443 -j REDIRECT --to-ports 7443
+	fi
+
         if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 		iptables-save > /etc/sysconfig/iptables
-        elif [ "${dist}" == "ubuntu" ]; then
+		if [ ${redhatDist} = "7"  ]; then
+			${Echo} "$FUNCNAME: ensuring iptables is started upon reboot " >> ${statusFile} 2>&1 
+
+			systemctl enable iptables
+		fi
+	elif [ "${dist}" == "ubuntu" ]; then
 	 	iptables-save > /etc/iptables/rules.v4
 	fi
 
-	service iptables restart
+        if [ "${dist}" != "sles" ]; then
+		service iptables restart
+	fi
 
 }
 
 restartJettyService ()
 
 {
-     
-		${Echo} "Restarting Jetty to ensure everything has taken effect"
 
-        if [ -f /var/run/jetty.pid ]; then
-                service jetty stop
-        fi
-        service jetty start
+	${Echo} "Restarting Jetty to ensure everything has taken effect"
 
-     
+	if [ -f /var/run/jetty.pid ]; then
+		service jetty stop
+	fi
+	service jetty start
+
 }
 
 applyFTICKS ()
@@ -2190,6 +2226,8 @@ invokeShibbolethUpgradeProcess()
         else
                 if [ ${dist} == "ubuntu" ]; then
                         apt-get -y remove --purge tomcat6 openjdk* default-jre java*
+                elif [ ${dist} == "sles" ]; then
+			zypper -n remove tomcat* openjdk* java*
                 else
                         yum -y remove tomcat* java*
                 fi

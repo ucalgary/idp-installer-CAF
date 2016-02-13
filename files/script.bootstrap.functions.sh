@@ -260,6 +260,10 @@ guessLinuxDist() {
 	if [ ! -z "`${Echo} ${dist} | grep -i 'ubuntu' | grep -v 'grep'`" ]
 	then
 		dist="ubuntu"
+	elif [ ! -z "`${Echo} ${dist} | grep -i 'suse' | grep -v 'grep'`" ]; then
+		dist="sles"
+	elif [ -s "/sbin/yast" ]; then
+		dist="sles"
 	elif [ ! -z "`${Echo} ${dist} | grep -i 'redhat' | grep -v 'grep'`" ]
 	then
 		dist="redhat"
@@ -301,6 +305,26 @@ setDistCommands() {
 		templatePathEduroamDist=${templatePathEduroamUbuntu}
 		distEduroamModules=${UbuntuEduroamModules}
     ${Echo} "Detected OS as Debian based: ${dist}"
+
+        elif [ ${dist} = "sles" ]; then
+		redhatDist="none"
+		debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
+                distCmdU=${slesCmdU}
+                distCmdUa=${slesCmdUa}
+                distCmd1=${slesCmd1}
+                distCmd2=${slesCmd2}
+		#Deprecated:2016-12-22:TODO:remove next release# distCmd3=${slesCmd3}
+                distCmd4=${slesCmd4}
+                distCmd5=${slesCmd5}
+                tomcatSettingsFile=${tomcatSettingsFileS}
+                dist_install_nc=${sles_install_nc}
+                dist_install_ldaptools=${sles_install_ldaptools}
+                distCmdEduroam=${slesCmdEduroam}
+		distEduroamPath=${slesEduroamPath}
+		distRadiusGroup=${slesRadiusGroup}
+		templatePathEduroamDist=${templatePathEduroamSles}
+		distEduroamModules=${SlesEduroamModules}
+		${Echo} "Detected OS as SUSE based: ${dist}"
 
         elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
                 if [ ${dist} = "centos" ]; then
