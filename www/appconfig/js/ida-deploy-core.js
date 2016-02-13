@@ -221,7 +221,8 @@ function importPreviousSettings() {
 var suppressedImportKeys = {
     "installer_section0_version": 0,
     "installer_section0_builddate": 0,
-    "installer_section0_fingerprint": 0
+    "installer_section0_fingerprint": 0,
+    "appserv": 0
 };
 
 
