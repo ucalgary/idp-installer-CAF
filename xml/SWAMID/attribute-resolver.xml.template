@@ -418,10 +418,12 @@
 	</resolver:AttributeDefinition>
 
 	<!-- Name Identifier related attributes -->
+<!-- IdP-Installer: As of Shibboleth 3.2.0 this is handled in saml-nameid.xml 
 	<resolver:AttributeDefinition id="transientId" xsi:type="ad:TransientId">
 		<resolver:AttributeEncoder xsi:type="enc:SAML1StringNameIdentifier" nameFormat="urn:mace:shibboleth:1.0:nameIdentifier"/>
 		<resolver:AttributeEncoder xsi:type="enc:SAML2StringNameID" nameFormat="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
 	</resolver:AttributeDefinition>
+-->
 
     <!-- ========================================== -->
     <!--      Data Connectors                       -->
@@ -475,9 +477,8 @@
     <!-- ========================================== -->
     <!--      Principal Connectors                  -->
     <!-- ========================================== -->
-    <resolver:PrincipalConnector xsi:type="pc:Transient" id="shibTransient" nameIDFormat="urn:mace:shibboleth:1.0:nameIdentifier"/>
-    <resolver:PrincipalConnector xsi:type="pc:Transient" id="saml1Unspec" nameIDFormat="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/>
-    <resolver:PrincipalConnector xsi:type="pc:Transient" id="saml2Transient" nameIDFormat="urn:oasis:names:tc:SAML:2.0:nameid-format:transient"/>
+    <!-- IdP-Installer: Principal Connectors for  shibTransient, saml1Unspec, saml2Transient are now taken care of in saml-nameid.xml -->
+
 <!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->
 
 
