@@ -289,7 +289,7 @@ setDistCommands() {
                 distCmdUa=${ubuntuCmdUa}
                 distCmd1=${ubuntuCmd1}
                 distCmd2=${ubuntuCmd2}
-                distCmd3=${ubuntuCmd3}
+				#Deprecated:2016-12-22:TODO:remove next release #distCmd3=${ubuntuCmd3}
                 distCmd4=${ubuntuCmd4}
                 distCmd5=${ubuntuCmd5}
                 tomcatSettingsFile=${tomcatSettingsFileU}
@@ -310,7 +310,7 @@ setDistCommands() {
                         distCmdUa=${centosCmdUa}
                         distCmd1=${centosCmd1}
                         distCmd2=${centosCmd2}
-                        distCmd3=${centosCmd3}
+                        #Deprecated:2016-12-22:TODO:remove next release# distCmd3=${centosCmd3}
                         distCmd4=${centosCmd4}
                         distCmd5=${centosCmd5}
                         dist_install_nc=${centos_install_nc}
@@ -331,7 +331,7 @@ setDistCommands() {
                         distCmdU=${redhatCmdU}
                         distCmd1=${redhatCmd1}
                         distCmd2=${redhatCmd2}
-                        distCmd3=${redhatCmd3}
+                        #Deprecated:2016-12-22:TODO:remove next release #distCmd3=${redhatCmd3}
                         distCmd4=${redhatCmd4}
                         distCmd5=${redhatCmd5}
                         dist_install_nc=${redhat_install_nc}

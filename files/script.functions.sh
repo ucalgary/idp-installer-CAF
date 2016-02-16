@@ -52,19 +52,7 @@ fetchJavaIfNeeded ()
 
 {
 	${Echo} "setJavaHome deprecates fetchJavaIfNeeded and ensures latest java is used"
-	# install java if needed
-	#javaBin=`which java 2>/dev/null`
-	#if [ ! -s "${javaBin}" ]; then
-	#	eval ${distCmd2}
-	#	eval ${distCmd3}
-		
-	#	javaBin=`which java 2>/dev/null`
-	#fi
-	#if [ ! -s "${javaBin}" ]; then
-	#	${Echo} "No java could be found! Install a working JRE and re-run this script."
-	#	${Echo} "Try: ${distCmd2} and ${distCmd3}"
-	#	cleanBadInstall
-	#fi
+	
 
 }
 
@@ -102,87 +90,205 @@ setVarIdPScope ()
 	idpScope="${freeRADIUS_realm}"
 }
 
-setJavaHome () {
+updateJavaAlternatives() {
+	for i in `ls $JAVA_HOME/bin/`; do
+		rm -f /var/lib/alternatives/$i
+		update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100
+		update-alternatives --set $i $JAVA_HOME/bin/$i
+	done
+}
 
-        # force the latest java onto the system to ensure latest is available for all operations.
-        # including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
+installOracleJava () {
+	javaType=$1
 
-        # June 23, 2015, altering java detection behaviour to be more platform agnostic
+	if [ "${javaType}" != "jdk" ]; then
+		javaType="jre"
+	fi
 
-	if [ -L "/usr/java/default" -a -d "/usr/java/jre${javaVer}" ]; then
-		
-                export JAVA_HOME=/usr/java/default
-                ${Echo} "Detected Java allready installed in ${JAVA_HOME}."
+	javaSrc="${javaType}-${javaName}-linux-x64.tar.gz"
+	javaDownloadLink="http://download.oracle.com/otn-pub/java/jdk/${javaBuildName}/${javaSrc}"
+	jceDownloadLink="http://download.oracle.com/otn-pub/java/jce/${javaMajorVersion}/${jcePolicySrc}"
 
-				# return 0  This is not accurate, we need to prepare the host for java settings regardless.
+	# force the latest java onto the system to ensure latest is available for all operations.
+	# including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
+
+	if [ -L "/usr/java/default" -a -d "/usr/java/${javaType}${javaVer}" ]; then
+		export JAVA_HOME=/usr/java/default
+		${Echo} "Detected Java allready installed in ${JAVA_HOME}."
+
+		if [ -z "`readlink -e /usr/bin/java | grep \"${javaType}${javaVer}\"`" ]; then
+			${Echo} "${JAVA_HOME} not used as default java. Updating system links.".
+			updateJavaAlternatives
+		fi
+	else
+		${Echo} "Oracle java not detected."
+
+		unset JAVA_HOME
+
+		# Download if needed and install from src
+		${Echo} "Downloading java."
+		if [ ! -s "${downloadPath}/${javaSrc}" ]; then
+			${fetchCmd} ${downloadPath}/${javaSrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie" ${javaDownloadLink} 2>&1
+		fi
+
+		${Echo} "Unpacking java and setting up symlinks."
+		if [ ! -d "/usr/java" ]; then
+			mkdir /usr/java
+		fi
+		tar xzf ${downloadPath}/${javaSrc} -C /usr/java/
+		unpackRet=$?
+
+		if [ "${unpackRet}" -ne 0 ]; then
+			${Echo} "Unpacking java failed, aborting script."
+			rm -r /usr/java/${javaType}${javaVer}/
+			return 1
+		fi
+
+		if [ -d "/usr/java/latest" ]; then
+			mv /usr/java/latest /usr/java/latest.old
+		fi
+		if [ -s "/usr/java/latest" ]; then
+			rm -f /usr/java/latest
+		fi
+		ln -s /usr/java/${javaType}${javaVer}/ /usr/java/latest
+
+		if [ -d "/usr/java/default" ]; then
+			mv /usr/java/default /usr/java/default.old
+		fi
+		if [ -s "/usr/java/default" ]; then
+			rm -f /usr/java/default
+		fi
+		ln -s /usr/java/latest /usr/java/default
+
+		export JAVA_HOME="/usr/java/default"
+		export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+		# Set the alternatives
+		updateJavaAlternatives
+
+		echo "***javahome is: ${JAVA_HOME}"
+	fi
+
+
+	# Regardless of origin, let's validate it's existence then ensure it's in our .bashrc and our path
+
+	${JAVA_HOME}/bin/java -version 2>&1
+	retval=$?
+
+	if [ "${retval}" -ne 0 ]; then
+		${Echo} "\n\n\nAn error has occurred in the configuration of the JAVA_HOME variable."
+		${Echo} "Please review the java installation log to see what went wrong."
+		return 1
 	else
 
-		${Echo} "Java not detected, downloading and installing.."
+		${Echo} "\n\n\nJAVA_HOME version verified as good."
+		jEnvString="export JAVA_HOME=${JAVA_HOME}"
 
-        unset JAVA_HOME
+		if [ -z "`grep 'JAVA_HOME' /root/.bashrc`" ]; then
 
-        #Install from src
-        javaSrc="jre-8u25-linux-x64.tar.gz"
-        if [ ! -s "${downloadPath}/${javaSrc}" ]; then
-                ${fetchCmd} ${downloadPath}/${javaSrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie"  https://download.oracle.com/otn-pub/java/jdk/8u25-b17/${javaSrc} >> ${statusFile} 2>&1
-        fi
-        if [ ! -d "/usr/java" ]; then
-		mkdir /usr/java
+			${Echo} "${jEnvString}" >> /root/.bashrc
+			${Echo} "\n\n\nJAVA_HOME added to end of /root/.bashrc"
+
+		else
+			if [ "`grep "export JAVA_HOME" /root/.bashrc | tail -n1`" != "${jEnvString}" ]; then
+				${Echo} "${jEnvString}" >> /root/.bashrc
+				${Echo} "\n\n\n***EXISTING JAVA_HOME DETECTED AND OVERRIDDEN!***"
+				${Echo} "\nA new JAVA_HOME has been appended to end of /root/.bashrc to ensure the latest javahome is used. Hand edit as needed\n\n"
+			fi
+
+		fi
+
+		# Ensure the java is in our execution path both in execution AND in the .bashrc
+
+		if [ -z "`grep PATH /root/.bashrc | grep \"${JAVA_HOME}/bin\"`" ]; then
+			${Echo} "export PATH=${PATH}:${JAVA_HOME}/bin" >> /root/.bashrc
+			${Echo} "\n\n\nUpdated PATH to add java bin dir at end of /root/.bashrc"
+			export PATH=${PATH}:${JAVA_HOME}/bin
+		fi
+
 	fi
-        tar xzf ${downloadPath}/${javaSrc} -C /usr/java/
-        ln -s /usr/java/jre${javaVer}/ /usr/java/latest
-        ln -s /usr/java/latest /usr/java/default
-        export JAVA_HOME="/usr/java/default"
-		export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-        #Set the alternatives
-        for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
-        for i in `ls $JAVA_HOME/bin/`;do update-alternatives --set $i $JAVA_HOME/bin/$i; done
-
-        echo "***javahome is: ${JAVA_HOME}"
-        # validate java_home and ensure it runs as expected before going any further
-        
-    fi
-
-    	# Regardless of origin, let's validate it's existence then ensure it's in our .bashrc and our path
 
 
-        ${JAVA_HOME}/bin/java -version >> ${statusFile} 2>&1
-		retval=$?
+	JCETestCmd="java -classpath ${downloadPath} checkJCEStrength"
 
-        if [ "${retval}" -ne 0 ]; then
-                ${Echo} "\n\n\nAn error has occurred in the configuration of the JAVA_HOME variable."
-                ${Echo} "Please review the java installation and status.log to see what went wrong."
-                ${Echo} "Install is aborted until this is resolved."
-                cleanBadInstall
-                exit
-        else
+	${Echo} "Testing Java Cryptography Extensions"
+	JCETestResults=$(eval ${JCETestCmd})
 
-                ${Echo} "\n\n\n JAVA_HOME version verified as good."
-                jEnvString="export JAVA_HOME=${JAVA_HOME}"
+	if [ "${JCETestResults}" == "${JCEUnlimitedResponse}" ]; then
+		${Echo} "Java Cryptography Extensions alredy installed."
+	else
+		${Echo} "Setting Java Cryptography Extensions to unlimited strength"
 
-                 if [ -z "`grep 'JAVA_HOME' /root/.bashrc`" ]; then
+		# Backup originals
+		JCEBkp1="local_policy.jar"
+		JCEBkp2="US_export_policy.jar"
+		JCEBkp1Path="${JAVA_HOME}/lib/security/${JCEBkp1}"
+		JCEBkp2Path="${JAVA_HOME}/lib/security/${JCEBkp2}"
+		JCEBkpPostfix=`date +%F-%s`
+		${Echo} "Backing up ${JCEBkp1} and ${JCEBkp1} from ${JAVA_HOME} to ${Spath}"
+		if [ "${javaType}" == "jdk" ]; then
+			JCEBkp1Path="${JAVA_HOME}/jre/lib/security/${JCEBkp1}"
+			JCEBkp2Path="${JAVA_HOME}/jre/lib/security/${JCEBkp2}"
+		fi
+		cp ${JCEBkp1Path} ${Spath}/${JCEBkp1}-${JCEBkpPostfix}
+		cp ${JCEBkp2Path} ${Spath}/${JCEBkp2}-${JCEBkpPostfix}
 
-                         ${Echo} "${jEnvString}" >> /root/.bashrc
-                         ${Echo} "\n\n\n JAVA_HOME added to end of /root/.bashrc"
+		# Fetch new policy file
+		if [ ! -s "${downloadPath}/${jcePolicySrc}" ]; then
+			${Echo} "Fetching Java Cryptography Extensions from Oracle"
+			${fetchCmd} ${downloadPath}/${jcePolicySrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie" ${jceDownloadLink} 2>&1
+		fi
 
-                 else
+		# Extract locally into downloads directory
+		unzip -o ${downloadPath}/${jcePolicySrc} -d ${downloadPath}
+		jceUnpacRet=$?
+		if [ "${jceUnpacRet}" -ne "0" ]; then
+			${Echo} "**Unpacking Java Cryptography Extensions update failed!**"
+			${Echo} "**Install will succeed but you will not operate at full crypto strength **"
+			${Echo} "**Some Service Providers will fail to negotiate.**"
+			return 0
+		fi
 
-                         ${Echo} "${jEnvString}" >> /root/.bashrc
-                         ${Echo} "\n\n\n ***EXISTING JAVA_HOME DETECTED AND OVERRIDDEN!***"
-                         ${Echo} "\n A new JAVA_HOME has been appended to end of /root/.bashrc to ensure the latest javahome is used. Hand edit as needed\n\n"
+		# copy into place
+		${Echo} "Putting Java Cryptography Extensions from Oracle into ${JAVA_HOME}/lib/security/"
 
-                 fi
+		JCEWorkingDir="${downloadPath}/UnlimitedJCEPolicyJDK8"
+		cp ${JCEWorkingDir}/${JCEBkp1} ${JCEBkp1Path}
+		cp ${JCEWorkingDir}/${JCEBkp2} ${JCEBkp2Path}
 
-                 # Ensure the java is in our execution path both in execution AND in the .bashrc
-                 
-                 jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
-                 ${Echo} "${jEnvPathString}" >> /root/.bashrc
-                 ${Echo} "\n\n\n Updated PATH to add java bin dir at end of /root/.bashrc"
+		${Echo} "Testing Java Cryptography Extensions"
+		JCETestResults=$(eval ${JCETestCmd})
 
-                 export PATH=${PATH}:${JAVA_HOME}/bin
+		if [ "${JCETestResults}" == "${JCEUnlimitedResponse}" ]; then
+			${Echo} "Java Cryptography Extensions update succeeded"
+		else
+			${Echo} "**Java Cryptography Extensions update failed! rolling back using backups**"
+			${Echo} "**Install will succeed but you will not operate at full crypto strength **"
+			${Echo} "**Some Service Providers will fail to negotiate.**"
 
-        fi
+			cp ${downloadPath}/${JCEBkp1}-${JCEBkpPostfix} ${JCEBkp1Path}
+			cp ${downloadPath}/${JCEBkp2}-${JCEBkpPostfix} ${JCEBkp2Path}
+		fi
+	fi
 
+	return 0
+}
+
+setJavaHome () {
+	# force the latest java onto the system to ensure latest is available for all operations.
+	# including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
+
+	# June 23, 2015, altering java detection behaviour to be more platform agnostic
+
+	installOracleJava
+	retval=$?
+
+	if [ "${retval}" -ne 0 ]; then
+		${Echo} "\n\n\nAn error has occurred in the configuration of the JAVA_HOME variable."
+		${Echo} "Please review the java installation and status.log to see what went wrong."
+		${Echo} "Install is aborted until this is resolved."
+		cleanBadInstall
+		exit
+	fi
 }
 
 setJavaCACerts ()
@@ -951,7 +1057,7 @@ enableStatusMonitoring() {
 	${Echo} "enableStatusMonitoring: Backing up original and applying our template to idp.home/conf/access-control.xml"
 
 	# make backup
-	cp /opt/shibboleth-idp/conf/access-control.xml /opt/shibboleth-idp/conf/access-control.xml.b4.replacement
+	cp /opt/shibboleth-idp/conf/access-control.xml /opt/shibboleth-idp/conf/access-control.xml.${fileBkpPostfix}
 	# Overlay the template file 
 	cp ${Spath}/prep/shibboleth/conf/access-control.xml.template /opt/shibboleth-idp/conf/access-control.xml
 
@@ -1153,25 +1259,7 @@ configContainerSSLServerKey()
 }
 
 
-patchShibbolethLDAPLoginConfigs ()
 
-{
-	# 	application server specific
-	if [ "${type}" = "ldap" ]; then
-		ldapServerStr=""
-		for i in `${Echo} ${ldapserver}`; do
-			ldapServerStr="`${Echo} ${ldapServerStr}` ldap://${i}"
-		done
-		ldapServerStr="`${Echo} ${ldapServerStr} | sed -re 's/^\s+//'`"
-
-		cat ${Spath}/${prep}/login.conf.diff.template \
-			| sed -re "s#LdApUrI#${ldapServerStr}#;s/LdApBaSeDn/${ldapbasedn}/;s/SuBsEaRcH/${subsearch}/" \
-			> ${Spath}/${prep}/login.conf.diff
-		files="`${Echo} ${files}` ${Spath}/${prep}/login.conf.diff"
-		patch /opt/shibboleth-idp/conf/login.config -i ${Spath}/${prep}/login.conf.diff >> ${statusFile} 2>&1
-	fi
-
-}
 
 configShibbolethFederationValidationKey ()
 
@@ -1218,7 +1306,7 @@ ${Echo} "Installing and adding daily crontab health checks"
 	${Echo} "Creating IdP Installer installation in ${idpInstallerBase}"
 	idpInstallerBin="${idpInstallerBase}/bin"
 	dailyTasks="${idpInstallerBin}/dailytasks.sh"
-	mkdir -p ${idpInstallerBin}
+	
 
 	${Echo} "adding dailytasks.sh to ${idpInstallerBin}"
 	# note that this file is not federation specific, but generic 
@@ -1429,6 +1517,51 @@ jettySetupPrepareBase()
     
 
 }
+
+jettySetupEnableStartOnBoot ()
+{
+
+	${Echo} "$FUNCNAME: Enabling jetty startup on boot" >> ${statusFile} 2>&1
+
+	idpInstallerBin="${idpInstallerBase}/bin"
+	
+	
+	${Echo} "$FUNCNAME: Creating Jetty User " >> ${statusFile} 2>&1
+
+ 		useradd -d /opt/jetty -s /bin/bash jetty
+
+	${Echo} "$FUNCNAME: Creating symlink for legacy service start/stop  " >> ${statusFile} 2>&1
+        ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
+
+	${Echo} "$FUNCNAME: Enabling automatic Jetty Startup " >> ${statusFile} 2>&1        
+       
+        if [ "${dist}" != "ubuntu" ]; then
+            if [ ${redhatDist} = "7"  ]; then
+
+				${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1        
+	
+				${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
+					cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
+
+				${Echo} "$FUNCNAME: copying IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
+					cp  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
+
+				systemctl daemon-reload
+				systemctl enable jetty.service
+
+			else
+				${Echo} "$FUNCNAME: Detected classic service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1        
+			    chkconfig jetty on
+			
+			fi
+        else
+				${Echo} "$FUNCNAME: Detected ubuntu service model, using update-rc.d to enable jetty" >> ${statusFile} 2>&1        
+                update-rc.d jetty defaults
+        fi
+
+
+
+}
 jettySetup() {
 
         #Installing a specific version of Jetty
@@ -1452,9 +1585,7 @@ jettySetup() {
 
         #jetty9File=`curl -s ${jettyBaseURL} | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
         
-        	   ${Echo} "jettySetup: Starting Jetty servlet container setup"
-
-
+        ${Echo} "$FUNCNAME: Starting Jetty servlet container setup" >> ${statusFile} 2>&1 
 
 		jetty9Path=`basename ${jetty9File}  .tar.gz`
 		jetty9URL="${jettyBaseURL}${jetty9File}"
@@ -1469,34 +1600,30 @@ jettySetup() {
                 	
         fi
 
-        # Manipulate Jetty configuration for the deployment
-        
-
+ 		${Echo} "$FUNCNAME: Manipulating Jetty config for our deployment" >> ${statusFile} 2>&1 
         cd /opt
         tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
         
-        # important to symlink as from here on in jetty to be assumed as 'there'
+ 		${Echo} "$FUNCNAME: adding symlink for /opt/jetty" >> ${statusFile} 2>&1 
         ln -s /opt/${jetty9Path} /opt/jetty
 
 		jettySetupPrepareBase
+
+ 		${Echo} "$FUNCNAME: manipulating jetty.sh for proper settings" >> ${statusFile} 2>&1 
 
         sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
         sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
         sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
-        useradd -d /opt/jetty -s /bin/bash jetty
-        ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
 
-        if [ "${dist}" != "ubuntu" ]; then
-                chkconfig jetty on
-        else
-                update-rc.d jetty defaults
-        fi
+ 		${Echo} "$FUNCNAME: manipulating jetty idp.ini for passphrases in jetty/jetty-base" >> ${statusFile} 2>&1 
+        cat ${filesPath}/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
+        
+        jettySetupEnableStartOnBoot
 
-        cat ${Spath}/files/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
 
-        # Setting ownership
-        chown jetty:jetty /opt/jetty/ -R
+		${Echo} "$FUNCNAME: applying ownership on key directories" >> ${statusFile} 2>&1 
+        chown -R jetty:jetty /opt/jetty/ 
         chown -R jetty:jetty /opt/shibboleth-idp/
 
         jettySetupSetDefaults
@@ -1511,6 +1638,8 @@ jettySetup() {
 applyIptablesSettings ()
 
 {
+	${Echo} "$FUNCNAME: applying iptables rules and saving them to redirect 443 to 7443 " >> ${statusFile} 2>&1 
+        
 
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
         iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
@@ -1520,6 +1649,14 @@ applyIptablesSettings ()
         
         if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 		iptables-save > /etc/sysconfig/iptables
+
+ 		if [ ${redhatDist} = "7"  ]; then
+	${Echo} "$FUNCNAME: ensuring iptables is started upon reboot " >> ${statusFile} 2>&1 
+        
+ 			systemctl enable iptables
+ 		fi
+
+
         elif [ "${dist}" == "ubuntu" ]; then
 	 	iptables-save > /etc/iptables/rules.v4
 	fi
@@ -1557,7 +1694,7 @@ applyFTICKS ()
 	# B. overlay new audit.xml, logback.xml so bean and technique is in place (make backup first)
 	overlayFiles="audit.xml logback.xml"
 	for i in ${overlayFiles}; do
-		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.b4.replacement
+		cp /opt/shibboleth-idp/conf/${i} /opt/shibboleth-idp/conf/${i}.${fileBkpPostfix}
 		cp ${Spath}/files/${my_ctl_federation}/${i}.template /opt/shibboleth-idp/conf/${i}
 	done
 
@@ -1580,12 +1717,240 @@ applyFTICKS ()
 				${Echo} "applyFTICKS loghost: ${my_fticks_loghost_value}"
 
 
-	cp /opt/shibboleth-idp/conf/idp.properties /opt/shibboleth-idp/conf/idp.properties.b4.replacement
+	cp /opt/shibboleth-idp/conf/idp.properties /opt/shibboleth-idp/conf/idp.properties.${fileBkpPostfix}
 	echo "idp.fticks.federation=${my_ctl_federation}" >> /opt/shibboleth-idp/conf/idp.properties
 	echo "idp.fticks.salt=${fticksSalt}" >> /opt/shibboleth-idp/conf/idp.properties
 	echo "idp.fticks.loghost=${my_fticks_loghost_value}" >> /opt/shibboleth-idp/conf/idp.properties
 
 	${Echo} "applyFTICKS updates completed"
+}
+
+
+applyNameIDC14Settings ()
+
+{
+
+# https://wiki.shibboleth.net/confluence/display/IDP30/PersistentNameIDGenerationConfiguration
+# C14= Canonicalization BTW :)
+# Enables the saml-nameid.properties file for persistent identifiers and configures xml file for use
+# 
+	local failExt="proposedUpdate"
+	local tgtFile="${idpConfPath}/saml-nameid.properties"
+	local tgtFileBkp="${tgtFile}.${fileBkpPostfix}"
+	${Echo} "Applying NameID settings to ${tgtFile}" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFile}" "${tgtFileBkp}"
+
+# The following uncomments certain lines that ship with the file:
+# lines 8,9 activate the generator 
+${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
+
+	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
+	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
+
+#lines 22 and 26 respectively which we'll adjust in a moment
+${Echo} "Applying NameID settings:${tgtFile}: uncommenting sourceAttribute statement" >> ${statusFile} 2>&1
+
+	sed -i  "/idp.persistentId.sourceAttribute/s/^#//" "${tgtFile}"
+
+# this replaces the string for the attribute filter (uid/sAMAccountName) as the key element for the hash
+${Echo} "Applying NameID settings:${tgtFile}: replaces the string for the attribute filter with ${attr_filter}" >> ${statusFile} 2>&1
+
+	sed -i  "s/changethistosomethingreal/${attr_filter}/" "${tgtFile}"	
+
+# lines 26: uncomment the salt and replace it with the right thing
+# note that this is the same salt as the ePTId
+${Echo} "Applying NameID settings:${tgtFile}: uncomment and set the salt for hashing the value" >> ${statusFile} 2>&1
+
+	sed -i  "/idp.persistentId.salt/s/^#//" "${tgtFile}"
+	sed -i  "s/changethistosomethingrandom/${esalt}/" "${tgtFile}"	
+
+# line 31. Uncomment it to use the 'MyPersistentIdStore' it references elsewhere
+${Echo} "Applying NameID settings:${tgtFile}: uncommenting use of MyPersistentIdStore for DB " >> ${statusFile} 2>&1
+
+	sed -i  "/idp.persistentId.store/s/^#//" "${tgtFile}"
+
+${Echo} "Applying NameID settings:${tgtFile}: appending to file settings using StoredPersistentIdGenerator so DB is used to generate IDs" >> ${statusFile} 2>&1
+
+	${Echo} "# Appended by Idp-Installer to use the proper generator" >> "${tgtFile}"
+	${Echo} "idp.persistentId.generator = shibboleth.StoredPersistentIdGenerator" >> "${tgtFile}"
+
+
+	local tgtFilexml="${idpConfPath}/saml-nameid.xml"
+	local tgtFilexmlBkp="${tgtFilexml}.${fileBkpPostfix}"
+
+	local samlnameidTemplate="${Spath}/prep/shibboleth/conf/saml-nameid.xml.template"
+
+${Echo} "Applying NameID settings:${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
+
+
+# perform overlay of our template with necessary substitutions
+${Echo} "Applying NameID settings:${tgtFilexml}: perform our overlay from template file onto ${tgtFilexml}" >> ${statusFile} 2>&1
+
+	cat ${samlnameidTemplate} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
+
+${Echo} "Applying NameID settings:${tgtFilexml}: verify successfull update" >> ${statusFile} 2>&1
+
+# verify that the updates proceeded at least to a non zero byte file result
+if [[ -s "${tgtFile}" && -s "${tgtFilexml}" ]]; then
+	${Echo} "${tgtFile} update complete" >> ${statusFile} 2>&1
+else
+	${Echo} "FAILED UPDATE: Issue detected with nameID files. The update to ${tgtFile} and ${tgtFilexml} are rolling back to originals" >> ${statusFile} 2>&1
+	${Echo} "Proposed updates for saml-nameid will be saved in the same directory with a ${failExt} extension" >> ${statusFile} 2>&1
+
+	# copy bad copies for latest investigation
+	cp "${tgtFilexml}" "${tgtFilexml}.${failExt}"
+	cp "${tgtFile}" "${tgtFile}.${failExt}"
+
+	# revert back to original for both 
+	cp "${tgtFilexmlBkp}" "${tgtFilexml}"
+	cp "${tgtFileBkp}" "${tgtFile}"
+
+	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
+
+fi
+${Echo} "Applying NameID settings:${tgtFilexml}: verify process complete" >> ${statusFile} 2>&1
+
+
+
+
+${Echo} "Applying NameID settings complete" >> ${statusFile} 2>&1
+	
+}
+
+prepareDatabase ()
+{
+	${Echo} "Preparing Mysql DB for storing identifiers"
+
+	# relies upon epass from script.messages.sh for the sqlpassword for userid 'shibboleth'
+
+	 	# grant sql access for shibboleth
+		# esalt generation moved to script.messages.sh to be used in more locations than just here
+		
+
+	cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+
+		${Echo} "Create MySQL database and shibboleth user."
+		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+		retval=$?
+		if [ "${retval}" -ne 0 ]; then
+			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+		fi
+
+}
+
+
+
+applyGlobalXmlDbSettingsDependancies ()
+
+{
+	${Echo} "$FUNCNAME: adding libraries in edit-webapp/WEB-INF/lib supporting database connectivity" >> ${statusFile} 2>&1
+
+	local commonsDbcp2Jar="commons-dbcp2-${commonsDbcp2Ver}.jar"
+	local commonsPool2Jar="commons-pool2-${commonsPool2Ver}.jar"
+	
+	cp ${downloadPath}/${commonsDbcp2Jar} "${idpEditWebappLibDir}"
+	cp ${downloadPath}/${commonsPool2Jar} "${idpEditWebappLibDir}"
+
+	${Echo} "$FUNCNAME: applying jetty user and group ownership to  libraries in edit-webapp/WEB-INF/lib " >> ${statusFile} 2>&1
+		
+	chown -R jetty:jetty "${idpEditWebappLibDir}"
+
+	${Echo} "$FUNCNAME: completed" >> ${statusFile} 2>&1
+
+}
+
+applyGlobalXmlDbSettings ()
+
+{
+
+	local failExt="proposedUpdate"
+	local tgtFilexml="${idpConfPath}/global.xml"
+	local tgtFilexmlBkp="${tgtFilexml}.${fileBkpPostfix}"
+
+	local TemplateXml="${Spath}/prep/shibboleth/conf/global.xml.template"
+
+${Echo} "$FUNCNAME:Working on ${tgtFilexml}: making backup of file" >> ${statusFile} 2>&1
+
+# Make a backup of our file
+	cp "${tgtFilexml}" "${tgtFilexmlBkp}"
+
+
+# perform overlay of our template with necessary substitutions
+${Echo} "Working on ${tgtFilexml}: perform our overlay from template file onto ${tgtFilexml}" >> ${statusFile} 2>&1
+
+	cat ${TemplateXml} | sed -re "s#SqLpAsSwOrD#${epass}#" > "${tgtFilexml}"
+
+${Echo} "Working on ${tgtFilexml}: verify successfull update" >> ${statusFile} 2>&1
+
+# verify that the updates proceeded at least to a non zero byte file result
+if [ -s "${tgtFilexml}" ]; then
+	${Echo} "Working on ${tgtFilexml}: verification successful. Update completed." >> ${statusFile} 2>&1
+else
+	${Echo} "FAILED UPDATE: Issue detected with ${tgtFilexml} file. The update to ${tgtFilexml} are rolling back to originals" >> ${statusFile} 2>&1
+	${Echo} "Proposed updates will be saved in the same directory with a ${failExt} extension" >> ${statusFile} 2>&1
+
+	# copy bad copies for latest investigation
+	cp "${tgtFilexml}" "${tgtFilexml}.${failExt}"
+
+	# revert back to original for both 
+	cp "${tgtFilexmlBkp}" "${tgtFilexml}"
+
+	${Echo} "FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
+
+fi
+
+${Echo} "Working on ${tgtFilexml}: verify process complete" >> ${statusFile} 2>&1
+
+applyGlobalXmlDbSettingsDependancies
+
+
+${Echo} "$FUNCNAME: Work on ${tgtFilexml} and related dependancies completed" >> ${statusFile} 2>&1
+
+
+}
+
+
+applyEptidSettings ()
+
+{
+	${Echo} "$FUNCNAME: Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
+
+	${Echo} "$FUNCNAME: Applying EPTID settings to attribute-resolver.xml" >> ${statusFile} 2>&1
+
+	 	cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
+        | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
+               > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
+       files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
+       
+      #REVIEW1 repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
+      #REVIEW1 sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+       repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+#REVIEW1       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
+#REVIEW1       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+	   repStr='<!-- EPTID FILTER PLACEHOLDER -->'
+       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+      
+}
+applyLDAPSettings ()
+{
+		${Echo} "Patching config files"
+
+
+		repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
+        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+
 }
 
 patchShibbolethConfigs ()
@@ -1620,52 +1985,32 @@ patchShibbolethConfigs ()
         fi
 
         if [ "${fticks}" != "n" ]; then
-              
               	# apply an enhanced application of the FTICKS functionality
-
-              	applyFTICKS
+				applyFTICKS
         fi
+
+        	# This loads the necessary schema for the database to prepare for
+        	#  eptid usage OR 
+        	# applyingNameIDC14Settings
+
+        	prepareDatabase
+
+        	applyGlobalXmlDbSettings
+
 
         if [ "${eptid}" != "n" ]; then
-                if [ -z "${epass}" ]; then
-                        epass=`${passGenCmd}`
-                fi
-		# grant sql access for shibboleth
-		esalt=`openssl rand -base64 36 2>/dev/null`
-		cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
 
-		${Echo} "Create MySQL database and shibboleth user."
-		mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
-		retval=$?
-		if [ "${retval}" -ne 0 ]; then
-			${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
-			${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
-		fi
-
-                cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
-                        | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
-                        > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
-                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
-
-                repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
-
-                repStr='<!-- EPTID FILTER PLACEHOLDER -->'
-                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+        		applyEptidSettings
         fi
 
-        repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
-        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+        applyLDAPSettings
 
+        
 	echo "applying chown "
 	chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
+
+	applyNameIDC14Settings
+
 
 }
 
@@ -1745,25 +2090,32 @@ overwriteKeystoreFiles ()
 	fi
 }
 
+makeInstallerHome()
+
+{
+	${Echo} "$FUNCNAME: Creating IdP-Installer support directories in ${idpInstallerBase} " >> ${statusFile} 2>&1
+
+	mkdir -p ${idpInstallerBase}
+	mkdir -p ${idpInstallerBin}
+
+}
 
 invokeShibbolethInstallProcessJetty9 ()
 {
+	${Echo} "$FUNCNAME: Beginning core installation process " >> ${statusFile} 2>&1
 
-        ### Begin of SAML IdP installation Process
-
-	containerDist="Jetty9"
-
-	# This is now done in script.bootstrap.functions.sh --> installDependanciesForInstallation
-
+    
 	# check for installed IDP
 	setVarUpgradeType
 
 	setJavaHome
 
+	makeInstallerHome
+
 	# Override per federation
 	performStepsForShibbolethUpgradeIfRequired
 
-# 	check for backup file and use it if available
+	# 	check for backup file and use it if available
 	checkAndLoadBackupFile
 
 	if [ "${installer_interactive}" = "y" ]
@@ -1781,9 +2133,6 @@ invokeShibbolethInstallProcessJetty9 ()
 	setVarIdPScope
 	
 	setJavaCACerts
-
-	setJavaCryptographyExtensions
-
 
 	generatePasswordsForSubsystems
 

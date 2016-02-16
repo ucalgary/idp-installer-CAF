@@ -10,17 +10,40 @@ upgrade=0
 
 shibDir="shibboleth-identity-provider"
 idpInstallerBase="/opt/idp-installer"
+idpInstallerBin="${idpInstallerBase}/bin"
+fileBkpPostfix="b4UpdatesApplied"
+systemdHome="/usr/lib/systemd/system"
 
 #
 # Key Component Versions
 
-shibVer="3.2.0"
+shibVer="3.2.1"
 casVer="3.3.3"
 mysqlConVer="5.1.35"
-javaVer="1.8.0_25"
 jettyVer="9.2.14.v20151106"
+
+# database pooling connectivity dependancies
+commonsDbcp2Ver="2.1.1"
+commonsPool2Ver="2.4.2"
+
 # uncomment if you want an older jetty version: jettyVer="9.2.13.v20150730"
 
+javaBuildName="8u65-b17"
+javaName="8u65"
+javaMajorVersion="8"
+javaVer="1.8.0_65"
+jcePolicySrc="jce_policy-8.zip"
+JCEUnlimitedResponse="2147483647"
+
+#
+# IdP-Installer file manifest (ie the files we create for ourselves)
+
+# these are in the bin directory
+idpIFiledailyTasks="dailytasks.sh"
+idpIFilejettySystemdService="jetty.service"
+
+# Key Component Versions end
+#
 
 # This URL determines which base to derive 'latest' from
 # --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
@@ -29,17 +52,11 @@ jettyBaseURL="http://download.eclipse.org/jetty/${jettyVer}/dist/"
 # this determines which file to check for in the downloads directory first.
 jetty9File="jetty-distribution-${jettyVer}.tar.gz"
 
-jettyBasePath="/opt/${shibDir}/jetty-base"
-
-# Prior to Shibboleth v3.2.0 the jettyBasePath is as above, otherwise it's this one below
-if [ "${shibVer}" == "3.2.0" ]; then
-	jettyBasePath="/opt/${shibDir}/embedded/jetty-base"
+# Prior to Shibboleth v3.2.0 the jettyBasePath is commented as below, otherwise it's the uncommented one
+	#jettyBasePath="/opt/${shibDir}/jetty-base"
+jettyBasePath="/opt/${shibDir}/embedded/jetty-base"
 	# as well, it is also missing the the tmp and logs directories which we will take care of 
 	# in the method to set up things.
-
-fi
-
-
 
 
 files=""
@@ -51,9 +68,10 @@ then
 fi
 
 #
-# used in eduroam configs
+# Other variables used in configuration
 #
 backupPath="${Spath}/backups/"
+filesPath="${Spath}/files"
 templatePath="${Spath}/assets"
 templatePathEduroamCentOS="${Spath}/assets/etc/raddb"
 templatePathEduroamCentOS7="${Spath}/assets/etc/raddb7"
@@ -72,22 +90,28 @@ mainMenuExitFlag=0
 whipSize="13 75"
 certpath="/opt/shibboleth-idp/ssl/"
 httpsP12="/opt/shibboleth-idp/credentials/https.p12"
-certREQ="${certpath}tomcat.req"
+certREQ="${certpath}webserver.csr"
 passGenCmd="openssl rand -base64 20"
+epass=`${passGenCmd}`
 messages="${Spath}/msg.txt"
 statusFile="${Spath}/status.log"
 bupFile="/opt/backup-shibboleth-idp.${ts}.tar.gz"
-idpPath="/opt/shibboleth-idp/"
+
+idpPath="/opt/shibboleth-idp"
+idpConfPath="${idpPath}/conf"
+idpEditWebappDir="${idpPath}/edit-webapp"
+idpEditWebappLibDir="${idpEditWebappDir}/WEB-INF/lib/"
+
+esalt=`openssl rand -base64 36 |tr -d '/\\+' 2>/dev/null`
 certificateChain="https://webkonto.student.hig.se/chain.pem"
 digicertChain="https://webkonto.student.hig.se/digichain.pem"
-tomcatDepend="https://build.shibboleth.net/nexus/content/repositories/releases/edu/internet2/middleware/security/tomcat6/tomcat6-dta-ssl/1.0.0/tomcat6-dta-ssl-1.0.0.jar"
 jettyDepend="https://build.shibboleth.net/nexus/content/repositories/releases/net/shibboleth/utilities/jetty9/jetty9-dta-ssl/1.0.0/jetty9-dta-ssl-1.0.0.jar"
 dist=""
 distCmdU=""
 distCmdUa=""
 distCmd1=""
 distCmd2=""
-distCmd3=""
+#Deprecated:2016-12-22:TODO:remove next release distCmd3=""
 distCmd4=""
 distCmd5=""
 dist_install_nc=""
@@ -102,7 +126,6 @@ fetchCmd="curl --silent -k -L --output"
 shibbURL="http://shibboleth.net/downloads/identity-provider/${shibVer}/${shibDir}-${shibVer}.tar.gz"
 casClientURL="http://downloads.jasig.org/cas-clients/cas-client-${casVer}-release.zip"
 mysqlConnectorURL="http://ftp.sunet.se/pub/unix/databases/relational/mysql/Downloads/Connector-J/mysql-connector-java-${mysqlConVer}.tar.gz"
-Rmsg="Do you want to install 'EPEL' and 'jpackage' to automaticly install dependancies? (Without theese depends the install WILL fail!)"
 
 # Titles for the whiptail environment for branding
 BackTitleSWAMID="SWAMID"
@@ -126,7 +149,7 @@ ubuntuRadiusGroup="freerad"
 redhatCmdU="yum -y update"
 redhatCmd1="yum -y install patch ntpdate unzip curl libxslt libxml2"
 redhatCmd2="yum -y install git-core"
-redhatCmd3="yum -y install java-1.7.0-openjdk java-1.7.0-openjdk-devel"
+#Deprecated:2016-12-22:TODO:remove next releaseredhatCmd3="yum -y install java-1.7.0-openjdk java-1.7.0-openjdk-devel"
 redhatCmd4="yum -y install tomcat6"
 redhatCmd5="yum -y install mysql-server"
 redhat_install_nc="yum -y install nc"
@@ -145,7 +168,7 @@ centosCmdU="yum -y update"
 centosCmdUa="yum clean all"
 centosCmd1="yum -y install patch ntpdate unzip curl libxml2"
 centosCmd2="yum -y install git"
-centosCmd3="yum -y install java-1.7.0-openjdk java-1.7.0-openjdk-devel"
+#Deprecated:2016-12-22:TODO:remove next release centosCmd3="yum -y install java-1.7.0-openjdk java-1.7.0-openjdk-devel"
 centosCmd4="yum -y install tomcat6"
 centosCmd5="yum -y install mysql-server"
 tomcatSettingsFileC="/etc/sysconfig/tomcat6"
