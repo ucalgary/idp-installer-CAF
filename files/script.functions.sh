@@ -1026,7 +1026,7 @@ idp.authn.LDAP.dnFormat                         = ${ldapDnFormat}
 EOM
 
 	# Run the installer
-	JAVA_HOME=/usr/java/default sh bin/install.sh \
+	JAVA_HOME=/usr/java/default bash bin/install.sh \
 	-Didp.src.dir=./ \
 	-Didp.target.dir=/opt/shibboleth-idp \
 	-Didp.host.name="${certCN}" \
