@@ -229,9 +229,9 @@
 <!--
 <AttributeFilterPolicy id="releaseNyAwebbenEntitlement">
 	<PolicyRequirementRule xsi:type="OR">
-		<Rule xsi:type="AttributeRequesterString" value="https://expert.antagning.se/ecs-sp" />
-		<Rule xsi:type="AttributeRequesterString" value="https://expert.testa.antagning.se/ecs-sp" />
-		<Rule xsi:type="AttributeRequesterString" value="https://expert.testb.antagning.se/ecs-sp" />
+		<Rule xsi:type="Requester" value="https://expert.antagning.se/ecs-sp" />
+		<Rule xsi:type="Requester" value="https://expert.testa.antagning.se/ecs-sp" />
+		<Rule xsi:type="Requester" value="https://expert.testb.antagning.se/ecs-sp" />
 	</PolicyRequirementRule>
 
 	<AttributeRule attributeID="NyAwebbenEntitlement">
@@ -246,7 +246,7 @@
 <!--  New TCS Personal -->
 <!--
 <AttributeFilterPolicy id="releaseTcsPersonalEntitlement">
-	<PolicyRequirementRule xsi:type="AttributeRequesterString" value="https://www.digicert.com/sso" />
+	<PolicyRequirementRule xsi:type="Requester" value="https://www.digicert.com/sso" />
 
 	<AttributeRule attributeID="displayName">
 		<PermitValueRule xsi:type="ANY" />
