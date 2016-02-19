@@ -942,27 +942,27 @@ runShibbolethInstaller ()
 
 	# Set some default values
 
-        if [ -x ${ldap_type} ]; then
+        if [ -z "${ldap_type}" ]; then
                 ldap_type="ad"
         fi
 
-	if [ -x ${ldapStartTLS} ]; then
+	if [ -z "${ldapStartTLS}" ]; then
 		ldapStartTLS="true"
 	fi
 
-        if [ -x ${ldapSSL} ]; then
+        if [ -z "${ldapSSL}" ]; then
                 ldapSSL="false"
 	fi
 
-        if [ -x ${user_field} ]; then
+        if [ -z "${user_field}" ]; then
                 user_field="samaccountname"
         fi
 
-        if [ -x ${attr_filter} ]; then
+        if [ -z "${attr_filter}" ]; then
                 attr_filter="uid"
         fi
 
-        if [ -x ${ldap_attr} ]; then
+        if [ -z "${ldap_attr}" ]; then
                 ldap_attr=""
         fi
 
