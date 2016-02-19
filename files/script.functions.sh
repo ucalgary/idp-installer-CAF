@@ -937,7 +937,7 @@ runShibbolethInstaller ()
 {
         #       run shibboleth installer
         cd /opt/${shibDir}
-        ${Echo} "Running shiboleth installer"
+        ${Echo} "Running shibboleth installer"
 
 
 	# Set some default values
