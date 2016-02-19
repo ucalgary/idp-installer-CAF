@@ -1887,6 +1887,7 @@ applyGlobalXmlDbSettingsDependancies ()
 	${Echo} "$FUNCNAME: applying jetty user and group ownership to  libraries in edit-webapp/WEB-INF/lib " >> ${statusFile} 2>&1
 		
 	chown -R jetty:jetty "${idpEditWebappLibDir}"
+	/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
 	${Echo} "$FUNCNAME: completed" >> ${statusFile} 2>&1
 
