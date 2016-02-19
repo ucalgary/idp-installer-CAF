@@ -2004,9 +2004,13 @@ patchShibbolethConfigs ()
         if [ "${google}" != "n" ]; then
                 repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
                 sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
-                cat ${Spath}/xml/${my_ctl_federation}/google-relay.diff.template | sed -re "s/IdPfQdN/${certCN}/" > ${Spath}/xml/${my_ctl_federation}/google-relay.diff
-                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/google-relay.diff"
-                patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/google-relay.diff >> ${statusFile} 2>&1
+		googleRelayLine=`grep -n '</util:list>' /opt/shibboleth-idp/conf/relying-party.xml | tail -n 1 | cut -d: -f1`
+		let "${googleRelayLine} -= 1"
+		sed -i "${googleRelayLine}r${Spath}/xml/${my_ctl_federation}/google-relay.diff.template" /opt/shibboleth-idp/conf/relying-party.xml
+		googleMetaLine=`grep -n '</MetadataProvider>' /opt/shibboleth-idp/conf/metadata-providers.xml | tail -n 1 | cut -d: -f1`
+		let "${googleMetaLine} -= 1"
+		sed -i "${googleMetaLine}i <MetadataProvider id=\"GoogleMD\" xsi:type=\"FilesystemMetadataProvider\" metadataFile=\"/opt/shibboleth-idp/metadata/google.xml\" />" /opt/shibboleth-idp/conf/metadata-providers.xml
+
                 cat ${Spath}/xml/${my_ctl_federation}/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
         fi
 
