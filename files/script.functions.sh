@@ -118,7 +118,24 @@ installOracleJava () {
 		${Echo} "Detected Java allready installed in ${JAVA_HOME}."
 
 		if [ -z "`readlink -e /usr/bin/java | grep \"${javaType}${javaVer}\"`" ]; then
-			${Echo} "${JAVA_HOME} not used as default java. Updating system links.".
+			${Echo} "${JAVA_HOME} not used as default java. Updating system links."
+
+			if [ -d "/usr/java/latest" ]; then
+				mv /usr/java/latest /usr/java/latest.old
+			fi
+			if [ -s "/usr/java/latest" ]; then
+				rm -f /usr/java/latest
+			fi
+			ln -s /usr/java/${javaType}${javaVer}/ /usr/java/latest
+
+			if [ -d "/usr/java/default" ]; then
+				mv /usr/java/default /usr/java/default.old
+			fi
+			if [ -s "/usr/java/default" ]; then
+				rm -f /usr/java/default
+			fi
+			ln -s /usr/java/latest /usr/java/default
+
 			updateJavaAlternatives
 		fi
 	else
