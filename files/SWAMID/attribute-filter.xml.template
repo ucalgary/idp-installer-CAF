@@ -21,35 +21,47 @@
 
 
 
-<!-- GEANT Dataprotection Code of Conduct -->
+<!-- GEANT Data protection Code of Conduct -->
 <AttributeFilterPolicy id="releaseToCoCo">
 	<PolicyRequirementRule xsi:type="EntityAttributeExactMatch"
 		attributeName="http://macedir.org/entity-category"
 		attributeValue="http://www.geant.net/uri/dataprotection-code-of-conduct/v1" />
 
 	<AttributeRule attributeID="displayName">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
+	</AttributeRule>
+	<AttributeRule attributeID="cn">
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
 	</AttributeRule>
 	<AttributeRule attributeID="email">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonPrincipalName">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
-		<PermitValueRule xsi:type="OR">
-			<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
-			<Rule xsi:type="Value" value="student" ignoreCase="true" />
-			<Rule xsi:type="Value" value="staff" ignoreCase="true" />
-			<Rule xsi:type="Value" value="alum" ignoreCase="true" />
-			<Rule xsi:type="Value" value="member" ignoreCase="true" />
-			<Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
-			<Rule xsi:type="Value" value="employee" ignoreCase="true" />
-			<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
+		<PermitValueRule xsi::type="AND">
+			<Rule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
+			<Rule xsi:type="OR">
+				<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
+				<Rule xsi:type="Value" value="student" ignoreCase="true" />
+				<Rule xsi:type="Value" value="staff" ignoreCase="true" />
+				<Rule xsi:type="Value" value="alum" ignoreCase="true" />
+				<Rule xsi:type="Value" value="member" ignoreCase="true" />
+				<Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
+				<Rule xsi:type="Value" value="employee" ignoreCase="true" />
+				<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
+			</Rule>
 		</PermitValueRule>
 	</AttributeRule>
+	<AttributeRule attributeID="eduPersonAffiliation">
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
+	</AttributeRule>
 	<AttributeRule attributeID="schacHomeOrganization">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
+	</AttributeRule>
+	<AttributeRule attributeID="schacHomeOrganizationType">
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
 	</AttributeRule>
 </AttributeFilterPolicy>
 
@@ -63,30 +75,33 @@
 		attributeValue="http://refeds.org/category/research-and-scholarship" />
 
 	<AttributeRule attributeID="displayName">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
 	</AttributeRule>
 	<AttributeRule attributeID="givenName">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
 	</AttributeRule>
 	<AttributeRule attributeID="surname">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
 	</AttributeRule>
 	<AttributeRule attributeID="email">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonPrincipalName">
-		<PermitValueRule xsi:type="ANY" />
+		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
-		<PermitValueRule xsi:type="OR">
-			<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
-			<Rule xsi:type="Value" value="student" ignoreCase="true" />
-			<Rule xsi:type="Value" value="staff" ignoreCase="true" />
-			<Rule xsi:type="Value" value="alum" ignoreCase="true" />
-			<Rule xsi:type="Value" value="member" ignoreCase="true" />
-			<Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
-			<Rule xsi:type="Value" value="employee" ignoreCase="true" />
-			<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
+		<PermitValueRule xsi::type="AND">
+			<Rule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
+			<Rule xsi:type="OR">
+				<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
+				<Rule xsi:type="Value" value="student" ignoreCase="true" />
+				<Rule xsi:type="Value" value="staff" ignoreCase="true" />
+				<Rule xsi:type="Value" value="alum" ignoreCase="true" />
+				<Rule xsi:type="Value" value="member" ignoreCase="true" />
+				<Rule xsi:type="Value" value="affiliate" ignoreCase="true" />
+				<Rule xsi:type="Value" value="employee" ignoreCase="true" />
+				<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
+			</Rule>
 		</PermitValueRule>
 	</AttributeRule>
 </AttributeFilterPolicy>
@@ -94,7 +109,7 @@
 
 
 
-<!-- entity-category-research-and-education -->
+<!-- entity-category-swamid-research-and-education -->
 <AttributeFilterPolicy id="entity-category-research-and-education">
 	<PolicyRequirementRule xsi:type="AND">
 		<Rule xsi:type="OR">
@@ -117,35 +132,24 @@
 	<AttributeRule attributeID="givenName">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="surname">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="displayName">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="commonName">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="eduPersonPrincipalName">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="eduPersonEntitlement">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
-	<AttributeRule attributeID="eduPersonAssurance">
-		<PermitValueRule xsi:type="ANY" />
-	</AttributeRule>
-
 	<AttributeRule attributeID="email">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
 		<PermitValueRule xsi:type="OR">
 			<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
@@ -158,27 +162,21 @@
 			<Rule xsi:type="Value" value="library-walk-in" ignoreCase="true" />
 		</PermitValueRule>
 	</AttributeRule>
-
 	<AttributeRule attributeID="organizationName">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="norEduOrgAcronym">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="countryName">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="friendlyCountryName">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 	<AttributeRule attributeID="schacHomeOrganization">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
 </AttributeFilterPolicy>
 
 
@@ -193,11 +191,6 @@
 	<AttributeRule attributeID="norEduPersonNIN">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
-
-	<AttributeRule attributeID="eduPersonAssurance">
-		<PermitValueRule xsi:type="ANY" />
-	</AttributeRule>
-
 </AttributeFilterPolicy>
 
 
