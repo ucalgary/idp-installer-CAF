@@ -457,7 +457,8 @@
 			- urn:schac:homeOrganizationType:int:NRENAffiliate
 			- urn:schac:homeOrganizationType:int:other
 -->
-    </Attribute>	</resolver:DataConnector>
+		</Attribute>
+	</resolver:DataConnector>
 
     <!-- Computed targeted ID connector -->
     <!--
