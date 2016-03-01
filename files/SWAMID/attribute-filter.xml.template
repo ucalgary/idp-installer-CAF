@@ -147,6 +147,9 @@
 	<AttributeRule attributeID="eduPersonEntitlement">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
+	<AttributeRule attributeID="eduPersonAssurance">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
 	<AttributeRule attributeID="email">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
@@ -189,6 +192,9 @@
 			attributeValue="http://www.swamid.se/category/sfs-1993-1153" />
 
 	<AttributeRule attributeID="norEduPersonNIN">
+		<PermitValueRule xsi:type="ANY" />
+	</AttributeRule>
+	<AttributeRule attributeID="eduPersonAssurance">
 		<PermitValueRule xsi:type="ANY" />
 	</AttributeRule>
 </AttributeFilterPolicy>
