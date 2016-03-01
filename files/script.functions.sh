@@ -42,9 +42,9 @@ patchFirewall()
                 systemctl start iptables
 
 	elif [ "${dist}" == "ubuntu" ]; then
-		${Echo} "Detected ${dist} ${redhatDist}"
+		${Echo} "Detected ${dist} ${debianDist}"
 
-		DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent	
+		DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
         fi
 
 }
