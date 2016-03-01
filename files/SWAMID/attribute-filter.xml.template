@@ -40,7 +40,7 @@
 		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
-		<PermitValueRule xsi::type="AND">
+		<PermitValueRule xsi:type="AND">
 			<Rule xsi:type="AttributeInMetadata" onlyIfRequired="true" />
 			<Rule xsi:type="OR">
 				<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
@@ -90,7 +90,7 @@
 		<PermitValueRule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
 	</AttributeRule>
 	<AttributeRule attributeID="eduPersonScopedAffiliation">
-		<PermitValueRule xsi::type="AND">
+		<PermitValueRule xsi:type="AND">
 			<Rule xsi:type="AttributeInMetadata" onlyIfRequired="false" />
 			<Rule xsi:type="OR">
 				<Rule xsi:type="Value" value="faculty" ignoreCase="true" />
