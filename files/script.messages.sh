@@ -34,6 +34,7 @@ javaMajorVersion="8"
 javaVer="1.8.0_65"
 jcePolicySrc="jce_policy-8.zip"
 JCEUnlimitedResponse="2147483647"
+javaMaxHeapSize="2048"
 
 #
 # IdP-Installer file manifest (ie the files we create for ourselves)

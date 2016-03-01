@@ -1071,6 +1071,41 @@ enableStatusMonitoring() {
 
 }
 
+addRobotsDotTxt ()
+{
+	${Echo} "$FUNCNAME: adding a robots.txt to the root location on the server" >> ${statusFile} 2>&1
+
+	cp "${Spath}/files/robots.txt.template" "/opt/jetty/jetty-base/webapps/ROOT/robots.txt"
+
+	${Echo} "$FUNCNAME: robots.txt is now in place" >> ${statusFile} 2>&1
+
+}
+
+updateJettyRootWebContext ()
+
+{
+	${Echo} "$FUNCNAME: Updating jetty behaviour for visitors of the root location on the server" >> ${statusFile} 2>&1
+
+	local idpInstallerBin="${idpInstallerBase}/bin"
+	
+	
+	${Echo} "$FUNCNAME: Creating skeleton for base webcontext " >> ${statusFile} 2>&1
+
+		mkdir -p /opt/jetty/jetty-base/webapps/ROOT/
+		touch /opt/jetty/jetty-base/webapps/ROOT/index.html
+ 		
+		addRobotsDotTxt
+	
+	${Echo} "$FUNCNAME:Completed" >> ${statusFile} 2>&1        
+    
+
+
+
+
+
+}
+
+
 enableECPUpdateIdPWebXML ()
 {
 		${Echo} "ECP Step: Update the web.xml of the idp and rebuild"
@@ -1475,7 +1510,7 @@ jettySetupSetDefaults ()
         jettyDefaults="/etc/default/jetty"
         jEnvString="export JAVA_HOME=${JAVA_HOME}"
  		jEnvPathString="export PATH=${PATH}:${JAVA_HOME}/bin"
- 		jEnvJavaDefOpts='export JAVA_OPTIONS="-Didp.home=/opt/shibboleth-idp -Xmx1024M"'
+ 		jEnvJavaDefOpts="export JAVA_OPTIONS=\"-Didp.home=/opt/shibboleth-idp -Xmx${javaMaxHeapSize}\""
  		# suppressed -XX:+PrintGCDetails because it was too noisy
 
 		${Echo} "${jEnvString}" >> ${jettyDefaults}
@@ -2174,6 +2209,11 @@ invokeShibbolethInstallProcessJetty9 ()
 	enableECP
 
 	enableStatusMonitoring
+
+	updateJettyRootWebContext
+
+
+
 
 	updateMachineTime
 
