@@ -1398,7 +1398,7 @@ notifyUserBeforeExit()
 if [ "${type}" = "ldap" ]; then
 	${Echo} "\n"
 	${Echo} "Looks like you have chosen to use ldap for Shibboleth single sign on."
-	${Echo} "Please read this to customize the logon page: https://wiki.shibboleth.net/confluence/display/SHIB2/IdPAuthUserPassLoginPage"
+	${Echo} "Please read this to customize the logon page: https://wiki.shibboleth.net/confluence/display/IDP30/PasswordAuthnConfiguration"
 fi
 
 	${Echo} "Processing complete. You may want to reboot to ensure all services start up as expected.\nExiting.\n"
