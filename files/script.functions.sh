@@ -1786,11 +1786,12 @@ applyNameIDC14Settings ()
 	cp "${tgtFile}" "${tgtFileBkp}"
 
 # The following uncomments certain lines that ship with the file:
-# lines 8,9 activate the generator 
-${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
+# lines 8,9 activate the generator
+# REVIEW1 2016-02 Legacy generators no longer needed
+# 	${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
 
-	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
-	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
+# 	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
+# 	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
 
 #lines 22 and 26 respectively which we'll adjust in a moment
 ${Echo} "Applying NameID settings:${tgtFile}: uncommenting sourceAttribute statement" >> ${statusFile} 2>&1
