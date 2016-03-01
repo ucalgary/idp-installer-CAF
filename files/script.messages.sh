@@ -61,7 +61,7 @@ jettyBasePath="/opt/${shibDir}/embedded/jetty-base"
 
 files=""
 ts=`date "+%s"`
-whiptailBin=`which whiptail`
+whiptailBin=`which whiptail 2>/dev/null`
 if [ ! -x "${whiptailBin}" ]
 then
 	GUIen="n"
