@@ -21,11 +21,11 @@ setBackTitle ()
 patchFirewall()
 {
         #Replace firewalld with iptables (Centos7)
-        ${Echo} "Updating firewall settings - changing from firewalld to iptables "
-		${Echo} "Working with Distro:${dist} with version: ${redhatDist}"
+	${Echo} "Working with Distro:${dist} with version: ${redhatDist}"
         
         if [ "${dist}" == "centos" -a "${redhatDist}" == "7" ]; then
-        ${Echo} "Detected ${dist} ${redhatDist}"
+		${Echo} "Updating firewall settings - changing from firewalld to iptables "
+		${Echo} "Detected ${dist} ${redhatDist}"
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -33,7 +33,8 @@ patchFirewall()
                 systemctl start iptables
 
         elif [ "${dist}" == "redhat" -a "${redhatDist}" == "7" ]; then
-        ${Echo} "Detected ${dist} ${redhatDist}"
+		${Echo} "Updating firewall settings - changing from firewalld to iptables "
+		${Echo} "Detected ${dist} ${redhatDist}"
                 systemctl stop firewalld
                 systemctl mask firewalld
                 eval "yum -y install iptables-services" >> ${statusFile} 2>&1
@@ -41,9 +42,9 @@ patchFirewall()
                 systemctl start iptables
 
 	elif [ "${dist}" == "ubuntu" ]; then
-        ${Echo} "Detected ${dist} ${redhatDist}"
+		${Echo} "Detected ${dist} ${debianDist}"
 
-		DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent	
+		DEBIAN_FRONTEND=noninteractive apt-get install -y iptables-persistent
         fi
 
 }
@@ -117,7 +118,24 @@ installOracleJava () {
 		${Echo} "Detected Java allready installed in ${JAVA_HOME}."
 
 		if [ -z "`readlink -e /usr/bin/java | grep \"${javaType}${javaVer}\"`" ]; then
-			${Echo} "${JAVA_HOME} not used as default java. Updating system links.".
+			${Echo} "${JAVA_HOME} not used as default java. Updating system links."
+
+			if [ -d "/usr/java/latest" ]; then
+				mv /usr/java/latest /usr/java/latest.old
+			fi
+			if [ -s "/usr/java/latest" ]; then
+				rm -f /usr/java/latest
+			fi
+			ln -s /usr/java/${javaType}${javaVer}/ /usr/java/latest
+
+			if [ -d "/usr/java/default" ]; then
+				mv /usr/java/default /usr/java/default.old
+			fi
+			if [ -s "/usr/java/default" ]; then
+				rm -f /usr/java/default
+			fi
+			ln -s /usr/java/latest /usr/java/default
+
 			updateJavaAlternatives
 		fi
 	else
@@ -442,6 +460,12 @@ installEPTIDSupport ()
 			test=`dpkg -s mysql-server > /dev/null 2>&1`
 			isInstalled=$?
 
+                elif [ "$dist" == "sles" ]; then
+			#package catalog test
+			#test=`zypper search -i mysql > /dev/null 2>&1`
+                        [ -f /etc/init.d/mysql ]
+                        isInstalled=$?
+
 		elif [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 			if [ "${redhatDist}" == "6" ]; then
 				[ -f /etc/init.d/mysqld ]
@@ -470,6 +494,9 @@ installEPTIDSupport ()
                         mysqldTest=`pgrep mysqld`
                         if [ -z "${mysqldTest}" ]; then
                                 if [ ${dist} == "ubuntu" ]; then
+                                        service mysql restart >> ${statusFile} 2>&1
+                                elif [ "${dist}" == "sles" ]; then
+					systemctl enable mysql
                                         service mysql restart >> ${statusFile} 2>&1
                                 else
                                         service mysqld restart >> ${statusFile} 2>&1
@@ -501,7 +528,7 @@ EOM
                         fi
 
 
-                        if [ "${dist}" != "ubuntu" ]; then
+			if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
                                 /sbin/chkconfig mysqld on
                         fi
                 fi
@@ -910,32 +937,32 @@ runShibbolethInstaller ()
 {
         #       run shibboleth installer
         cd /opt/${shibDir}
-        ${Echo} "Running shiboleth installer"
+        ${Echo} "Running shibboleth installer"
 
 
 	# Set some default values
 
-        if [ -x ${ldap_type} ]; then
+        if [ -z "${ldap_type}" ]; then
                 ldap_type="ad"
         fi
 
-	if [ -x ${ldapStartTLS} ]; then
+	if [ -z "${ldapStartTLS}" ]; then
 		ldapStartTLS="true"
 	fi
 
-        if [ -x ${ldapSSL} ]; then
+        if [ -z "${ldapSSL}" ]; then
                 ldapSSL="false"
 	fi
 
-        if [ -x ${user_field} ]; then
+        if [ -z "${user_field}" ]; then
                 user_field="samaccountname"
         fi
 
-        if [ -x ${attr_filter} ]; then
+        if [ -z "${attr_filter}" ]; then
                 attr_filter="uid"
         fi
 
-        if [ -x ${ldap_attr} ]; then
+        if [ -z "${ldap_attr}" ]; then
                 ldap_attr=""
         fi
 
@@ -1026,7 +1053,8 @@ idp.authn.LDAP.dnFormat                         = ${ldapDnFormat}
 EOM
 
 	# Run the installer
-	JAVA_HOME=/usr/java/default bash bin/install.sh \
+
+	JAVA_HOME=/usr/java/default /opt/${shibDir}/bin/install.sh \
 	-Didp.src.dir=./ \
 	-Didp.target.dir=/opt/shibboleth-idp \
 	-Didp.host.name="${certCN}" \
@@ -1410,7 +1438,7 @@ notifyUserBeforeExit()
 if [ "${type}" = "ldap" ]; then
 	${Echo} "\n"
 	${Echo} "Looks like you have chosen to use ldap for Shibboleth single sign on."
-	${Echo} "Please read this to customize the logon page: https://wiki.shibboleth.net/confluence/display/SHIB2/IdPAuthUserPassLoginPage"
+	${Echo} "Please read this to customize the logon page: https://wiki.shibboleth.net/confluence/display/IDP30/PasswordAuthnConfiguration"
 fi
 
 	${Echo} "Processing complete. You may want to reboot to ensure all services start up as expected.\nExiting.\n"
@@ -1567,35 +1595,38 @@ jettySetupEnableStartOnBoot ()
 	
 	${Echo} "$FUNCNAME: Creating Jetty User " >> ${statusFile} 2>&1
 
- 		useradd -d /opt/jetty -s /bin/bash jetty
+	useradd -d /opt/jetty -s /bin/bash -U jetty
 
 	${Echo} "$FUNCNAME: Creating symlink for legacy service start/stop  " >> ${statusFile} 2>&1
         ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
 
-	${Echo} "$FUNCNAME: Enabling automatic Jetty Startup " >> ${statusFile} 2>&1        
-       
-        if [ "${dist}" != "ubuntu" ]; then
-            if [ ${redhatDist} = "7"  ]; then
+	${Echo} "$FUNCNAME: Enabling automatic Jetty Startup " >> ${statusFile} 2>&1
 
-				${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1        
-	
-				${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
-					cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
-
-				${Echo} "$FUNCNAME: copying IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
-					cp  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
-
-				systemctl daemon-reload
-				systemctl enable jetty.service
-
-			else
-				${Echo} "$FUNCNAME: Detected classic service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1        
-			    chkconfig jetty on
-			
-			fi
-        else
-				${Echo} "$FUNCNAME: Detected ubuntu service model, using update-rc.d to enable jetty" >> ${statusFile} 2>&1        
+        if [ "${dist}" == "ubuntu" ]; then
+		${Echo} "$FUNCNAME: Detected ubuntu service model, using update-rc.d to enable jetty" >> ${statusFile} 2>&1
                 update-rc.d jetty defaults
+	elif [ "${dist}" == "sles" ]; then
+		${Echo} "$FUNCNAME: Detected suse service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1
+		chkconfig --add jetty
+		chkconfig jetty on
+	else
+		if [ ${redhatDist} = "7"  ]; then
+
+			${Echo} "$FUNCNAME: Detected newer service model, using systemd to enable jetty" >> ${statusFile} 2>&1	
+			${Echo} "$FUNCNAME: copying over systemd jetty.service file" >> ${statusFile} 2>&1
+			cp "${filesPath}/jetty.service.template" "${idpInstallerBin}/${idpIFilejettySystemdService}"
+
+			${Echo} "$FUNCNAME: copying IdP-Installer jetty.service file to systemd dir " >> ${statusFile} 2>&1
+			cp  "${idpInstallerBin}/${idpIFilejettySystemdService}" "${systemdHome}/${idpIFilejettySystemdService}"
+
+			systemctl daemon-reload
+			systemctl enable jetty.service
+
+		else
+			${Echo} "$FUNCNAME: Detected classic service model, using chkconfig to enable jetty" >> ${statusFile} 2>&1
+			chkconfig jetty on
+			
+		fi
         fi
 
 
@@ -1677,45 +1708,58 @@ jettySetup() {
 applyIptablesSettings ()
 
 {
-	${Echo} "$FUNCNAME: applying iptables rules and saving them to redirect 443 to 7443 " >> ${statusFile} 2>&1 
-        
+	${Echo} "$FUNCNAME: applying firewall rules and saving them to redirect 443 to 7443 " >> ${statusFile} 2>&1
+        if [ "${dist}" == "sles" ]; then
+		SuSEfirewall2 open EXT TCP 443 7443 8443
 
-        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
-        iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
-        iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
-        iptables -t nat -I OUTPUT -p tcp -o lo --dport 443 -j REDIRECT --to-ports 7443
-        
+		slesRedir=`grep "^FW_REDIRECT=" /etc/sysconfig/SuSEfirewall2 | cut -d\" -f2 | sed s/\n//`
+		slesStr="0/0,0/0,tcp,443,8443"
+		if [ ! -z "${slesRedir}" ]; then
+			slesRedir="${slesRedir} "
+		fi
+		if [ -z "`echo $slesRedir | grep ${slesStr}`" ]; then
+			slesRedir="${slesRedir}${slesStr}"
+			echo "FW_REDIRECT=\"${slesRedir}\"" >> /etc/sysconfig/SuSEfirewall2
+		fi
+
+		SuSEfirewall2
+	else
+		iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+		iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
+		iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
+		iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
+		iptables -t nat -I OUTPUT -p tcp -o lo --dport 443 -j REDIRECT --to-ports 7443
+	fi
+
         if [ "${dist}" == "centos" -o "${dist}" == "redhat" ]; then
 		iptables-save > /etc/sysconfig/iptables
 
- 		if [ ${redhatDist} = "7"  ]; then
-	${Echo} "$FUNCNAME: ensuring iptables is started upon reboot " >> ${statusFile} 2>&1 
-        
- 			systemctl enable iptables
- 		fi
+		if [ ${redhatDist} = "7"  ]; then
+			${Echo} "$FUNCNAME: ensuring iptables is started upon reboot " >> ${statusFile} 2>&1 
 
-
-        elif [ "${dist}" == "ubuntu" ]; then
+			systemctl enable iptables
+		fi
+	elif [ "${dist}" == "ubuntu" ]; then
 	 	iptables-save > /etc/iptables/rules.v4
 	fi
 
-	service iptables restart
+        if [ "${dist}" != "sles" ]; then
+		service iptables restart
+	fi
 
 }
 
 restartJettyService ()
 
 {
-     
-		${Echo} "Restarting Jetty to ensure everything has taken effect"
 
-        if [ -f /var/run/jetty.pid ]; then
-                service jetty stop
-        fi
-        service jetty start
+	${Echo} "Restarting Jetty to ensure everything has taken effect"
 
-     
+	if [ -f /var/run/jetty.pid ]; then
+		service jetty stop
+	fi
+	service jetty start
+
 }
 
 applyFTICKS ()
@@ -1782,11 +1826,12 @@ applyNameIDC14Settings ()
 	cp "${tgtFile}" "${tgtFileBkp}"
 
 # The following uncomments certain lines that ship with the file:
-# lines 8,9 activate the generator 
-${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
+# lines 8,9 activate the generator
+# REVIEW1 2016-02 Legacy generators no longer needed
+# 	${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
 
-	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
-	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
+# 	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
+# 	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
 
 #lines 22 and 26 respectively which we'll adjust in a moment
 ${Echo} "Applying NameID settings:${tgtFile}: uncommenting sourceAttribute statement" >> ${statusFile} 2>&1
@@ -1900,6 +1945,7 @@ applyGlobalXmlDbSettingsDependancies ()
 	${Echo} "$FUNCNAME: applying jetty user and group ownership to  libraries in edit-webapp/WEB-INF/lib " >> ${statusFile} 2>&1
 		
 	chown -R jetty:jetty "${idpEditWebappLibDir}"
+	/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
 	${Echo} "$FUNCNAME: completed" >> ${statusFile} 2>&1
 
@@ -2016,15 +2062,19 @@ patchShibbolethConfigs ()
 	fi
 
         if [ "${google}" != "n" ]; then
-		${Echo} "$FUNCNAME: enabling Google configuration settings" >> ${statusFile} 2>&1	 
+	${Echo} "$FUNCNAME: enabling Google configuration settings" >> ${statusFile} 2>&1	 
 
-            repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
-            sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
-            cat ${Spath}/xml/${my_ctl_federation}/google-relay.diff.template | sed -re "s/IdPfQdN/${certCN}/" > ${Spath}/xml/${my_ctl_federation}/google-relay.diff
-            files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/google-relay.diff"
-            patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/google-relay.diff >> ${statusFile} 2>&1
-            cat ${Spath}/xml/${my_ctl_federation}/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
-    fi
+       repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
+      sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+		googleRelayLine=`grep -n '</util:list>' /opt/shibboleth-idp/conf/relying-party.xml | tail -n 1 | cut -d: -f1`
+		((googleRelayLine--))
+		sed -i "${googleRelayLine}r${Spath}/xml/${my_ctl_federation}/google-relay.diff.template" /opt/shibboleth-idp/conf/relying-party.xml
+		googleMetaLine=`grep -n '</MetadataProvider>' /opt/shibboleth-idp/conf/metadata-providers.xml | tail -n 1 | cut -d: -f1`
+		sed -i "${googleMetaLine}i <MetadataProvider id=\"GoogleMD\" xsi:type=\"FilesystemMetadataProvider\" metadataFile=\"/opt/shibboleth-idp/metadata/google.xml\" />" /opt/shibboleth-idp/conf/metadata-providers.xml
+
+                cat ${Spath}/xml/${my_ctl_federation}/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
+        fi
+
 
         if [ "${fticks}" != "n" ]; then
               	# apply an enhanced application of the FTICKS functionality
@@ -2207,11 +2257,11 @@ invokeShibbolethInstallProcessJetty9 ()
 	# Override per federation
 	configShibbolethFederationValidationKey
 
-        patchShibbolethConfigs
+	jettySetup
+
+	patchShibbolethConfigs
 
 	performPostUpgradeSteps
-
-        jettySetup
 
 	enableECP
 
@@ -2247,6 +2297,8 @@ invokeShibbolethUpgradeProcess()
         else
                 if [ ${dist} == "ubuntu" ]; then
                         apt-get -y remove --purge tomcat6 openjdk* default-jre java*
+                elif [ ${dist} == "sles" ]; then
+			zypper -n remove tomcat* openjdk* java*
                 else
                         yum -y remove tomcat* java*
                 fi

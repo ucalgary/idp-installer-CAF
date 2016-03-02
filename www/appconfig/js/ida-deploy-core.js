@@ -221,7 +221,8 @@ function importPreviousSettings() {
 var suppressedImportKeys = {
     "installer_section0_version": 0,
     "installer_section0_builddate": 0,
-    "installer_section0_fingerprint": 0
+    "installer_section0_fingerprint": 0,
+    "appserv": 0
 };
 
 
@@ -531,6 +532,9 @@ $(document).ready(function() {            $("[rel='tooltip']").tooltip();     })
 
         //      if( ($("#idpurl").val())==undefined )
         if ($("#idpurl").val()) {
+
+            var idpTmp = $("#idpurl").val().replace(/\/$/, '');
+	    $("#idpurl").val(idpTmp);
 
             if (loggingEnabled) {
                 console.log('Update():presets: idpurl is:|' + $("#idpurl").val() + '|');
