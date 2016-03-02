@@ -65,7 +65,7 @@ jettyBasePath="/opt/${shibDir}/embedded/jetty-base"
 
 files=""
 ts=`date "+%s"`
-whiptailBin=`which whiptail`
+whiptailBin=`which whiptail 2>/dev/null`
 if [ ! -x "${whiptailBin}" ]
 then
 	GUIen="n"
@@ -185,6 +185,22 @@ centosRadiusGroup="radiusd"
 redhatEpel5="rpm -Uvh http://download.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm"
 redhatEpel6="rpm -Uvh http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm"
 
+
+slesCmdU="zypper -q -n refresh"
+slesCmd1="zypper -n install -l patch ntp unzip curl libxml2-tools update-alternatives"
+slesCmd2="zypper -n install -l git-core"
+slesCmd4="zypper -n install -l tomcat"
+slesCmd5="zypper -n install -l mysql"
+tomcatSettingsFileS="/etc/default/tomcat6"
+sles_install_nc="zypper -n install -l netcat"
+sles_install_netstat="zypper -n install -l net-tools"
+sles_install_ldaptools="zypper -n install -l openldap2-client"
+slesEduroamPath="/etc/raddb"
+slesRadiusGroup="radiusd"
+slesMaven12="zypper ar http://download.opensuse.org/repositories/devel:/tools:/building/SLE_12/devel:tools:building.repo;zypper refresh -q -n --gpg-auto-import-keys refresh"
+
+slesCmdEduroam="zypper -n install -l bind-utils ntp samba samba-winbind freeradius-server freeradius-server-krb5 freeradius-server-ldap freeradius-server-perl freeradius-server-python freeradius-server-utils freeradius-server-mysql make"
+slesCmdFedSSO="zypper -n install -l java-1_7_0-openjdk-devel tomcat mysql"
 
 # info for validation of required fields for deployer options
 # one long list but broken apart into sections similar to the HTML installer page
