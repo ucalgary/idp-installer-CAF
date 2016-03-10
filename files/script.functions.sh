@@ -1109,6 +1109,82 @@ addRobotsDotTxt ()
 
 }
 
+
+enableRAndSCategoryIfSelected ()
+{
+	# Note: This function needs to act on the attribute-filter.xml file which should be the IdP-Installer template.
+	# This means that it needs to run post template processing.
+
+	${Echo} "$FUNCNAME: Determining to enable R and S Entity Category support in the attribute-filter.xml" >> ${statusFile} 2>&1
+
+	local failExt="proposedUpdate"
+	local tgtFile="${idpConfPath}/attribute-filter.xml"
+	local tgtFileBkp="${tgtFile}.${fileBkpPostfix}"
+
+if [ "${rAndSEnabled}" = "y" ]; then
+
+	${Echo} "R and S settings are enabled, applying them to ${tgtFile} now." >> ${statusFile} 2>&1
+
+	# Make a backup of our file
+		cp "${tgtFile}" "${tgtFileBkp}"
+
+	# remove first comment tag by completing it
+
+	sed -i  '/<!--IdPInstaller-releaseToRandS/<!--IdPInstaller-releaseToRandS -->/' "${tgtFile}"
+
+	# remove last comment tag by completing it
+
+	sed -i  '/IdPInstaller-releaseToRandS-->/<!--IdPInstaller-releaseToRandS -->/' "${tgtFile}"
+
+	#
+	# Post update testing:
+
+	# Detect zero byte file, if found, revert
+	# verify that the updates proceeded at least to a non zero byte file result
+	if [[ -s "${tgtFile}"  ]]; then
+		${Echo} "${tgtFile} update complete and non zero in size..proceeding to XML validity test" >> ${statusFile} 2>&1
+	else
+		${Echo} "$FUNCNAME: FAILED UPDATE: Issue detected. File detected as zero bytes. Reverting ${tgtFile} to originals" >> ${statusFile} 2>&1
+		${Echo} "Proposed updates atttribute-filter.xml can be found with the  ${failExt} extension" >> ${statusFile} 2>&1
+
+		# copy bad copies for latest investigation
+		cp "${tgtFile}" "${tgtFile}.${failExt}"
+
+		# revert back to original for both 
+		cp "${tgtFileBkp}" "${tgtFile}"
+
+		${Echo} "$FUNCNAME: FAILED UPDATE: Files rolled back, installation will still proceed, but check installer status.log and IdP idp-process.log, idp-warn.log for issues post startup" >> ${statusFile} 2>&1
+
+	fi
+
+	#
+	# Detect malformed XML, if found, revert.
+	local mytest=`/usr/bin/xmllint ${tgtFile} > /dev/null 2>&1`
+			# $? is the most recent foreground pipeline exit status.  If it's ok, we did our job right.
+	local isWebXMLOK=$?
+
+	if [ "${isWebXMLOK}" -ne 0 ]; then
+
+		${Echo} "$FUNCNAME:  PROBLEM: ${tgtFile} failed to validate via xmllint. saving to ${tgtFile}.${failExt} and reverting to original" >> ${statusFile} 2>&1
+		cp ${tgtFile} ${tgtFile}.${failExt}
+		cp "${tgtFileBkp}" "${tgtFile}"
+		${Echo} "$FUNCNAME: ${tgtFile} is now unchanged. Please examine it and startup logs for issues." >> ${statusFile} 2>&1
+			
+	else
+
+		${Echo} "$FUNCNAME: ${tgtFile} passed XML validation." >> ${statusFile} 2>&1
+
+	fi
+
+
+else
+	${Echo} "$FUNCNAME: R and S entity category support was not selected, skipping enabling this policy in the IdP" >> ${statusFile} 2>&1
+fi	
+${Echo} "$FUNCNAME: R and S entity category support processing done." >> $
+
+}
+
+
 updateJettyRootWebContext ()
 
 {
@@ -2269,7 +2345,7 @@ invokeShibbolethInstallProcessJetty9 ()
 
 	updateJettyRootWebContext
 
-
+	enableRAndSCategoryIfSelected
 
 
 	updateMachineTime
