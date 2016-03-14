@@ -195,7 +195,7 @@
 #  Your IdP record will receive the necessary entity category on your IdP signaling you support it.
 -->
 
-<!-- IdPInstaller-releaseToRandS
+<!--IdPInstaller-releaseToRandS
 
 <AttributeFilterPolicy id="CAF-IdPInstaller-releaseToRandS">
     <PolicyRequirementRule xsi:type="EntityAttributeExactMatch"
@@ -234,7 +234,7 @@
     </AttributeRule>
 </AttributeFilterPolicy>
 
-IdPInstaller-releaseToRandS --> 
+IdPInstaller-releaseToRandS--> 
 
 
 

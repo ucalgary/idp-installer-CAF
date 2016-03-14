@@ -1110,6 +1110,7 @@ addRobotsDotTxt ()
 }
 
 
+
 enableRAndSCategoryIfSelected ()
 {
 	# Note: This function needs to act on the attribute-filter.xml file which should be the IdP-Installer template.
@@ -1129,12 +1130,13 @@ if [ "${rAndSEnabled}" = "y" ]; then
 		cp "${tgtFile}" "${tgtFileBkp}"
 
 	# remove first comment tag by completing it
+	# we need to use some special sed-foo to avoid the strange complications with the bang and less than signs
 
-	sed -i  '/<!--IdPInstaller-releaseToRandS/<!--IdPInstaller-releaseToRandS -->/' "${tgtFile}"
+	${sedInplaceCmd}  -e 's&<!--IdPInstaller-releaseToRandS&<!--IdPInstaller-releaseToRandS -->&' "${tgtFile}"
 
 	# remove last comment tag by completing it
 
-	sed -i  '/IdPInstaller-releaseToRandS-->/<!--IdPInstaller-releaseToRandS -->/' "${tgtFile}"
+	${sedInplaceCmd}  -e 's&IdPInstaller-releaseToRandS-->&<!--IdPInstaller-releaseToRandS -->&' "${tgtFile}"
 
 	#
 	# Post update testing:
@@ -1480,6 +1482,9 @@ ${Echo} "Crontab work complete, current crontab: ${CRONTAB} "
 cleanupFilesRoutine ()
 {
 
+
+${Echo} "$FUNCNAME: Cleaning up working files" >> ${statusFile} 2>&1
+
 if [ "${cleanUp}" -eq 1 ]; then
 # 	remove configs with templates
 	for i in ${files}; do
@@ -1491,6 +1496,13 @@ else
 		${Echo} ${i}
 	done
 fi
+
+${Echo} "$FUNCNAME: cleaning up IdP conf directory" >> ${statusFile} 2>&1
+
+rm -f ${idpPath}/conf/*.bak
+
+
+
 
 }
 notifyUserBeforeExit()
@@ -1636,7 +1648,7 @@ jettySetupManageCiphers() {
 
 		removeCiphers="TLS_RSA_WITH_AES_128_GCM_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA256 TLS_RSA_WITH_AES_128_CBC_SHA TLS_RSA_WITH_AES_256_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA"
 	for cipher in $removeCiphers; do
-		sed -i "/${cipher}/d" /opt/jetty/jetty-base/etc/jetty.xml
+		${sedInplaceCmd} "/${cipher}/d" /opt/jetty/jetty-base/etc/jetty.xml
 	done
 
 	 ${Echo} "jettySetup:jettySetupManageCiphers: Ending fine tuning ciphers from /opt/jetty/jetty-base/etc/jetty.xml "
@@ -1757,10 +1769,10 @@ jettySetup() {
 
  		${Echo} "$FUNCNAME: manipulating jetty.sh for proper settings" >> ${statusFile} 2>&1 
 
-        sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
-        sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
-        sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
-        sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
+        ${sedInplaceCmd} 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
+        ${sedInplaceCmd} 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
+        ${sedInplaceCmd} 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/jetty-base/g' /opt/jetty/bin/jetty.sh
+        ${sedInplaceCmd} 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/jetty-base\/tmp/g' /opt/jetty/bin/jetty.sh
 
  		${Echo} "$FUNCNAME: manipulating jetty idp.ini for passphrases in jetty/jetty-base" >> ${statusFile} 2>&1 
         cat ${filesPath}/idp.ini | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#" > /opt/jetty/jetty-base/start.d/idp.ini
@@ -1906,30 +1918,30 @@ applyNameIDC14Settings ()
 # REVIEW1 2016-02 Legacy generators no longer needed
 # 	${Echo} "Applying NameID settings:${tgtFile}: activate the nameID generator" >> ${statusFile} 2>&1
 
-# 	sed -i  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
-# 	sed -i  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
+# 	${sedInplaceCmd}  "/idp.nameid.saml2.legacyGenerator/s/^#//" "${tgtFile}"
+# 	${sedInplaceCmd}  "/idp.nameid.saml1.legacyGenerator/s/^#//" "${tgtFile}"
 
 #lines 22 and 26 respectively which we'll adjust in a moment
 ${Echo} "Applying NameID settings:${tgtFile}: uncommenting sourceAttribute statement" >> ${statusFile} 2>&1
 
-	sed -i  "/idp.persistentId.sourceAttribute/s/^#//" "${tgtFile}"
+	${sedInplaceCmd}  "/idp.persistentId.sourceAttribute/s/^#//" "${tgtFile}"
 
 # this replaces the string for the attribute filter (uid/sAMAccountName) as the key element for the hash
 ${Echo} "Applying NameID settings:${tgtFile}: replaces the string for the attribute filter with ${attr_filter}" >> ${statusFile} 2>&1
 
-	sed -i  "s/changethistosomethingreal/${attr_filter}/" "${tgtFile}"	
+	${sedInplaceCmd}  "s/changethistosomethingreal/${attr_filter}/" "${tgtFile}"	
 
 # lines 26: uncomment the salt and replace it with the right thing
 # note that this is the same salt as the ePTId
 ${Echo} "Applying NameID settings:${tgtFile}: uncomment and set the salt for hashing the value" >> ${statusFile} 2>&1
 
-	sed -i  "/idp.persistentId.salt/s/^#//" "${tgtFile}"
-	sed -i  "s/changethistosomethingrandom/${esalt}/" "${tgtFile}"	
+	${sedInplaceCmd}  "/idp.persistentId.salt/s/^#//" "${tgtFile}"
+	${sedInplaceCmd}  "s/changethistosomethingrandom/${esalt}/" "${tgtFile}"	
 
 # line 31. Uncomment it to use the 'MyPersistentIdStore' it references elsewhere
 ${Echo} "Applying NameID settings:${tgtFile}: uncommenting use of MyPersistentIdStore for DB " >> ${statusFile} 2>&1
 
-	sed -i  "/idp.persistentId.store/s/^#//" "${tgtFile}"
+	${sedInplaceCmd}  "/idp.persistentId.store/s/^#//" "${tgtFile}"
 
 ${Echo} "Applying NameID settings:${tgtFile}: appending to file settings using StoredPersistentIdGenerator so DB is used to generate IDs" >> ${statusFile} 2>&1
 
@@ -2089,16 +2101,16 @@ applyEptidSettings ()
        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
        
       #REVIEW1 repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
-      #REVIEW1 sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+      #REVIEW1 ${sedInplaceCmd} -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
        repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
-       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+       ${sedInplaceCmd} -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
 #REVIEW1       repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
-#REVIEW1       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+#REVIEW1       ${sedInplaceCmd} -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
 	   repStr='<!-- EPTID FILTER PLACEHOLDER -->'
-       sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+       ${sedInplaceCmd} -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
       
 }
 applyLDAPSettings ()
@@ -2108,7 +2120,7 @@ applyLDAPSettings ()
 
 
 		repStr='<!-- LDAP CONNECTOR PLACEHOLDER -->'
-        sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+        ${sedInplaceCmd} -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/ldapconn.txt" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
 
 
 }
@@ -2134,19 +2146,19 @@ patchShibbolethConfigs ()
     cat ${Spath}/files/${my_ctl_federation}/relying-party.xml > /opt/shibboleth-idp/conf/relying-party.xml
 
 	if [ "${consentEnabled}" = "n" ]; then
-		sed -i 's#<bean parent="Shibboleth.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="Shibboleth.SSO" />#;s#<bean parent="SAML2.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="SAML2.SSO" />#' /opt/shibboleth-idp/conf/relying-party.xml
+		${sedInplaceCmd} 's#<bean parent="Shibboleth.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="Shibboleth.SSO" />#;s#<bean parent="SAML2.SSO" p:postAuthenticationFlows="attribute-release" />#<bean parent="SAML2.SSO" />#' /opt/shibboleth-idp/conf/relying-party.xml
 	fi
 
         if [ "${google}" != "n" ]; then
 	${Echo} "$FUNCNAME: enabling Google configuration settings" >> ${statusFile} 2>&1	 
 
        repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
-      sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+      ${sedInplaceCmd} -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
 		googleRelayLine=`grep -n '</util:list>' /opt/shibboleth-idp/conf/relying-party.xml | tail -n 1 | cut -d: -f1`
 		((googleRelayLine--))
-		sed -i "${googleRelayLine}r${Spath}/xml/${my_ctl_federation}/google-relay.diff.template" /opt/shibboleth-idp/conf/relying-party.xml
+		${sedInplaceCmd} "${googleRelayLine}r${Spath}/xml/${my_ctl_federation}/google-relay.diff.template" /opt/shibboleth-idp/conf/relying-party.xml
 		googleMetaLine=`grep -n '</MetadataProvider>' /opt/shibboleth-idp/conf/metadata-providers.xml | tail -n 1 | cut -d: -f1`
-		sed -i "${googleMetaLine}i <MetadataProvider id=\"GoogleMD\" xsi:type=\"FilesystemMetadataProvider\" metadataFile=\"/opt/shibboleth-idp/metadata/google.xml\" />" /opt/shibboleth-idp/conf/metadata-providers.xml
+		${sedInplaceCmd} "${googleMetaLine}i <MetadataProvider id=\"GoogleMD\" xsi:type=\"FilesystemMetadataProvider\" metadataFile=\"/opt/shibboleth-idp/metadata/google.xml\" />" /opt/shibboleth-idp/conf/metadata-providers.xml
 
                 cat ${Spath}/xml/${my_ctl_federation}/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
         fi

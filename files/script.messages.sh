@@ -126,6 +126,7 @@ distEduroamPath=""
 distRadiusGroup=""
 templatePathEduroamDist=""
 distEduroamModules=""
+sedInplaceCmd='sed -i.bak'
 fetchCmd="curl --silent -k -L --output"
 shibbURL="http://shibboleth.net/downloads/identity-provider/${shibVer}/${shibDir}-${shibVer}.tar.gz"
 casClientURL="http://downloads.jasig.org/cas-clients/cas-client-${casVer}-release.zip"
