@@ -547,14 +547,23 @@ EOM
 
 installCasClientIfEnabled() {
 
+			
 if [ "${type}" = "cas" ]; then
 
+${Echo} "$FUNCNAME: CAS is your AuthN technique, preparing to do updates"  >> ${statusFile} 2>&1
+	
 	if [ ! -f "${downloadPath}/cas-client-${casVer}-release.zip" ]; then
+		${Echo} "$FUNCNAME: fetching CAS from the web"  >> ${statusFile} 2>&1
+
 		fetchCas
 	fi
+
+	${Echo} "$FUNCNAME: unzipping cas-client-${casVer}-release.zip to /opt"  >> ${statusFile} 2>&1
+
 	unzip -qo ${downloadPath}/cas-client-${casVer}-release.zip -d /opt
 	if [ ! -s "/opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar" ]; then
-		${Echo} "Unzip of cas-client failed, check zip file: ${downloadPath}/cas-client-${casVer}-release.zip"
+
+		${Echo} "$FUNCNAME: Unzip of cas-client failed, check zip file: ${downloadPath}/cas-client-${casVer}-release.zip"  >> ${statusFile} 2>&1
 		cleanBadInstall
 	fi
 
@@ -570,19 +579,64 @@ if [ "${type}" = "cas" ]; then
 		caslogurl=$(askString "CAS login URL" "Please input the Login URL to your CAS server (https://cas.xxx.yy/cas/login)" "${casurl}/login")
 	fi
 
+	${Echo} "$FUNCNAME: copying necessary jars into place (cas-client-core,shib-cas-autehtnicator-3.0.0) "  >> ${statusFile} 2>&1
+
 	cp /opt/cas-client-${casVer}/modules/cas-client-core-${casVer}.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
 	cp ${Spath}/downloads/shib-cas-authenticator-3.0.0.jar /opt/shibboleth-idp/edit-webapp/WEB-INF/lib/
-	cp /opt/shibboleth-idp/webapp/WEB-INF/web.xml /opt/shibboleth-idp/edit-webapp/WEB-INF/
+
+	${Echo} "$FUNCNAME: enabling CAS flow - creating directory flows/authn/Shibcas and copying configs into place"  >> ${statusFile} 2>&1
 	mkdir -p /opt/shibboleth-idp/flows/authn/Shibcas
 	cp ${Spath}/${prep}/shibcas-authn-beans.xml ${Spath}/${prep}/shibcas-authn-flow.xml /opt/shibboleth-idp/flows/authn/Shibcas
 
-	patch /opt/shibboleth-idp/edit-webapp/WEB-INF/web.xml -i ${Spath}/${prep}/${shibDir}-web.xml.diff >> ${statusFile} 2>&1
+
+	${Echo} "$FUNCNAME: enabling CAS flow in conf/authn/general-authn.xml via patch command"  >> ${statusFile} 2>&1
+
 	patch /opt/shibboleth-idp/conf/authn/general-authn.xml -i ${Spath}/${prep}/${shibDir}-general-authn.xml.diff >> ${statusFile} 2>&1
 
-	/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
+
+	${Echo} "$FUNCNAME: enabling CAS flow in web.xml by copying standard web.xml into edit-webapp"  >> ${statusFile} 2>&1
+
+		cp /opt/shibboleth-idp/webapp/WEB-INF/web.xml /opt/shibboleth-idp/edit-webapp/WEB-INF/
+		local webXML="web.xml"
+		local webAppWEBINFOverride="/opt/shibboleth-idp/edit-webapp/WEB-INF"
+		local webAppWEBINF="/opt/shibboleth-idp/webapp/WEB-INF"
+		# set to the overridden one provided it exists
+		local tgtFileToUpdate="${webAppWEBINFOverride}/${webXML}"
+		local tgtFileToUpdateBackup="${tgtFileToUpdate}.orig"
+
+		local fragmentTemplate="${Spath}/prep/jetty/web.xml.fragment.template"
+
+		# make the backup of the file
+		cp ${tgtFileToUpdate} ${tgtFileToUpdateBackup}
+
+
+		${Echo} "$FUNCNAME: Begin modifying web.xml" >> ${statusFile} 2>&1
+			#  NOTE: The use of the greater than overwrites the file web.xml and we cat the fragment to complete it.
+			#  this is intentional			
+			head -n -1 ${tgtFileToUpdateBackup} > ${tgtFileToUpdate}
+			cat ${fragmentTemplate} >> ${tgtFileToUpdate}
+		${Echo} "$FUNCNAME: Modifications done, attempting to validate web.xml as sane XML" >> ${statusFile} 2>&1
+
+		local mytest=`/usr/bin/xmllint ${tgtFileToUpdate} > /dev/null 2>&1`
+		# $? is the most recent foreground pipeline exit status.  If it's ok, we did our job right.
+		local isWebXMLOK=$?
+
+        if [ "${isWebXMLOK}" -ne 0 ]; then
+			${Echo} "$FUNCNAME: RUH-OH! web.xml failed to validate via xmllint. saving to web.xml.failed and reverting to original" >> ${statusFile} 2>&1
+			cp ${tgtFileToUpdate} ${tgtFileToUpdate}.failed
+			cp ${tgtFileToUpdateBackup} ${tgtFileToUpdate}
+			${Echo} "$FUNCNAME: RUH-OH! manual intervention required for CAS to work, startup of container may fail, please investigate." >> ${statusFile} 2>&1
+				
+        else
+			${Echo} "$FUNCNAME: web.xml validates via xmllint, good to proceed." >> ${statusFile} 2>&1
+  
+        fi
+
+		${Echo} "$FUNCNAME: Proceeding to rebuilding the war and deploying" >> ${statusFile} 2>&1
+ 		/opt/shibboleth-idp/bin/build.sh -Didp.target.dir=/opt/shibboleth-idp
 
 else
-	${Echo} "Authentication type: ${type}, CAS Client Not Requested"
+	${Echo} "$FUNCNAME: Authentication type: ${type}, CAS Client Not Requested"  >> ${statusFile} 2>&1
 
 
 fi
