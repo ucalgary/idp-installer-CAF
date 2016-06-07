@@ -3,45 +3,33 @@
 
 
 HELP="
-
-
-
-
 ##############################################################################
-#  Federated Identity Deployer Tools script by:                              #
-# Anders Lördal,  SWAMID                                                     #
-# Chris Phillips, CANARIE                                                    #
-#                                                                            #
-#                                                                            #
-# Version 2.6                                                                #
-#                                                                            #
-# Deploys a working IDP for SWAMID on an Ubuntu, CentOS or Redhat system     #
-# SAML2 Uses: tomcat6                                                        #
-#       shibboleth-identityprovider-2.4.0                                    #
-#       cas-client-3.2.1-release                                             #
-#       mysql-connector-java-5.1.27 (for EPTID)                              #
-#       apache-maven-3.1.1 (for building FTICKS plugin)                      #
-# eduroam uses:                                                              #
-#       freeRADIUS-2.1.12                                                    #
-#       samba-3.6.9 (to connect to AD for MS-CHAPv2)                         #
-#                                                                            #
-# Templates are provided for CAS and LDAP authentication                     #
-#                                                                            #
-# To disable the whiptail gui run with argument '-c'                         #
-# To keep generated files run with argument '-k'                             #
-#    NOTE! some of theese files WILL contain cleartext passwords.            #
-#                                                                            #
-# To add a new template for another authentication, just add a new directory #
-# under the 'prep' directory, add the neccesary .diff files and add any      #
-# special hanlding of those files to the script.                             #
-#                                                                            #
-# You can pre-set configuration values in the file 'config'                  #
-#                                                                            #
-# Please send questions and improvements to: anders.lordal@hig.se            #
+  Federated Identity Deployer Tools by:                              
+ 
+ Anders Lördal,  SWAMID                                                     
+ Chris Phillips, CANARIE                                 
+
+ Version 3.0.0                                                               
+                                                                            
+ Deploys a working IDP for SWAMID or CANARIE CAF on an Ubuntu, CentOS or Redhat system     
+ SAML2 Uses:
+      jetty-9.2.14
+      shibboleth-identityprovider-3.2.1
+      cas-client-3.3.3-release
+      mysql-connector-java-5.1.35 (for EPTID)
+      mysql DB 5.6 Community Release                     
+eduroam uses:
+      freeRADIUS-3.0.1
+      samba-4.1.1 (to connect to AD for MS-CHAPv2)
+
+
+SWAMID  specific questions contact: anders.lordal@hig.se            
+CANARIE specific questions contact: ticket@canarie.ca            
+
 ##############################################################################
 "
 
-# Copyright 2011, 2012, 2013, 2014
+# Copyright 2011-16
 # Anders Lördal, SWAMID
 # Chris Phillips, CANARIE
 #
