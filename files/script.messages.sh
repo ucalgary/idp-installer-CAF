@@ -13,7 +13,7 @@ javaVer="1.8.0_25"
 # This URL determines which base to derive 'latest' from
 # --> this is the very very latest: jettyBaseURL="http://download.eclipse.org/jetty/stable-9/dist/"
 # Below is the 9.2.11 one
-jettyBaseURL="http://download.eclipse.org/jetty/9.2.11.v20150529/dist/"
+jettyBaseURL="http://archive.eclipse.org/jetty/9.2.11.v20150529/dist/"
 
 
 files=""
@@ -70,7 +70,7 @@ templatePathEduroamDist=""
 distEduroamModules=""
 fetchCmd="curl --silent -k --output"
 shibbURL="http://shibboleth.net/downloads/identity-provider/${shibVer}/shibboleth-identityprovider-${shibVer}-bin.zip"
-casClientURL="http://downloads.jasig.org/cas-clients/cas-client-${casVer}-release.zip"
+casClientURL="http://developer.jasig.org/cas-clients/cas-client-${casVer}-release.zip"
 mysqlConnectorURL="http://ftp.sunet.se/pub/unix/databases/relational/mysql/Downloads/Connector-J/mysql-connector-java-${mysqlConVer}.tar.gz"
 Rmsg="Do you want to install 'EPEL' and 'jpackage' to automaticly install dependancies? (Without theese depends the install WILL fail!)"
 
